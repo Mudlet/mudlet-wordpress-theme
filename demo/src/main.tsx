@@ -25,7 +25,7 @@ const brand: BrandConfig = {
             name: 'mudlet-demo',
             filename: 'mudlet-demo.mpackage',
             url: demoPackageUrl,
-            version: '0.17.2',   // bump with config.lua to push a new world to returning visitors
+            version: '0.18.0',   // bump with config.lua to push a new world to returning visitors
             removable: false,
         },
         {

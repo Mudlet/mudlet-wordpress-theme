@@ -46,10 +46,16 @@ local URL = {
     discord  = 'https://discord.gg/kuYvMQ9',
     github   = 'https://github.com/Mudlet/Mudlet',
     ptb      = 'https://make.mudlet.org/snapshots/?platform=all&source=ptb',
-    win      = 'https://www.mudlet.org/download/66/',
-    macx     = 'https://www.mudlet.org/download/65/',
-    macarm   = 'https://www.mudlet.org/download/64/',
-    linux    = 'https://www.mudlet.org/download/63/',
+    -- The download manager's own links, which is what the real buttons point
+    -- at: each one redirects straight to the installer, so opening it puts the
+    -- file in the visitor's downloads rather than showing them another page.
+    -- The ids belong to whichever release is current and move with each one —
+    -- unlike the version, weights and hashes typed into the vault below, which
+    -- are the July 2026 snapshot.
+    win      = 'https://www.mudlet.org/download/70/',
+    macx     = 'https://www.mudlet.org/download/69/',
+    macarm   = 'https://www.mudlet.org/download/68/',
+    linux    = 'https://www.mudlet.org/download/67/',
     post422  = 'https://www.mudlet.org/2026/07/4-22-mapping-made-friendlier/',
     post4220 = 'https://www.mudlet.org/2026/07/mudlet-4-22-0/',
     post421  = 'https://www.mudlet.org/2026/06/4-21-mudlet-made-better/',
@@ -103,6 +109,71 @@ local function say(...)
     echo('\n')
 end
 
+-- The orange button ----------------------------------------------------------
+--
+-- The button on the front page is labelled DOWNLOAD MUDLET, so it downloads
+-- Mudlet: the build for the machine the visitor is reading this on, the same
+-- one the real front page would hand them.
+--
+-- getOS() is how it knows. In the browser that is not the platform Mudlet was
+-- built for — there isn't one — it is the visitor's own OS, sniffed from the
+-- user agent, which is the guess the download page makes too, so the world and
+-- the page agree without either having to ask the other.
+local BUILDS = {
+    win    = { url = URL.win,    what = 'the Windows installer' },
+    macarm = { url = URL.macarm, what = 'the macOS build', intel = true },
+    linux  = { url = URL.linux,  what = 'the Linux AppImage' },
+}
+
+local function currentBuild()
+    local name, version, third = getOS()
+    if name == 'windows' then return BUILDS.win end
+    if name == 'linux' then
+        -- Android and ChromeOS both come back as linux, with an osType in
+        -- front of the processor that nothing else has. Neither of them runs
+        -- an AppImage.
+        if third == 'android' or third == 'chromeos' then return nil end
+        return BUILDS.linux
+    end
+    if name == 'mac' then
+        -- iPhones and iPads say mac as well, and the version is the only thing
+        -- here that separates them: the sniffer matches "Mac OS X 10_15_7" and
+        -- not an iOS agent's "like Mac OS X", so those arrive unknown.
+        if version == 'unknown' then return nil end
+        -- Safari reports Intel even on Apple Silicon, so arm64 is the safer
+        -- default — the same call the download page makes, with the x86_64
+        -- build one line underneath.
+        return BUILDS.macarm
+    end
+    return nil
+end
+
+-- `afar` is the visitor typing 'download' in a room the button is not in.
+local function press(afar)
+    local build = currentBuild()
+    if not build then
+        openUrl(URL.download)
+        say(C.text, 'The button gives, then catches. Whatever you are reading this on is ',
+            'not something Mudlet ships an installer for — ',
+            link('the download page', URL.download), C.text, ' has every platform there is.')
+        return
+    end
+    openUrl(build.url)
+    if afar then
+        say(C.text, 'The button is on the front page, but it reaches from here: ',
+            build.what, ' starts downloading.')
+    else
+        say(C.text, 'It gives with a clunk you feel in your wrist, and ', build.what,
+            ' starts downloading.')
+    end
+    say(C.dim, 'If your browser held that back, take it by hand: ',
+        link(build.what, build.url), C.dim .. '.')
+    if build.intel then
+        say(C.dim, 'On an Intel Mac? ', link('The x86_64 build', URL.macx),
+            C.dim, ' is the one you want instead.')
+    end
+end
+
 -- The world ------------------------------------------------------------------
 --
 -- Each thing carries the noun the parser matches (keys[1] is canonical, the
@@ -133,10 +204,15 @@ D.rooms = {
             {
                 name = 'the orange button',
                 keys = { 'button', 'orange button', 'download button' },
-                url = URL.download,
+                grab = press,
                 look = function()
                     say(C.text, 'Big. Orange. Worn smooth by a great many hands. It reads DOWNLOAD ',
                         'MUDLET, and it is not a metaphor for anything — it does that.')
+                    local build = currentBuild()
+                    if build then
+                        say(C.dim, 'Pressing it downloads ', build.what,
+                            ', which is the one for the machine you are reading this on.')
+                    end
                     say(C.dim, 'You could ', cmd('press it', 'press button', 'press the button', C.dim),
                         C.dim, ', or go ', cmd('down', 'down', 'go down', C.dim),
                         C.dim, ' and take the crates one at a time.')
@@ -1065,10 +1141,18 @@ end
 -- Except for the crates. Those URLs are installers, and 130 MiB arriving in the
 -- downloads tray because somebody typed a word at a demo is not a thing to do
 -- to a visitor: a `heavy` thing hands over the link and lets them decide.
+--
+-- The orange button is that rule the other way up. It is labelled DOWNLOAD
+-- MUDLET and pressing it is the visitor asking for precisely that, so it
+-- carries its own `grab` and starts the real download.
 function D.take(noun)
     local thing = find(noun)
     if not thing then
         say(C.text, 'You cannot take that.')
+        return
+    end
+    if thing.grab then
+        thing.grab()
         return
     end
     if not thing.url then
@@ -1146,9 +1230,7 @@ function D.input(raw)
         -- 'download' on its own is the front page's big orange button, wherever
         -- the visitor happens to be standing.
         if rest == '' and verb == 'download' then
-            openUrl(URL.download)
-            say(C.text, 'The button is on the front page, but it works from here: ',
-                link('mudlet.org/download', URL.download), C.text .. '.')
+            press(true)
         else
             D.take(rest)
         end
