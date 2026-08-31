@@ -5,6 +5,7 @@
 -- would mean exporting five private helpers across a seam that is not real.
 
 local D = demo
+local rooms = require('mudlet-demo.rooms')
 
 -- The map --------------------------------------------------------------------
 --
@@ -16,38 +17,102 @@ local D = demo
 
 local AREA = 'mudlet.org'
 
--- Fixed ids, and the area is torn down before it is rebuilt: a profile keeps
--- its map across package reinstalls, so anything createRoomID()'d would stack
--- up a fresh set of rooms every time the world was rewritten.
-local ROOM = { home = 1, news = 2, commons = 3, vault = 4, makers = 5, workshop = 6 }
-
--- Laid out as the site reads: news above the front page, the vault below it,
--- the commons to the west. All six sit on one z level, including the vault —
--- a cellar on its own level would be a map with one room on it, which is
--- accurate and useless at this size.
+-- Where a room is drawn is not written down anywhere: it is walked.
 --
--- The workshop goes north of the commons, which puts it inside the bounding box
--- the other five already made: three squares by three, and the map frames the
--- same way it did with a corner empty.
-local PLACE = {
-    home     = { x =  0, y =  0 },
-    news     = { x =  0, y =  1 },
-    commons  = { x = -1, y =  0 },
-    vault    = { x =  0, y = -1 },
-    makers   = { x = -2, y =  0 },
-    workshop = { x = -1, y =  1 },
+-- One square per compass step, breadth-first from the front page, so a room's
+-- position is a consequence of how you get to it. The exits are already
+-- declared once, in the room that has them, and that is the whole of what a
+-- new room has to say for itself — the coordinate, the id and the line drawn
+-- on the map all follow from it.
+--
+-- `up` and `down` step one square as well, on the same z, which is what makes
+-- the vault read as a cellar: `down` from the front page puts it directly
+-- under, and because the exit is called `down` rather than `south` the mapper
+-- draws the stair markers and no line — a line would say you can walk into it.
+-- All six rooms therefore sit on one level. A cellar on a level of its own
+-- would be a map with one room on it, which is accurate and useless at this
+-- size.
+local STEP = {
+    north = {  0,  1 }, south = {  0, -1 },
+    east  = {  1,  0 }, west  = { -1,  0 },
+    up    = {  0,  1 }, down  = {  0, -1 },
 }
 
--- The vault is `down`/`up` only. It sits one square below the front page so it
--- reads as a cellar, but the exit is a stair, so the mapper draws the stair
--- markers and no line — a line would say you can walk south into it.
-local MAP_EXITS = {
-    { 'home', 'news',    'north', 'south' },
-    { 'home', 'commons', 'west',  'east'  },
-    { 'home', 'vault',   'down',  'up'    },
-    { 'commons', 'makers', 'west',  'east'  },
-    { 'commons', 'workshop', 'north', 'south' },
-}
+local START = 'home'
+
+-- Everything that can go wrong below is a mistake in the exits — ours, made
+-- while editing — and not anything a visitor can reach. So it goes to the
+-- debug console and the map is drawn regardless: a hero has no business
+-- showing anybody a stack trace, and most of a map beats none of one.
+local function complain(...)
+    if type(debugc) == 'function' then
+        debugc('mudlet-demo map: ' .. table.concat({ ... }, ' ') .. '\n')
+    end
+end
+
+local function sortedKeys(t)
+    local keys = {}
+    for key in pairs(t) do keys[#keys + 1] = key end
+    table.sort(keys)
+    return keys
+end
+
+-- Ids are derived from the room names, sorted, rather than kept in a list
+-- beside them. Renumbering is safe because the area is torn down before it is
+-- rebuilt and deleteArea takes its rooms with it. What is *not* safe is
+-- createRoomID(), which would stack up a fresh set of rooms on every package
+-- reinstall — a profile keeps its map.
+local function ids()
+    local id = {}
+    for i, key in ipairs(sortedKeys(rooms)) do id[key] = i end
+    return id
+end
+
+-- Breadth-first, taking exits in sorted order, so the layout and anything said
+-- about it are the same on every run.
+local function layout()
+    local at = { [START] = { x = 0, y = 0 } }
+    local queue, head = { START }, 1
+    while queue[head] do
+        local key = queue[head]
+        head = head + 1
+        local here = at[key]
+        for _, dir in ipairs(sortedKeys(rooms[key].exits)) do
+            local dest = rooms[key].exits[dir]
+            local step = STEP[dir]
+            if not rooms[dest] then
+                complain(key, 'has an exit', dir, 'to', dest .. ',', 'which is not a room')
+            elseif not step then
+                complain(key, 'reaches', dest, 'by', dir .. ',', 'which the map cannot step in')
+            elseif not at[dest] then
+                at[dest] = { x = here.x + step[1], y = here.y + step[2] }
+                queue[#queue + 1] = dest
+            elseif at[dest].x ~= here.x + step[1] or at[dest].y ~= here.y + step[2] then
+                complain(dir, 'from', key, 'would put', dest, 'somewhere it already is not:',
+                    'the exits into it disagree about where it is')
+            end
+        end
+    end
+
+    -- A room nothing leads to is a room nobody can see, and two rooms in one
+    -- square is a map that lies about the world. Neither stops the drawing.
+    local taken = {}
+    for _, key in ipairs(sortedKeys(rooms)) do
+        local place = at[key]
+        if not place then
+            complain(key, 'cannot be reached from', START .. ',', 'so it is not on the map')
+        else
+            local square = place.x .. ',' .. place.y
+            if taken[square] then
+                complain(key, 'and', taken[square], 'are drawn in the same square')
+            end
+            taken[square] = key
+        end
+    end
+    return at
+end
+
+local ROOM, PLACE = ids(), layout()
 
 local ENV = 200   -- one custom env colour, so the rooms are the site's orange
 
@@ -60,21 +125,27 @@ function D.buildMap()
     setMapBackgroundColor(30, 24, 19)   -- the hero terminal's own ground
 
     -- The map info panel — area, room id, coordinate ranges — is on by default
-    -- and, at this size, is the entire widget. Four rooms need no coordinate
+    -- and, at this size, is the entire widget. Six rooms need no coordinate
     -- readout; the room name is already the line above the map.
     for label in pairs(getMapInfo()) do disableMapInfo(label) end
 
     for key, id in pairs(ROOM) do
-        if roomExists(id) then deleteRoom(id) end
-        addRoom(id)
-        setRoomArea(id, area)
-        setRoomCoordinates(id, PLACE[key].x, PLACE[key].y, 0)
-        setRoomName(id, D.rooms[key].title)
-        setRoomEnv(id, ENV)
+        if PLACE[key] then
+            if roomExists(id) then deleteRoom(id) end
+            addRoom(id)
+            setRoomArea(id, area)
+            setRoomCoordinates(id, PLACE[key].x, PLACE[key].y, 0)
+            setRoomName(id, rooms[key].title)
+            setRoomEnv(id, ENV)
+        end
     end
-    for _, e in ipairs(MAP_EXITS) do
-        setExit(ROOM[e[1]], ROOM[e[2]], e[3])
-        setExit(ROOM[e[2]], ROOM[e[1]], e[4])
+
+    -- Drawn from the side that declares them, one exit at a time, so a pair
+    -- that disagrees comes out as two one-way exits rather than as a guess.
+    for key, room in pairs(rooms) do
+        for dir, dest in pairs(room.exits) do
+            if PLACE[key] and PLACE[dest] then setExit(ROOM[key], ROOM[dest], dir) end
+        end
     end
     updateMap()
 end

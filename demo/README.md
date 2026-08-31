@@ -144,6 +144,25 @@ north of the commons, inside the bounding box the other five already made, so
 adding it did not change the framing. Zoom is set so all six rooms stay in frame
 from *any* of them, not just from the middle.
 
+**None of that layout is written down.** `map.lua` walks the rooms breadth-first
+from the front page, one square per exit, so where a room is drawn is a
+consequence of how you reach it — and the exits are already declared once, in
+the room that has them. `up` and `down` step a square too, on the same z, which
+is exactly what puts the vault under the front page while its exit stays a
+stair. Room ids are derived the same way, from the sorted room names; renumbering
+is safe because the area is torn down before it is rebuilt and `deleteArea`
+takes its rooms with it. Adding a connected room is therefore a file in
+`rooms/`, a line in `rooms/init.lua`, and the exit in the room it hangs off —
+no coordinate, no id, no map exit.
+
+Four things can go wrong in that walk, and all four are mistakes in the exits
+rather than anything a visitor can do: an exit to a room that does not exist, an
+exit in a direction the map cannot step in, two paths that disagree about where
+a room is, and a room nothing leads to. Each is reported to the debug console —
+`mudlet-demo map: ...`, which surfaces in the browser's own console — and the
+map is drawn anyway, minus whatever could not be placed. A hero has no business
+showing anybody a stack trace, and most of a map beats none of one.
+
 It starts closed. Console height is the scarce thing in a homepage hero, and a
 map that opens itself costs the visitor space before they have asked for
 anything; closed it costs one 34px pill. **This also used to be forced:** below
