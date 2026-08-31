@@ -2088,6 +2088,24 @@ function D.connected()
     say(C.sys, 'This is Mudlet, running in your browser — and this is mudlet.org,')
     say(C.sys, 'laid out as a MUD. Click anything underlined, or type ',
         cmd('help', 'help', 'the short list of commands', C.sys), C.sys .. '.')
+    D.probe()
+end
+
+-- Phase 0 probe. Four claims, printed rather than assumed: a plain .lua shipped
+-- in the .mpackage is require()able from the profile VFS, so is a directory
+-- through package.path's second pattern, so is a sibling one level down,
+-- and an error raised inside any of them names the file and the line. Removed
+-- with the probe files themselves once the split lands.
+function D.probe()
+    say()
+    local ok, plain = pcall(require, 'mudlet-demo.probe')
+    say(C.sys, 'probe plain   : ', tostring(ok), '  ', tostring(ok and plain.where or plain))
+    local okDir, dir = pcall(require, 'mudlet-demo.probedir')
+    say(C.sys, 'probe initlua : ', tostring(okDir), '  ', tostring(okDir and dir.where or dir))
+    say(C.sys, 'probe sibling : ', tostring(okDir), '  ', tostring(okDir and dir.leaf or '-'))
+    if ok then
+        say(C.sys, 'probe error   : ', tostring(select(2, pcall(plain.boom))))
+    end
 end
 
 tempTimer(0.4, function() D.boot() end)

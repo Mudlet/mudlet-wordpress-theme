@@ -49,10 +49,18 @@ const baseVersion = config.match(versionLine)?.[1];
 if (!baseVersion) {
 	throw new Error('config.lua: no `version = [[<n>]]` line to build a version from');
 }
+// Phase 0 probe: plain .lua files carried in the zip alongside the XML, to
+// prove the installer unpacks them into the profile and require() finds them.
+// They are hashed with everything else so editing one still moves the version.
+// Goes away with the probe.
+const PROBE = ['probe.lua', 'probedir/init.lua', 'probedir/leaf.lua'];
+const probeSrc = Object.fromEntries(PROBE.map(f => [f, readFileSync(join(pkgDir, f), 'utf8')]));
+
 const fingerprint = createHash('sha256')
 	.update(config.replace(versionLine, ''))
 	.update(worldSrc)
 	.update(embed)
+	.update(PROBE.map(f => probeSrc[f]).join(''))
 	.digest('hex')
 	.slice(0, 8);
 const version = `${baseVersion}+${fingerprint}`;
@@ -114,6 +122,7 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 const zip = zipSync({
 	'config.lua': strToU8(configSrc),
 	'mudlet-demo.xml': strToU8(xml),
+	...Object.fromEntries(PROBE.map(f => [f, strToU8(probeSrc[f])])),
 });
 
 mkdirSync(dirname(outFile), { recursive: true });
