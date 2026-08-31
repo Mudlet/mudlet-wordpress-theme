@@ -44,11 +44,15 @@ fires, so the catch-all carries a negative lookahead for `lua ` rather than
 matching everything; a bare `lua` still falls through to the world's normal
 reply. Both patterns live in `scripts/build-package.mjs`.
 
-Bump `version` in **both** `packages/mudlet-demo/config.lua` and the
-`BrandPackage` in `src/main.tsx` to push a new world to returning visitors —
-a profile whose installed copy has a different version reinstalls on open.
-Forget this and you will edit `world.lua`, rebuild, reload, and read the old
-world back, because the installed copy still claims the same version.
+A profile whose installed copy claims a different version reinstalls the
+package on open, which is how an edited world reaches a returning visitor.
+That version used to be a number bumped by hand in two files, and forgetting
+either meant editing `world.lua`, rebuilding, reloading and reading the old
+world back. The build derives it instead: `config.lua`'s number plus a hash
+of the Lua being zipped, written into the packaged `config.lua` and into
+`src/assets/mudlet-demo.version.ts`, which `src/main.tsx` imports. Edit the
+world and the version moves; rebuild an untouched world and it does not.
+Bump the number in `config.lua` for a release, not for an edit.
 
 `src/embed.css` also shrinks the command bar and sets the console type to the
 hero terminal's own 12.48px/1.8, so the swap from the scripted session to the
@@ -57,13 +61,13 @@ uses IBM Plex Mono, the client Mudlet's Bitstream Vera Sans Mono.
 
 ## The world itself
 
-It is mudlet.org, walked instead of scrolled. Five rooms — the front page, the
-release vault (`down`), the news room (`north`), the commons (`west`) and the
-Makers Hall beyond it — each standing in for a part of the site, each thing in
-them linking out to the real page it parodies. `look windows` is the download
-page's Windows row, sha256 and all; `read board` is the three latest posts; the
-commons is the forum, wiki, Discord, GitHub and package-repository links, behind
-doors.
+It is mudlet.org, walked instead of scrolled. Six rooms — the front page, the
+release vault (`down`), the news room (`north`), the commons (`west`), the
+Makers Hall beyond it and the workshop north of it — each standing in for a part
+of the site, each thing in them linking out to the real page it parodies.
+`look windows` is the download page's Windows row, sha256 and all; `read board`
+is the three latest posts; the commons is the forum, wiki, Discord, GitHub and
+package-repository links, behind doors.
 
 In Makers Hall a sage keeps the ledger of everyone who ever built Mudlet:
 `ask about vadi`, `ask about everyone` (thirty names in two columns), or click
@@ -95,12 +99,14 @@ own doing — border plus labels, the way any Mudlet package would build a HUD.
 
 Behind the pill is Mudlet's own mapper: the real widget, the real map database,
 `centerview` following you from room to room, floating in the corner over the
-text. Four rooms is a tiny map, but it is the same mapper a twelve-thousand-room
+text. Six rooms is a tiny map, but it is the same mapper a twelve-thousand-room
 game drives, and "a real mapper" is one of the six claims the page makes two
 sections down. The vault is `down`/`up` only — it sits one square below the
 front page so it reads as a cellar, and the mapper draws the stair markers with
-no line, because a line would say you can walk south into it. Zoom is set so all
-four rooms stay in frame from *any* of them, not just from the middle.
+no line, because a line would say you can walk south into it. The workshop goes
+north of the commons, inside the bounding box the other five already made, so
+adding it did not change the framing. Zoom is set so all six rooms stay in frame
+from *any* of them, not just from the middle.
 
 It starts closed. Console height is the scarce thing in a homepage hero, and a
 map that opens itself costs the visitor space before they have asked for
@@ -122,18 +128,105 @@ a per-profile field that collapses it to a ▾ arrow for every map view at once.
 In-world links run `expandAlias`, not `send`: `send` goes straight at a socket
 that isn't there, and it is the catch-all alias that makes an offline profile
 answer at all. The installer crates are the one exception to "taking a thing
-opens it" — those URLs are 130 MiB, and a `heavy` thing hands over the link
+opens it" — those URLs are 130 MiB, and a `heavy` thing (or a `crate`, which
+is the same rule wearing the current release's label) hands over the link
 instead of firing `openUrl`, rather than dropping an installer into the
 downloads tray because somebody typed a word at a demo.
 
-Content — versions, weights, hashes, headlines — is typed out at the top of
-`world.lua`, copied from the live site (4.22.0, 6 July 2026). Feeding it from
-the page's own release and post data later is a change to those tables, not to
-the machinery under them.
+### The world asks the site what it says
+
+The prose is written; the facts inside it are not. The version chalked on the
+vault wall, the four crate weights and hashes, the notices on the board, the
+number of boxed worlds on the shelf and the size of the ledger all come from
+one request, made while the console animates its fake connect:
+
+```
+GET /wp-json/mudlet/v1/demo
+```
+
+The other end is `wordpress/theme/mudlet/inc/demo-seed.php`, which answers out
+of the same plugins the pages are drawn from — so the vault and `/download/`
+cannot disagree about a release, and the shelves and the games grid cannot
+disagree about how many games there are. The URL is site-relative because the
+frame is served from the site's own origin anyway; a second spelling
+(`/?rest_route=…`) is tried when the first fails, since `/wp-json/` needs
+pretty permalinks.
+
+`SITE`, at the top of `world.lua`, is both the shape of that answer and the
+fallback: the July 2026 snapshot the rooms were composed against. It has to be
+a fallback, because the demo also runs from the prototype page, a Vite dev
+server and `file://` copies, none of which have a WordPress behind them. There
+the request fails, the world keeps what is written, and the visitor is told
+nothing — a hero has no business showing an error.
+
+Two consequences worth knowing:
+
+- **The first room waits for it, briefly.** `D.boot()` fires the request with
+  the first dot and prints the room when the animation has run its 1.5s *and*
+  the answer has landed or `SEED_WAIT` has passed. Worst case the console says
+  `connecting…` for three seconds; where there is no site to ask, the request
+  fails at once and none of that is spent.
+- **Descriptions that quote a fact are functions**, evaluated at print time, so
+  an answer that arrives late is still right the next time somebody looks.
+
+The ledger is seeded too, prose included. `MAKERS` in `world.lua` keeps the
+names, the nouns the sage answers to and the GitHub handles; the sentence it
+says about each person comes from the site, which is the About dialog by way of
+the makers plugin. Somebody the hall has never heard of is seated rather than
+met with "not in this ledger", and who is on the team now comes across as well,
+so the eight at the front of the ledger are the eight the dialog draws large.
+Matching is on the full name, not on the sage's deliberately loose `keys`.
+
+One entry is marked `own` and keeps its written line: it describes Mudlet Web as
+the thing the visitor is standing in, which is a joke only available from inside
+the demo — there is no upstream version of it to take instead.
 
 The hero's scripted fallback in `prototype/index.src.html` shows the same room
 this world opens in, so the two halves don't disagree when the frame never
 loads.
+
+## The one thing it fetches live
+
+Everything above arrives once, at boot, from the site. The workshop is the
+exception, and deliberately so: what landed this week is not a fact about
+mudlet.org, it is a fact about the repository, and it is out of date by the time
+the page has finished loading. So the clerk at the slanted desk asks GitHub
+directly, from the visitor's browser, at the moment the question is put —
+`ask about this week` and `ask about issues`, or `look book` and `look board`,
+which are the same two answers behind clickable nouns.
+
+```
+GET https://api.github.com/repos/Mudlet/Mudlet/commits?per_page=100&since=<7d>
+GET https://api.github.com/search/issues?q=repo:Mudlet/Mudlet+is:issue+is:open
+GET https://api.github.com/search/issues?…+label:"good first issue"
+```
+
+No token, and no server of ours in the middle: `api.github.com` allows any
+origin, so this works from the prototype page and a `file://` copy as readily as
+from WordPress, and mudlet-web falls back to its own proxy for any origin that
+refuses a direct fetch. Open issues are counted through the search API rather
+than the repo endpoint's `open_issues_count`, which adds pull requests to the
+total.
+
+Notes on the shape of it, all of them in `world.lua` under **The Workshop**:
+
+- **One request in flight**, keyed on its url, with an 8s timeout — the
+  browser's fetch has none of its own, and a hung request would otherwise leave
+  the clerk mid-sentence for good. A second question replaces the first rather
+  than queueing behind it.
+- **Every failure has a line, and two of them are different.** GitHub's rate
+  limit (403, or 429 on the secondary one) gets the clerk admitting they have
+  said their sixty for the hour; everything else gets the wire being down. Both
+  carry the link to the page they could not read, so a visitor who gets the
+  apology is one click from the answer.
+- **Answers are kept for five minutes.** Asking twice is what people do to a
+  live number, and the second ask should cost the room nothing.
+- **An answer that lands after you have left the room is dropped**, the same
+  rule the sage's greeting follows.
+- **Hands and machines are counted apart.** GitHub types dependabot as a `Bot`
+  and `mudlet-machine-account` as an ordinary user, so both are matched by name
+  as well — "from seven hands and two machines" is the interesting half of the
+  number.
 
 ## Deploying it
 

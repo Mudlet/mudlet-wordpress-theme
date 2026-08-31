@@ -5,6 +5,7 @@ import './embed.css';
 import { AutoLanding } from './AutoLanding';
 import demoPackageUrl from './assets/mudlet-demo.mpackage?url';
 import runLuaCodeUrl from './assets/run-lua-code.mpackage?url';
+import { DEMO_PACKAGE_VERSION } from './assets/mudlet-demo.version';
 
 const brand: BrandConfig = {
     appName: 'Mudlet',
@@ -25,7 +26,10 @@ const brand: BrandConfig = {
             name: 'mudlet-demo',
             filename: 'mudlet-demo.mpackage',
             url: demoPackageUrl,
-            version: '0.18.0',   // bump with config.lua to push a new world to returning visitors
+            // Generated beside the .mpackage from a hash of its Lua, so an edit
+            // to the world reaches returning visitors without anyone having to
+            // remember to bump a number here as well.
+            version: DEMO_PACKAGE_VERSION,
             removable: false,
         },
         {

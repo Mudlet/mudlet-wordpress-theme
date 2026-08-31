@@ -1,19 +1,26 @@
 -- mudlet.org, walked instead of scrolled.
 --
--- Four rooms stand in for the site: the front page, the release downloads, the
--- news archive, and the places the site links out to. Everything a visitor can
--- open here opens the real page it is parodying — the descriptions carry the
--- links, so `look windows` is the download page's Windows row and the link in
--- it is that row's button.
+-- Six rooms stand in for the site: the front page, the release downloads, the
+-- news archive, the places the site links out to, the people who built it and
+-- the workshop they build it in. Everything a visitor can open here opens the
+-- real page it is parodying — the descriptions carry the links, so
+-- `look windows` is the download page's Windows row and the link in it is that
+-- row's button.
+--
+-- One room is the exception to all of that, and it is the last one: the
+-- Workshop does not know what it says until somebody asks, because what landed
+-- this week is not a fact about the site at all. See "The Workshop", below.
 --
 -- Nothing has to be typed. Every noun, exit and suggested command prints as a
 -- clickable link, so the whole world is playable with a mouse — which is the
 -- point in a homepage hero, where most visitors will click before they type.
 --
--- The content is typed out on purpose. Versions, weights, hashes and headlines
--- are copied from the live site (4.22.0, 6 July 2026); nothing in here assumes
--- that stays true, and feeding it from the page's own release and post data
--- later is a change to the tables at the top, not to the machinery below.
+-- The prose is written; the facts inside it are not. Versions, weights, hashes,
+-- headlines and counts are asked of the site this is framed in, once, over one
+-- REST call while the console animates its connect — see SITE, further down.
+-- What is written into SITE is the July 2026 snapshot, and it is what the world
+-- says anywhere there is no site to ask: the prototype page, a dev server, a
+-- file:// copy.
 demo = demo or {}
 local D = demo
 
@@ -35,6 +42,18 @@ local C = {
 -- stay in the world keep the colour of the line they sit in.
 local U = '<u>'
 
+-- The terminal on the plinth quotes this package's own size back at the
+-- visitor, and a hand-typed number is wrong the moment anyone edits the world.
+-- scripts/build-package.mjs counts the .lua files it zips and rewrites the
+-- literal below on every build, failing if this line stops matching the pattern
+-- it looks for. What is written here is only what an unbuilt copy would claim.
+local SCRIPT_LINES = 0
+
+-- 1315 -> "1,315". One separator is all a package this size will ever need.
+local function thousands(n)
+    return (tostring(n):gsub('^(%d+)(%d%d%d)$', '%1,%2'))
+end
+
 local URL = {
     home     = 'https://www.mudlet.org/',
     download = 'https://www.mudlet.org/download/',
@@ -45,6 +64,13 @@ local URL = {
     wiki     = 'https://wiki.mudlet.org/',
     discord  = 'https://discord.gg/kuYvMQ9',
     github   = 'https://github.com/Mudlet/Mudlet',
+    -- The pages the clerk in the Workshop is reading off a wire. Every line
+    -- they say carries one of these, so a visitor who gets the apology instead
+    -- of the answer is still one click from the thing itself.
+    commits  = 'https://github.com/Mudlet/Mudlet/commits',
+    pulls    = 'https://github.com/Mudlet/Mudlet/pulls',
+    issues   = 'https://github.com/Mudlet/Mudlet/issues',
+    firstish = 'https://github.com/Mudlet/Mudlet/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22',
     ptb      = 'https://make.mudlet.org/snapshots/?platform=all&source=ptb',
     -- The download manager's own links, which is what the real buttons point
     -- at: each one redirects straight to the installer, so opening it puts the
@@ -107,6 +133,138 @@ local function say(...)
     end
     flush()
     echo('\n')
+end
+
+-- What the site says about itself ---------------------------------------------
+--
+-- Every number and version in this world used to be typed into its prose, and
+-- prose does not notice when a release ships: the vault was still stacked with
+-- 4.22.0 crates the week 5.0 came out. So the world asks the site it is framed
+-- in, once, while the console is still animating its fake connect:
+--
+--     GET /wp-json/mudlet/v1/demo
+--
+-- The other end of that is wordpress/theme/mudlet/inc/demo-seed.php, which
+-- answers out of the same plugins the pages themselves are drawn from — so the
+-- vault and /download/ cannot disagree, and neither can the shelves and the
+-- games grid.
+--
+-- What is written below is both the fallback and the shape of the answer. It
+-- has to be a fallback, because the demo is not always inside mudlet.org: it
+-- runs from the prototype page, from a Vite dev server and from a file:// copy,
+-- none of which have a WordPress behind them. There, and on any request that
+-- fails or arrives late, the world stays as written here — the July 2026
+-- snapshot the rooms were composed against — and says nothing about it. A hero
+-- has no business showing a visitor an error.
+local SITE = {
+    release = {
+        version    = '4.22.0',
+        date       = '6 July 2026',
+        date_short = '6 Jul 2026',
+        date_loud  = '6 JULY 2026',
+        url        = URL.download,
+        -- Keyed the way the crates are named, which is what a visitor types at.
+        builds = {
+            windows = { label = 'Windows',              size = '128.8 MiB',
+                        short = 'b9f49c8d…9089bd39', url = URL.win },
+            macos   = { label = 'macOS (Intel)',        size = '131.7 MiB',
+                        short = '64371626…e64ac6d7', url = URL.macx },
+            silicon = { label = 'macOS (Apple Silicon)', size = '130.1 MiB',
+                        short = '54d97693…10261bdb', url = URL.macarm },
+            linux   = { label = 'Linux',                size = '170.4 MiB',
+                        short = '8f10a78a…8a7c9040', url = URL.linux },
+        },
+    },
+    games = {
+        count = 42,
+        names = { 'Achaea', 'Aetolia', 'Lusternia', 'Imperian', 'Starmourn',
+            'Aardwolf', 'BatMUD', 'ZombieMUD', 'WoTMUD', 'Icesus', '3Kingdoms',
+            'God Wars II' },
+        url = URL.download,
+    },
+    -- The ledger, and what the sage says when asked about anyone in it. MAKERS
+    -- further down is the same list written out, and it is the fallback: the
+    -- site's copy wins wherever there is a site, so nobody's credit depends on
+    -- when this file was last edited.
+    makers = { count = 30, people = {}, url = URL.makers },
+    news = {
+        count = 178,
+        url   = URL.news,
+        posts = {
+            { date = '6 Jul 2026', title = '4.22 — mapping, made friendlier',
+              author = 'Vadim Peretokin', url = URL.post422,
+              blurb = 'create, rename and delete map areas from the mapper itself' },
+            { date = '6 Jul 2026', title = 'Mudlet 4.22.0',
+              author = 'Vadim Peretokin', url = URL.post4220,
+              blurb = 'a Configure Areas UI, lockable stub exits, fourteen fixes' },
+            { date = '13 Jun 2026', title = '4.21 — Mudlet, made better',
+              author = 'ZookaOnGit', url = URL.post421,
+              blurb = '47 features, 77 improvements, 207 bug fixes' },
+        },
+    },
+}
+
+-- The world spells its numbers out — forty-two boxes, thirty near enough — so
+-- the sage does too rather than dropping digits into the middle of a sentence.
+-- It has to spell whatever the site sends back, which is why this composes
+-- rather than lists: forty-two was a fact about July 2026, not a constant.
+local NUMBERS = {
+    'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
+    'eighteen', 'nineteen', 'twenty',
+}
+
+local TENS = { 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety' }
+
+local function spell(n)
+    n = tonumber(n) or 0
+    if NUMBERS[n] then return NUMBERS[n] end
+    if n > 20 and n < 100 then
+        local ten, one = math.floor(n / 10), n % 10
+        return TENS[ten - 1] .. (one > 0 and ('-' .. NUMBERS[one]) or '')
+    end
+    -- Past ninety-nine it is a figure. The news archive is already there.
+    return tostring(n)
+end
+
+-- Sentences start with a capital; the spelling is the same word.
+local function spellCap(n)
+    local word = spell(n)
+    return word:sub(1, 1):upper() .. word:sub(2)
+end
+
+-- What a crate has stencilled on it: "Mudlet 5.0.0 for Windows, 122.7 MiB".
+-- One function because that string is printed three times per crate — on the
+-- lid, in the link under the description, and in the line take() prints — and
+-- three copies of it would drift apart inside one release.
+local function crateLabel(name)
+    local build = SITE.release.builds[name] or {}
+    local label = 'Mudlet ' .. SITE.release.version .. ' for ' .. (build.label or name)
+    return build.size and build.size ~= '' and (label .. ', ' .. build.size) or label
+end
+
+-- A dozen of the boxed worlds, drawn again every time somebody reads the
+-- shelves. The site sends all forty-odd; naming a fixed twelve of them would
+-- give the same twelve every look, which is the reason the page's own grid
+-- shuffles too. Drawn without replacement, so no lid is stencilled twice.
+local function someGames(wanted)
+    local pool = {}
+    for _, name in ipairs(SITE.games.names) do pool[#pool + 1] = name end
+    local shown = {}
+    for _ = 1, math.min(wanted, #pool) do
+        shown[#shown + 1] = table.remove(pool, math.random(#pool))
+    end
+    return shown
+end
+
+-- The two lines under a crate's description: the hash, elided the way the
+-- download page elides it, and the link that is the download itself.
+local function crateLines(name)
+    local build = SITE.release.builds[name] or {}
+    if build.short and build.short ~= '' then
+        say(C.dim, '  sha256 ', build.short)
+    end
+    say(C.dim, '  ', link(crateLabel(name), build.url or SITE.release.url))
 end
 
 -- The orange button ----------------------------------------------------------
@@ -183,12 +341,16 @@ end
 D.rooms = {
     home = {
         title = 'The Front Page',
-        desc = 'A wide room under a banner in letters the colour of a struck match: '
-            .. 'play immersive, multiplayer, pure-text games. Below it, one orange '
-            .. 'button, worn smooth in the middle. Shelves down the near wall hold '
-            .. 'forty-two boxed worlds. On a plinth in the centre someone has left a '
-            .. 'terminal running a small MUD; you lean over it, and lean over it, and '
-            .. 'lean over it.',
+        -- A function, not a string: the shelves hold however many worlds Mudlet
+        -- currently ships, and the room is described after the seed lands.
+        desc = function()
+            return 'A wide room under a banner in letters the colour of a struck match: '
+                .. 'play immersive, multiplayer, pure-text games. Below it, one orange '
+                .. 'button, worn smooth in the middle. Shelves down the near wall hold '
+                .. spell(SITE.games.count) .. ' boxed worlds. On a plinth in the centre '
+                .. 'someone has left a terminal running a small MUD; you lean over it, '
+                .. 'and lean over it, and lean over it.'
+        end,
         exits = { north = 'news', down = 'vault', west = 'commons' },
         things = {
             {
@@ -223,9 +385,11 @@ D.rooms = {
                 keys = { 'shelves', 'shelf', 'boxes', 'worlds', 'games', 'muds' },
                 url = URL.download,
                 look = function()
-                    say(C.text, 'Forty-two boxes, a hostname stencilled on each lid: Achaea, Aetolia, ',
-                        'Lusternia, Imperian, Starmourn, Aardwolf, BatMUD, ZombieMUD, WoTMUD, ',
-                        'Icesus, 3Kingdoms, God Wars II, and thirty more.')
+                    local named = someGames(12)
+                    local rest = SITE.games.count - #named
+                    say(C.text, spellCap(SITE.games.count), ' boxes, a hostname stencilled on ',
+                        'each lid: ', table.concat(named, ', '),
+                        rest > 0 and (', and ' .. spell(rest) .. ' more.') or '.')
                     say(C.dim, 'Mudlet ships with the lot. None of them will ask you for a port number.')
                 end,
             },
@@ -238,7 +402,7 @@ D.rooms = {
                     say(C.text, 'You have found the demo. It is a real Mudlet — Lua, PCRE2, the ',
                         'lot — compiled to WebAssembly and running in this browser tab. ',
                         'Nothing is connected to anything. Every line you type is answered by ',
-                        'a Lua script three hundred lines long.')
+                        'a Lua package ', thousands(SCRIPT_LINES), ' lines long.')
                     say(C.dim, 'Prove it: ',
                         cmd('lua echo("hello from Lua")', 'lua echo("hello from Lua")',
                             'run it in the demo\'s own Lua VM', C.dim))
@@ -249,27 +413,37 @@ D.rooms = {
 
     news = {
         title = 'The News Room',
-        desc = 'A small office that is almost entirely cork. Notices go up faster than '
-            .. 'anyone takes them down and the layers have gone geological — the bottom '
-            .. 'of the board is from 2008. A drawer beneath is labelled ARCHIVE, amended '
-            .. 'in a second pen to 178 AND RISING.',
+        desc = function()
+            return 'A small office that is almost entirely cork. Notices go up faster than '
+                .. 'anyone takes them down and the layers have gone geological — the bottom '
+                .. 'of the board is from 2008. A drawer beneath is labelled ARCHIVE, amended '
+                .. 'in a second pen to ' .. SITE.news.count .. ' AND RISING.'
+        end,
         exits = { south = 'home' },
         things = {
             {
                 name = 'the notice board',
                 keys = { 'board', 'notice board', 'noticeboard', 'notices', 'news' },
+                -- Whatever the site has posted most recently, in the site's own
+                -- order. The dates are right-aligned into a fixed column so the
+                -- headlines line up whether the day is one digit or two.
                 look = function()
-                    say(C.text, 'Three notices near the top, still crisp:')
+                    local posts = SITE.news.posts
+                    if #posts == 0 then
+                        say(C.text, 'The board is bare, which has never happened before.')
+                        return
+                    end
+                    say(C.text, spellCap(#posts), ' notices near the top, still crisp:')
                     say()
-                    say(C.dim, '  6 Jul 2026  ', link('4.22 — mapping, made friendlier', URL.post422))
-                    say(C.text, '    Vadim Peretokin', C.desc,
-                        ' — create, rename and delete map areas from the mapper itself.')
-                    say(C.dim, '  6 Jul 2026  ', link('Mudlet 4.22.0', URL.post4220))
-                    say(C.text, '    Vadim Peretokin', C.desc,
-                        ' — a Configure Areas UI, lockable stub exits, fourteen fixes.')
-                    say(C.dim, ' 13 Jun 2026  ', link('4.21 — Mudlet, made better', URL.post421))
-                    say(C.text, '    ZookaOnGit', C.desc,
-                        ' — 47 features, 77 improvements, 207 bug fixes.')
+                    for _, post in ipairs(posts) do
+                        say(C.dim, ('%11s  '):format(post.date), link(post.title, post.url))
+                        local by = post.author ~= '' and post.author or nil
+                        local blurb = post.blurb ~= '' and post.blurb or nil
+                        if by or blurb then
+                            say(C.text, '    ' .. (by or ''), C.desc,
+                                blurb and ((by and ' — ' or '    ') .. blurb) or '')
+                        end
+                    end
                 end,
             },
             {
@@ -288,61 +462,60 @@ D.rooms = {
 
     vault = {
         title = 'The Release Vault',
-        desc = 'Cold, dry, very well swept. Four crates stand on trestles, each stencilled '
-            .. 'with a platform and a weight, each with a long number chalked on the lid '
-            .. 'that nobody has ever checked. A fifth stands apart by the stairs, its lid '
-            .. 'loose and its contents faintly warm. On the wall, in chalk: 4.22.0 — 6 JULY 2026.',
+        desc = function()
+            return 'Cold, dry, very well swept. Four crates stand on trestles, each stencilled '
+                .. 'with a platform and a weight, each with a long number chalked on the lid '
+                .. 'that nobody has ever checked. A fifth stands apart by the stairs, its lid '
+                .. 'loose and its contents faintly warm. On the wall, in chalk: '
+                .. SITE.release.version .. ' — ' .. SITE.release.date_loud .. '.'
+        end,
         exits = { up = 'home' },
         things = {
             {
                 name = 'windows',
                 keys = { 'windows', 'win', 'exe' },
                 url = URL.win,
-                heavy = 'Mudlet 4.22.0 for Windows, 128.8 MiB',
+                crate = 'windows',
                 look = function()
-                    say(C.text, 'Pine, sealed 6 July 2026. An installer, signed — the certificate ',
-                        'was donated, which is the sort of thing that happens to projects ',
-                        'people like.')
-                    say(C.dim, '  sha256 b9f49c8d…9089bd39')
-                    say(C.dim, '  ', link('Mudlet 4.22.0 for Windows, 128.8 MiB', URL.win))
+                    say(C.text, 'Pine, sealed ', SITE.release.date, '. An installer, signed — ',
+                        'the certificate was donated, which is the sort of thing that happens ',
+                        'to projects people like.')
+                    crateLines('windows')
                 end,
             },
             {
                 name = 'macos',
                 keys = { 'macos', 'mac', 'intel', 'x86', 'x86_64' },
                 url = URL.macx,
-                heavy = 'Mudlet 4.22.0 for macOS (Intel), 131.7 MiB',
+                crate = 'macos',
                 look = function()
-                    say(C.text, 'The older of the two Macs — Intel, x86_64, sealed the same July ',
+                    say(C.text, 'The older of the two Macs — Intel, x86_64, sealed the same ',
                         'morning as the rest of them.')
-                    say(C.dim, '  sha256 64371626…e64ac6d7')
-                    say(C.dim, '  ', link('Mudlet 4.22.0 for macOS (Intel), 131.7 MiB', URL.macx))
+                    crateLines('macos')
                 end,
             },
             {
                 name = 'silicon',
                 keys = { 'silicon', 'apple silicon', 'arm', 'arm64', 'm1', 'm2' },
                 url = URL.macarm,
-                heavy = 'Mudlet 4.22.0 for macOS (Apple Silicon), 130.1 MiB',
+                crate = 'silicon',
                 look = function()
                     say(C.text, 'Apple Silicon, built native — no translation layer, no apology on ',
                         'startup.')
-                    say(C.dim, '  sha256 54d97693…10261bdb')
-                    say(C.dim, '  ', link('Mudlet 4.22.0 for macOS (Apple Silicon), 130.1 MiB', URL.macarm))
+                    crateLines('silicon')
                 end,
             },
             {
                 name = 'linux',
                 keys = { 'linux', 'appimage', 'ubuntu', 'debian' },
                 url = URL.linux,
-                heavy = 'Mudlet 4.22.0 for Linux, 170.4 MiB',
+                crate = 'linux',
                 look = function()
-                    say(C.text, 'The heaviest of the four, and the only one that is not really an ',
-                        'installer: an AppImage. Put it somewhere permanent and run it from ',
-                        'there. It is the Ubuntu answer, the Debian answer and the "my ',
-                        'distribution is unusual" answer, all under one lid.')
-                    say(C.dim, '  sha256 8f10a78a…8a7c9040')
-                    say(C.dim, '  ', link('Mudlet 4.22.0 for Linux, 170.4 MiB', URL.linux))
+                    say(C.text, 'The one that is not really an installer: an AppImage. Put it ',
+                        'somewhere permanent and run it from there. It is the Ubuntu answer, ',
+                        'the Debian answer and the "my distribution is unusual" answer, all ',
+                        'under one lid.')
+                    crateLines('linux')
                 end,
             },
             {
@@ -351,9 +524,9 @@ D.rooms = {
                 url = URL.ptb,
                 heavy = 'the Public Test Build snapshots',
                 look = function()
-                    say(C.text, 'The Public Test Build: everything that has landed since 4.22.0, ',
-                        'unsealed by design. The people who open this crate are the reason the ',
-                        'other four are safe to open.')
+                    say(C.text, 'The Public Test Build: everything that has landed since ',
+                        SITE.release.version, ', unsealed by design. The people who open this ',
+                        'crate are the reason the other four are safe to open.')
                     say(C.dim, '  ', link('Public Test Build snapshots', URL.ptb))
                 end,
             },
@@ -376,7 +549,7 @@ D.rooms = {
         desc = 'Four doors and a cabinet, in a room that is otherwise all noticeboard. '
             .. 'None of the doors are locked. Two stand ajar, and you can hear the arguing '
             .. 'from here — amiably, about tabs. The cabinet is enormous and alphabetical.',
-        exits = { east = 'home', west = 'makers' },
+        exits = { east = 'home', north = 'workshop', west = 'makers' },
         things = {
             {
                 name = 'the forum door',
@@ -418,6 +591,9 @@ D.rooms = {
                     say(C.text, 'C++ and Lua, GPL, and open to anyone who can be bothered. There are ',
                         'good first issues stacked on the desk by the door, and whoever reviews ',
                         'your patch has been doing this since 2008.')
+                    say(C.dim, 'It is also the one door here that goes somewhere: the workshop ',
+                        'is ', cmd('north', 'north', 'go north', C.dim), C.dim, ', and there is ',
+                        'somebody in it who knows what landed this week.')
                     say(C.dim, '  ', link('github.com/Mudlet/Mudlet', URL.github))
                 end,
             },
@@ -447,6 +623,66 @@ D.rooms = {
         },
     },
 
+    -- The only room whose contents are not written down anywhere in this file.
+    -- Its two answers are fetched from GitHub when they are asked for; the
+    -- machinery, and the reasoning, are under "The Workshop" further down.
+    workshop = {
+        title = 'The Workshop',
+        desc = 'Long, high-windowed, and smelling of solder and yesterday\'s coffee. Down '
+            .. 'one wall a bench of work half-done and carefully labelled; down the other, '
+            .. 'a board of everything nobody has got to yet, which is a good deal longer. '
+            .. 'By the window stands a slanted desk with this week\'s date on it, and a '
+            .. 'clerk keeping the book open at that page.',
+        exits = { south = 'commons' },
+        things = {
+            {
+                name = 'the clerk',
+                keys = { 'clerk', 'bookkeeper' },
+                npc = true,
+                presence = function()
+                    say(C.text, 'A ', cmd('clerk', 'look clerk', 'look at the clerk', C.say),
+                        C.text, ' stands at the slanted desk, one pen behind the ear, writing ',
+                        'up the week.')
+                end,
+                look = function()
+                    say(C.text, 'Sleeves rolled, one pen behind the ear and a second one in use. ',
+                        'The clerk keeps the week — what has landed, who landed it, and what is ',
+                        'still open — and writes none of it down until somebody asks, which ',
+                        'they maintain is the only way to keep a book honest.')
+                    say(C.dim, 'Ask ', cmd('about this week', 'ask about this week',
+                            'what has landed in the last seven days', C.dim),
+                        C.dim, ', or ', cmd('about what is open', 'ask about issues',
+                            'what is still open', C.dim), C.dim, '.')
+                    say(C.dim, 'Both answers come off github.com at the moment you ask for them. ',
+                        'Nothing else in this world is that fresh.')
+                end,
+            },
+            {
+                name = 'the week\'s book',
+                keys = { 'book', 'week', 'desk', 'ledger', 'commits' },
+                look = function() D.week() end,
+            },
+            {
+                name = 'the board',
+                keys = { 'board', 'issues', 'bugs', 'wall' },
+                url = URL.issues,
+                look = function() D.issues() end,
+            },
+            {
+                name = 'the bench',
+                keys = { 'bench', 'pulls', 'patches', 'work' },
+                url = URL.pulls,
+                look = function()
+                    say(C.text, 'Work half-done, each piece labelled with the name of whoever put ',
+                        'it down and the date they meant to come back to it. Some of the labels ',
+                        'are old. All of it is out in the open, which is the whole difference ',
+                        'between this bench and most benches.')
+                    say(C.dim, '  ', link('the open pull requests', URL.pulls))
+                end,
+            },
+        },
+    },
+
     makers = {
         title = 'Makers Hall',
         desc = 'A hall with one very long table down the middle and more chairs than there '
@@ -459,7 +695,7 @@ D.rooms = {
         -- reads as part of the furniture, and one that lands two seconds later
         -- reads as somebody noticing you came in.
         enter = function()
-            D.enterTimer = tempTimer(2, [[demo.greet()]])
+            D.enterTimer = tempTimer(2, function() D.greet() end)
         end,
         things = {
             {
@@ -495,7 +731,8 @@ D.rooms = {
                 name = 'the chairs',
                 keys = { 'chairs', 'chair', 'table', 'names', 'chairbacks' },
                 look = function()
-                    say(C.text, 'Thirty of them, near enough. Some are pulled right in and warm; ',
+                    say(C.text, spellCap(SITE.makers.count), ' of them, near enough. Some are ',
+                        'pulled right in and warm; ',
                         'some have been pushed back since 2010 and hold a name and one very ',
                         'specific contribution, like a build script or an installer, which is ',
                         'how open source remembers people.')
@@ -536,7 +773,12 @@ local MAKERS = {
     { big = true, name = 'Leris', gh = 'Kebap', keys = { 'leris', 'kebap' },
       line = 'Makes Mudlet, the website and the wiki readable whatever language you speak — and '
           .. 'talks the genre up wherever he goes.' },
-    { big = true, name = 'Piotr Wilczynski', gh = 'Delwing', keys = { 'piotr', 'wilczynski', 'delwing' },
+    -- `own`: the site's copy of this one is the About dialog's, and the About
+    -- dialog cannot say "the thing you are standing in" — it is not a demo of
+    -- Mudlet Web running inside Mudlet Web. So this line stays written here and
+    -- the seed leaves it alone.
+    { big = true, own = true, name = 'Piotr Wilczynski', gh = 'Delwing',
+      keys = { 'piotr', 'wilczynski', 'delwing' },
       line = 'Joined in 2020. Reworked much of the 2D mapper and added a great deal of the Lua '
           .. 'API. Outside the client: Mudlet Web — which is the thing you are standing in — the '
           .. 'documentation extract behind editor autocompletion, and the tools that share maps '
@@ -604,17 +846,6 @@ local MAKERS = {
           .. 'secure IRC, Discord improvements, and a batch of editor shortcuts.' },
 }
 
--- The world spells its numbers out — forty-two boxes, thirty near enough — so
--- the sage does too rather than dropping digits into the middle of a sentence.
-local NUMBERS = {
-    'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
-    'eighteen', 'nineteen', 'twenty', 'twenty-one', 'twenty-two', 'twenty-three',
-    'twenty-four', 'twenty-five', 'twenty-six', 'twenty-seven', 'twenty-eight',
-    'twenty-nine', 'thirty',
-}
-
-local function spell(n) return NUMBERS[n] or tostring(n) end
 
 local function findMaker(noun)
     if noun == '' then return nil end
@@ -669,7 +900,7 @@ function D.tell(m)
             m.name .. ' on GitHub')
         tail[#tail + 1] = C.dim .. '   ·   '
     end
-    tail[#tail + 1] = cmd('twenty-nine other names', 'look ledger',
+    tail[#tail + 1] = cmd(spell(#MAKERS - 1) .. ' other names', 'look ledger',
         'turn back to the ledger', C.dim)
     say(unpack(tail))
 end
@@ -680,7 +911,10 @@ end
 function D.ledger()
     say()
     say(C.text, 'The sage lets the ledger fall open at the front.')
-    say(C.say, '"Thirty, near enough. These eight carry it."')
+    local carried = 0
+    for _, m in ipairs(MAKERS) do if m.big then carried = carried + 1 end end
+    say(C.say, '"' .. spellCap(SITE.makers.count) .. ', near enough. These '
+        .. spell(carried) .. ' carry it."')
     say()
     for _, m in ipairs(MAKERS) do
         if m.big then say(C.text, '  ', makerLink(m)) end
@@ -726,7 +960,8 @@ function D.everyone()
         say(unpack(line))
     end
     say()
-    say(C.dim, 'Thirty names, one client. ', link('mudlet.org/the-makers', URL.makers))
+    say(C.dim, spellCap(#MAKERS), ' names, one client. ',
+        link('mudlet.org/the-makers', SITE.makers.url))
 end
 
 -- Fired by the room's entry timer. It checks the room again because two
@@ -746,7 +981,8 @@ function D.greet()
     elseif asked == 0 then
         say(C.say, '"Back again."', C.text, ' The sage turns to a fresh page, hopefully.')
     elseif asked >= #MAKERS then
-        say(C.say, '"All thirty of them."', C.text, ' The sage closes the ledger, ',
+        say(C.say, '"All ' .. spell(#MAKERS) .. ' of them."', C.text,
+            ' The sage closes the ledger, ',
             'looking rather pleased.')
     else
         say(C.say, '"You have asked after ' .. spell(asked) .. ' of them,"', C.text,
@@ -754,10 +990,363 @@ function D.greet()
     end
 end
 
+-- The Workshop ----------------------------------------------------------------
+--
+-- One room in this world does not know what it says until somebody asks.
+--
+-- Everywhere else the facts arrive with the seed: one request, at boot, and the
+-- prose is settled before the visitor has read a word of it. What landed this
+-- week cannot work that way and should not — it is not a fact about mudlet.org
+-- at all, it is a fact about the repository, and it is already out of date by
+-- the time the page has finished loading. So the clerk asks GitHub, from the
+-- visitor's own browser, at the moment the question is put.
+--
+-- That is possible because api.github.com allows any origin and wants no token
+-- for either of these routes, and because mudlet-web falls back to its proxy
+-- for any origin that refuses a direct fetch. It costs the visitor sixty
+-- requests an hour on the commits route and ten a minute on the search — a
+-- budget nobody can spend by hand, and the one who tries is told so in as many
+-- words rather than shown an error.
+--
+-- Nothing here is required. Every failure has a line in the clerk's own voice,
+-- every one of those lines carries the link to the page it could not read, and
+-- the room reads the same whether GitHub answered or not.
+
+local GH = {
+    -- Commits on the default branch in the last seven days. per_page=100 is
+    -- the ceiling, and a week that beats it is reported as "a hundred and
+    -- more": a second page would be another request for a number nobody is
+    -- checking against anything.
+    commits = 'https://api.github.com/repos/Mudlet/Mudlet/commits?per_page=100&since=',
+    -- Counting open issues without counting pull requests takes the search
+    -- API — the repo endpoint's open_issues_count adds the two together, and a
+    -- clerk who says six hundred when five hundred are issues is worse than a
+    -- clerk who says nothing at all.
+    issues  = 'https://api.github.com/search/issues?per_page=1'
+        .. '&q=repo%3AMudlet%2FMudlet+is%3Aissue+is%3Aopen',
+    first   = 'https://api.github.com/search/issues?per_page=1'
+        .. '&q=repo%3AMudlet%2FMudlet+is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22',
+}
+
+-- Long enough for a cold lookup on a phone, short enough that nobody decides
+-- the room is broken. The browser's fetch has no timeout of its own, so a
+-- request left hanging would otherwise leave the clerk mid-sentence for good.
+local FETCH_WAIT = 8
+
+-- An answer is kept for five minutes. Asking twice is a thing visitors do to a
+-- live number — looking again is how you check that it is one — and the second
+-- ask should cost the room nothing.
+local FRESH = 300
+
+local function settleJob(reason, body)
+    local job = D.job
+    if not job then return end
+    D.job = nil
+    if job.timer then killTimer(job.timer) end
+    job.done(reason, body)
+end
+
+local function bindHTTP()
+    if D.httpBound then return end
+    D.httpBound = true
+    -- Anonymous handlers hear every request the profile makes, the seed's
+    -- included, so both ends filter: these on the url in flight, the seed's on
+    -- its own route.
+    registerAnonymousEventHandler('sysGetHttpDone', function(_, url, body)
+        if D.job and url == D.job.url then settleJob(nil, body) end
+    end)
+    registerAnonymousEventHandler('sysGetHttpError', function(_, message, url)
+        if not (D.job and url == D.job.url) then return end
+        -- Both of GitHub's rate limits answer 403, and the secondary one
+        -- sometimes 429. Everything else — no route, no network, a proxy
+        -- having a bad afternoon — is one thing from where the visitor is
+        -- standing, and gets the one other line.
+        local code = tostring(message or ''):match('HTTP (%d+)')
+        settleJob((code == '403' or code == '429') and 'limit' or 'wire')
+    end)
+end
+
+-- One request in flight. A second question asked while the first is still out
+-- replaces it: the old answer is dropped rather than printed late, underneath
+-- a line it no longer belongs to.
+local function fetch(url, done)
+    bindHTTP()
+    if D.job and D.job.timer then killTimer(D.job.timer) end
+    local job = { url = url, done = done }
+    D.job = job
+    job.timer = tempTimer(FETCH_WAIT, function()
+        if D.job == job then settleJob('wire') end
+    end)
+    getHTTP(url, { Accept = 'application/vnd.github+json' })
+end
+
+local function decode(body)
+    local ok, data = pcall(yajl.to_value, body)
+    if ok and type(data) == 'table' then return data end
+end
+
+-- An answer that lands after the visitor has walked out belongs to a room they
+-- are not in. The sage's greeting checks the same thing for the same reason: a
+-- clerk should not call after you from another room.
+local function stillHere()
+    return D.here == 'workshop'
+end
+
+-- What the clerk says when GitHub does not answer. Two lines, because the two
+-- reasons are genuinely different and one of them is the visitor's own doing:
+-- an unauthenticated caller gets sixty requests an hour per address, and a
+-- browser that has been sitting on this page all afternoon can spend them.
+local function apology(reason, label, url)
+    if reason == 'limit' then
+        say(C.say, '"That is my lot."', C.text, ' The clerk sets the pen down, ',
+            'unembarrassed. ', C.say, '"They count how much I am allowed to say, and I ',
+            'have said all of it this hour. Come back when it has forgotten me — or read ',
+            'it off the wall yourself, it is the same wall."')
+    else
+        say(C.say, '"Not written up."', C.text, ' The clerk shuts the book on a thumb. ',
+            C.say, '"The wire between here and the workshop proper is down. It happens. ',
+            'It is all posted outside, if you cannot wait for me."')
+    end
+    say(C.dim, '  ', link(label, url))
+end
+
+-- GitHub flags its own bots and not the ones a project keeps: dependabot
+-- arrives typed Bot, and mudlet-machine-account — which pushes the translation
+-- and release commits — arrives as an ordinary user with a machine's name. The
+-- clerk counts hands and machines apart because the difference is the
+-- interesting half of the number.
+local function isMachine(who, kind)
+    return kind == 'Bot' or who:find('%[bot%]') ~= nil
+        or who:find('machine%-account') ~= nil
+end
+
+-- Cut to n code points, not n bytes: commit messages carry umlauts like
+-- everything else here, and a byte cut lands in the middle of one.
+local function clip(str, n)
+    if ulen(str) <= n then return str end
+    local count = 0
+    for i = 1, #str do
+        local byte = str:byte(i)
+        if byte < 128 or byte > 191 then
+            count = count + 1
+            if count > n - 1 then return str:sub(1, i - 1) .. '…' end
+        end
+    end
+    return str
+end
+
+-- "2026-08-31T03:39:17Z" -> "three hours ago".
+--
+-- os.time reads a table as *local* time and the API answers in UTC, so the
+-- difference between the two clocks is added back on. Without it the clerk is
+-- wrong by the visitor's own offset, which is worst in exactly the places
+-- nobody testing this lives.
+--
+-- Both tables have their isdst dropped, which is the whole trick: os.date
+-- fills it in from the *current* season, and a table that says "not summer
+-- time" put through os.time in July is an hour out. Absent, it is worked out
+-- from the date in hand — which is the right answer for both of these.
+local function ago(iso)
+    local y, mo, d, h, mi, s = tostring(iso):match('(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)')
+    if not y then return nil end
+    local at = os.time({ year = tonumber(y), month = tonumber(mo), day = tonumber(d),
+        hour = tonumber(h), min = tonumber(mi), sec = tonumber(s) })
+    local utc = os.date('!*t')
+    utc.isdst = nil
+    local skew = os.difftime(os.time(), os.time(utc))
+    local secs = os.difftime(os.time(), at + skew)
+    if secs < 90 then return 'just now' end
+    if secs < 5400 then return spell(math.floor(secs / 60 + 0.5)) .. ' minutes ago' end
+    if secs < 129600 then return spell(math.floor(secs / 3600 + 0.5)) .. ' hours ago' end
+    return spell(math.floor(secs / 86400 + 0.5)) .. ' days ago'
+end
+
+-- The clerk's two answers, printed. Neither prints the sentence that introduces
+-- it: that line belongs to the ask, which knows whether the clerk had to go and
+-- look or was still holding the number.
+local function tellWeek(week)
+    if week.count == 0 then
+        say(C.say, '"Nothing in seven days."', C.text, ' Neither worried nor surprised. ',
+            C.say, '"It goes in bursts. Somebody will break something tonight."')
+    else
+        local hands = spell(week.people) .. (week.people == 1 and ' hand' or ' hands')
+        local machines = spell(week.machines)
+            .. (week.machines == 1 and ' machine' or ' machines')
+        -- A week with nothing but machines in it is a real week — the release
+        -- and translation robots push on their own — and "from no hands" is
+        -- not a sentence anybody says out loud.
+        local from = 'from ' .. hands
+        if week.people == 0 then
+            from = 'and every one of them from a machine'
+        elseif week.machines > 0 then
+            from = from .. ' and ' .. machines
+        end
+        say(C.say, '"', week.more and 'A hundred and more' or spellCap(week.count),
+            ' in seven days,"', C.text, ' the clerk says, ', C.say, '"', from, '."')
+        if week.last then
+            say(C.dim, '  ', week.last.when and (week.last.when .. ' — ') or '',
+                link(week.last.title, week.last.url, week.last.title), C.dim,
+                ', by ', week.last.who)
+        end
+    end
+    say(C.dim, '  ', link('the full run of it', URL.commits))
+end
+
+local function tellIssues(open)
+    if open.first and open.first > 0 then
+        say(C.say, '"', tostring(open.count), ' open,"', C.text, ' the clerk says, ',
+            C.say, '"and ', spell(open.first), ' of them marked for anyone who fancies a ',
+            'first go at it."')
+        say(C.dim, '  ', link('the ' .. spell(open.first) .. ' of them', URL.firstish))
+    elseif open.first then
+        say(C.say, '"', tostring(open.count), ' open, and not one of them marked for a first ',
+            'go."', C.text, ' The clerk sounds mildly impressed. ', C.say, '"Somebody has ',
+            'been taking them."')
+    else
+        say(C.say, '"', tostring(open.count), ' open."', C.text, ' Said the way you would say ',
+            'the tide is in.')
+    end
+    say(C.dim, '  ', link('the board itself', URL.issues))
+end
+
+-- What landed in the last seven days: one request, and everything the clerk
+-- says about it is counted out of the answer rather than read off a field.
+function D.week()
+    say()
+    if D.weekly and os.difftime(os.time(), D.weekly.at) < FRESH then
+        say(C.text, 'The clerk does not need to look twice.')
+        tellWeek(D.weekly)
+        return
+    end
+
+    local ok, since = pcall(os.date, '!%Y-%m-%dT%H:%M:%SZ', os.time() - 7 * 86400)
+    if not ok or type(since) ~= 'string' then
+        apology('wire', 'the full run of it', URL.commits)
+        return
+    end
+
+    say(C.text, 'The clerk pulls the week down off the wall by the window.')
+    fetch(GH.commits .. since, function(reason, body)
+        if not stillHere() then return end
+        local list = not reason and decode(body) or nil
+        if not list then
+            apology(reason or 'wire', 'the full run of it', URL.commits)
+            return
+        end
+
+        local week = { at = os.time(), count = #list, more = #list >= 100,
+            people = 0, machines = 0 }
+        local seen = {}
+        for _, entry in ipairs(list) do
+            local account = type(entry.author) == 'table' and entry.author or nil
+            local committed = type(entry.commit) == 'table' and entry.commit or {}
+            local authored = type(committed.author) == 'table' and committed.author or {}
+            -- The login where GitHub matched the email to an account, and the
+            -- name off the commit itself where it did not. Either way it is
+            -- the same person twice under one key.
+            local who = account and account.login or authored.name or '?'
+            if not seen[who] then
+                seen[who] = true
+                if isMachine(tostring(who):lower(), account and account.type) then
+                    week.machines = week.machines + 1
+                else
+                    week.people = week.people + 1
+                end
+            end
+            if not week.last and type(committed.message) == 'string' then
+                -- os.date('!*t') is the one call in this file that assumes a
+                -- full os library under the wasm; the clause it feeds is
+                -- decoration, so it is asked for rather than relied on.
+                local timed, when = pcall(ago, authored.date)
+                week.last = {
+                    title = clip(committed.message:match('^[^\r\n]*') or '', 56),
+                    who   = tostring(who),
+                    when  = timed and type(when) == 'string' and when or nil,
+                    url   = type(entry.html_url) == 'string' and entry.html_url or URL.commits,
+                }
+            end
+        end
+
+        D.weekly = week
+        tellWeek(week)
+    end)
+end
+
+-- What is still open: two requests, chained, because the search API counts one
+-- query at a time. The second one — the issues a stranger could take — is the
+-- reason this room is worth walking into, but it is not worth losing the first
+-- number over, so a failure there answers with what came back.
+function D.issues()
+    say()
+    if D.open and os.difftime(os.time(), D.open.at) < FRESH then
+        say(C.text, 'The clerk points at the board without turning round.')
+        tellIssues(D.open)
+        return
+    end
+
+    say(C.text, 'The clerk runs a thumb down the board.')
+    fetch(GH.issues, function(reason, body)
+        if not stillHere() then return end
+        local data = not reason and decode(body) or nil
+        local count = data and tonumber(data.total_count)
+        if not count then
+            apology(reason or 'wire', 'the board itself', URL.issues)
+            return
+        end
+        fetch(GH.first, function(reason2, body2)
+            if not stillHere() then return end
+            local firsts = not reason2 and decode(body2) or nil
+            D.open = { at = os.time(), count = count,
+                first = firsts and tonumber(firsts.total_count) or nil }
+            tellIssues(D.open)
+        end)
+    end)
+end
+
+-- The clerk answers to two subjects and admits to the rest. The nouns are
+-- matched on a substring the way the room's things are, so "this week",
+-- "commits" and "what landed" all reach the same book.
+local function about(noun, words)
+    for _, word in ipairs(words) do
+        if noun:find(word, 1, true) then return true end
+    end
+end
+
+function D.askClerk(noun)
+    if noun == '' or noun == 'clerk' then
+        say()
+        say(C.text, 'The clerk looks up, pen still moving.')
+        say(C.say, '"Two things I keep: what has landed this week, and what is still open."')
+        say(C.dim, '  ', cmd('ask about this week', 'ask about this week',
+                'the last seven days, off github.com', C.dim),
+            C.dim, '   ·   ', cmd('ask about issues', 'ask about issues',
+                'what is still open, off github.com', C.dim))
+        return
+    end
+    if about(noun, { 'week', 'commit', 'land', 'chang', 'new', 'recent' }) then D.week() return end
+    if about(noun, { 'issue', 'bug', 'open', 'board', 'first', 'todo', 'help' }) then D.issues() return end
+
+    say()
+    if findMaker(noun) then
+        say(C.say, '"Names are the sage\'s book, not mine,"', C.text, ' the clerk says, ',
+            'nodding through the wall. ', C.say, '"Two doors round, past the arguing."')
+    else
+        say(C.say, '"Not in my book."', C.text, ' The clerk shrugs, not unkindly.')
+    end
+    say(C.dim, 'What the clerk does keep: ',
+        cmd('this week', 'ask about this week', 'what has landed', C.dim), C.dim, ', and ',
+        cmd('what is open', 'ask about issues', 'what is still open', C.dim), C.dim, '.')
+end
+
+-- Two people in this world answer questions, and they keep different books: the
+-- sage has the past, off a fixed ledger, and the clerk has this week, off the
+-- network. Which one answers is which room you are standing in.
 function D.ask(noun)
+    if D.here == 'workshop' then D.askClerk(noun) return end
     if D.here ~= 'makers' then
-        say(C.text, 'There is nobody here to ask. The sage keeps the ledger in Makers ',
-            'Hall, ', cmd('west of the commons', 'west', 'go west', C.text), C.text .. '.')
+        say(C.text, 'There is nobody here to ask. Both books are kept off the commons: ',
+            'the sage\'s in Makers Hall to the west of it, the clerk\'s in the Workshop ',
+            'to the north.')
         return
     end
     if noun == '' then D.ledger() return end
@@ -779,7 +1368,7 @@ D.here = D.here or 'home'
 --
 -- Not a drawing of a map: Mudlet's own mapper, small, in the corner of the
 -- console. "A real mapper" is one of the six claims the page makes two
--- sections down, so the demo may as well be running one — four rooms is a
+-- sections down, so the demo may as well be running one — six rooms is a
 -- tiny map, but it is the same widget, the same map database and the same
 -- centerview() that a twelve-thousand-room game drives.
 
@@ -788,18 +1377,23 @@ local AREA = 'mudlet.org'
 -- Fixed ids, and the area is torn down before it is rebuilt: a profile keeps
 -- its map across package reinstalls, so anything createRoomID()'d would stack
 -- up a fresh set of rooms every time the world was rewritten.
-local ROOM = { home = 1, news = 2, commons = 3, vault = 4, makers = 5 }
+local ROOM = { home = 1, news = 2, commons = 3, vault = 4, makers = 5, workshop = 6 }
 
 -- Laid out as the site reads: news above the front page, the vault below it,
--- the commons to the west. All four sit on one z level, including the vault —
+-- the commons to the west. All six sit on one z level, including the vault —
 -- a cellar on its own level would be a map with one room on it, which is
 -- accurate and useless at this size.
+--
+-- The workshop goes north of the commons, which puts it inside the bounding box
+-- the other five already made: three squares by three, and the map frames the
+-- same way it did with a corner empty.
 local PLACE = {
-    home    = { x =  0, y =  0 },
-    news    = { x =  0, y =  1 },
-    commons = { x = -1, y =  0 },
-    vault   = { x =  0, y = -1 },
-    makers  = { x = -2, y =  0 },
+    home     = { x =  0, y =  0 },
+    news     = { x =  0, y =  1 },
+    commons  = { x = -1, y =  0 },
+    vault    = { x =  0, y = -1 },
+    makers   = { x = -2, y =  0 },
+    workshop = { x = -1, y =  1 },
 }
 
 -- The vault is `down`/`up` only. It sits one square below the front page so it
@@ -810,6 +1404,7 @@ local MAP_EXITS = {
     { 'home', 'commons', 'west',  'east'  },
     { 'home', 'vault',   'down',  'up'    },
     { 'commons', 'makers', 'west',  'east'  },
+    { 'commons', 'workshop', 'north', 'south' },
 }
 
 local ENV = 200   -- one custom env colour, so the rooms are the site's orange
@@ -909,10 +1504,10 @@ function D.mapPaint()
     -- land on.
     centerview(ROOM[D.here])
     -- Zoom counts rooms across the view, so it goes *up* as the widget shrinks:
-    -- 5 keeps all four rooms in frame from *any* of them at MAP_MAX, and this
+    -- 5 keeps all six rooms in frame from *any* of them at MAP_MAX, and this
     -- holds that framing at every size in between. Tighter looks better from
     -- the front page and drops a room off the edge from the news room, which is
-    -- the wrong trade for a map of four things.
+    -- the wrong trade for a map of six things.
     setMapZoom(5 * MAP_MAX / size)
     updateMap()
 end
@@ -1036,7 +1631,10 @@ function D.look(noun)
 
     say()
     say(C.room, room.title)
-    say(C.desc, room.desc)
+    -- A description is a string when nothing in it moves, and a function when
+    -- it quotes something the site was asked about — evaluated here, at print
+    -- time, so a seed that lands late still reads correctly the next look.
+    say(C.desc, type(room.desc) == 'function' and room.desc() or room.desc)
 
     -- Both lists print as links, so the world can be played entirely by
     -- clicking: every noun looks at itself, every exit walks.
@@ -1159,6 +1757,14 @@ function D.take(noun)
         say(C.text, 'It stays where it is.')
         return
     end
+    -- A crate's weight and its link are the release the site is serving, not
+    -- the version it was stencilled with when this room was written.
+    if thing.crate then
+        local build = SITE.release.builds[thing.crate] or {}
+        say(C.text, 'You get both hands under the lid. ',
+            link(crateLabel(thing.crate), build.url or thing.url))
+        return
+    end
     if thing.heavy then
         say(C.text, 'You get both hands under the lid. ', link(thing.heavy, thing.url))
         return
@@ -1170,7 +1776,7 @@ end
 
 function D.help()
     say()
-    say(C.sys, 'mudlet.org, walked instead of scrolled. Four rooms, one website.')
+    say(C.sys, 'mudlet.org, walked instead of scrolled. Six rooms, one website.')
     say()
     say(C.text, '  ', cmd('look', 'look', 'look around'),
         C.text, '           ', C.desc, 'look around you')
@@ -1181,6 +1787,9 @@ function D.help()
     say(C.text, '  ', cmd('lua <code>', 'lua echo("hello from Lua")', 'try it'),
         C.text, '     ', C.desc, 'this is a real Lua runtime')
     say(C.text, '  ask <name>     ', C.desc, 'the sage in Makers Hall knows who built what')
+    say(C.text, '  ', cmd('ask this week', 'ask about this week',
+        'the clerk counts the last seven days'),
+        C.text, '  ', C.desc, 'the clerk in the Workshop reads it off GitHub, live')
     say()
     -- The one place a colour tag is written by hand rather than by say(): the
     -- sample has to be closed with </u> as well as opened, because everything
@@ -1235,9 +1844,10 @@ function D.input(raw)
             D.take(rest)
         end
     elseif verb == 'ask' or verb == 'about' then
-        -- 'ask sage about X' and 'ask X' both land here; the sage is the only
-        -- one in the world to ask, so the noun in the middle is optional.
-        D.ask((rest:gsub('^sage%s*', ''):gsub('^about%s+', '')))
+        -- 'ask sage about X' and 'ask X' both land here. There is at most one
+        -- person to ask in any room, so who is being asked is optional — and
+        -- naming the wrong one of the two is not a correction worth printing.
+        D.ask((rest:gsub('^sage%s*', ''):gsub('^clerk%s*', ''):gsub('^about%s+', '')))
     elseif verb == 'help' or verb == 'commands' or verb == '?' then
         D.help()
     elseif REPLIES[verb] then
@@ -1255,6 +1865,178 @@ end
 -- appear — so the handover is invisible and what the visitor sees is one client
 -- connecting once. Change these and the markup in prototype/index.src.html
 -- (.term__boot) has to change with them.
+-- Asking the site -------------------------------------------------------------
+--
+-- The endpoint is site-relative on purpose. The demo is framed from the site's
+-- own origin — a hard requirement for unrelated reasons, see demo/README.md —
+-- so the REST root is reachable from wherever the frame is served without the
+-- world having to be told what site it is in. Two spellings of the one route
+-- because /wp-json/ only exists with pretty permalinks on; the query form is
+-- what a plain install answers, and is tried when the first fails.
+local SEED_URLS = {
+    '/wp-json/mudlet/v1/demo',
+    '/?rest_route=/mudlet/v1/demo',
+}
+
+-- The longest the first room will wait for an answer, on top of the 1.5s the
+-- connect animation runs anyway. Everywhere there is no WordPress the request
+-- fails immediately and none of this is spent.
+local SEED_WAIT = 1.5
+
+-- Nothing that arrives is trusted and nothing is required: a field replaces
+-- what the world already says only when it turns up with something in it. A
+-- site answering half of this — an older theme, a plugin somebody deactivated —
+-- leaves the other half as written prose rather than as a hole in a sentence.
+local function fill(into, from, keys)
+    if type(from) ~= 'table' then return end
+    for _, key in ipairs(keys) do
+        local value = from[key]
+        if value ~= nil and value ~= '' then into[key] = value end
+    end
+end
+
+-- A notice needs a headline and somewhere to go; the date, the author and the
+-- clause under it are decoration and may be missing.
+local function notices(posts)
+    local clean = {}
+    if type(posts) ~= 'table' then return clean end
+    for _, post in ipairs(posts) do
+        if type(post) == 'table' and type(post.title) == 'string'
+            and type(post.url) == 'string' and post.title ~= '' then
+            clean[#clean + 1] = {
+                date   = tostring(post.date or ''),
+                title  = post.title,
+                author = tostring(post.author or ''),
+                blurb  = tostring(post.blurb or ''),
+                url    = post.url,
+            }
+        end
+    end
+    return clean
+end
+
+-- The ledger, rewritten from the site's copy of it.
+--
+-- Somebody the hall has never heard of gets a chair; somebody it knows keeps
+-- their name, their handle and the nouns the sage answers to, and takes the
+-- site's sentence in place of the one written here. Who is on the project now
+-- comes across too, so the eight at the front of the ledger are the eight the
+-- About dialog currently draws large.
+--
+-- The exception is an entry marked `own`: a line that talks about this demo
+-- from inside it is one the About dialog cannot make, and there is no version
+-- of it upstream to take instead.
+--
+-- Matched on the full name first — the sage's `keys` are deliberately loose,
+-- and a loose match is the wrong tool when the question is "is this the same
+-- person" rather than "who does this visitor mean".
+local function inLedger(name)
+    local wanted = name:lower()
+    for _, m in ipairs(MAKERS) do
+        if m.name:lower() == wanted then return m end
+    end
+    return findMaker(wanted)
+end
+
+local function roster(people)
+    if type(people) ~= 'table' then return end
+    for _, person in ipairs(people) do
+        local name = type(person) == 'table' and person.name or nil
+        if type(name) == 'string' and name ~= '' then
+            local line = type(person.line) == 'string' and person.line ~= ''
+                and person.line or nil
+            local gh = type(person.github) == 'string' and person.github ~= ''
+                and person.github or nil
+            local known = inLedger(name)
+            if known then
+                if line and not known.own then known.line = line end
+                known.gh = known.gh or gh
+                if type(person.core) == 'boolean' then known.big = person.core end
+            else
+                local keys = {}
+                for word in name:lower():gmatch('%a+') do keys[#keys + 1] = word end
+                if gh then keys[#keys + 1] = gh:lower() end
+                MAKERS[#MAKERS + 1] = {
+                    big  = person.core ~= false,
+                    name = name,
+                    gh   = gh,
+                    keys = keys,
+                    line = line or 'In the credits, and the ledger has not caught up '
+                        .. 'with what they have done yet.',
+                }
+            end
+        end
+    end
+end
+
+function D.applySeed(data)
+    if type(data) ~= 'table' then return end
+
+    local release = data.release
+    if type(release) == 'table' then
+        fill(SITE.release, release, { 'version', 'date', 'date_short', 'date_loud', 'url' })
+        if type(release.builds) == 'table' then
+            for name, build in pairs(SITE.release.builds) do
+                fill(build, release.builds[name], { 'label', 'size', 'short', 'url' })
+            end
+        end
+    end
+
+    fill(SITE.games, data.games, { 'count', 'url' })
+    if type(data.games) == 'table' and type(data.games.names) == 'table'
+        and #data.games.names > 0 then
+        SITE.games.names = data.games.names
+    end
+
+    fill(SITE.makers, data.makers, { 'count', 'url' })
+    if type(data.makers) == 'table' then roster(data.makers.people) end
+
+    fill(SITE.news, data.news, { 'count', 'url' })
+    if type(data.news) == 'table' then
+        local board = notices(data.news.posts)
+        if #board > 0 then SITE.news.posts = board end
+    end
+end
+
+-- One request, and one answer either way: whatever happens, D.settled ends up
+-- true and the world stops waiting. The handlers filter on the route because
+-- they are anonymous and would otherwise hear anything else that ever fetches.
+function D.askSite()
+    local attempt = 0
+
+    local function settle()
+        if D.settled then return end
+        D.settled = true
+        D.connected()
+    end
+
+    local function ask()
+        attempt = attempt + 1
+        if not SEED_URLS[attempt] then settle() return end
+        getHTTP(SEED_URLS[attempt])
+    end
+
+    local function ours(url)
+        return type(url) == 'string' and url:find('mudlet/v1/demo', 1, true) ~= nil
+    end
+
+    registerAnonymousEventHandler('sysGetHttpDone', function(_, url, body)
+        if D.settled or not ours(url) then return end
+        -- A site that answers with something other than JSON is a site that
+        -- does not have this endpoint. That is not an error the visitor needs.
+        local ok, data = pcall(yajl.to_value, body)
+        if ok then D.applySeed(data) end
+        settle()
+    end)
+
+    registerAnonymousEventHandler('sysGetHttpError', function(_, _, url)
+        if D.settled or not ours(url) then return end
+        ask()
+    end)
+
+    ask()
+end
+
 function D.boot()
     -- Before the first line, not at connect: the page holds an identical bar
     -- over this frame while the bundle loads, so the client must already have
@@ -1264,8 +2046,14 @@ function D.boot()
     say()
     say(C.sys, 'connecting')
     D.dot = 0
-    D.dotTimer = tempTimer(0.3, [[demo.dots()]], true)
-    tempTimer(1.5, [[demo.connected()]])
+    D.dotTimer = tempTimer(0.3, function() D.dots() end, true)
+    -- The connect animation doubles as the seed's window: the request goes out
+    -- with the first dot, and the first room is printed once the animation has
+    -- run its length *and* the site has answered or run out of time. Both
+    -- timers call the same gate; whichever is last through it connects.
+    D.askSite()
+    tempTimer(1.5, function() D.animated = true D.connected() end)
+    tempTimer(1.5 + SEED_WAIT, function() D.settled = true D.connected() end)
 end
 
 -- Rewrites the last line in place rather than printing another one: cursor to
@@ -1284,6 +2072,8 @@ function D.dots()
 end
 
 function D.connected()
+    if D.online or not (D.animated and D.settled) then return end
+    D.online = true
     if D.dotTimer then killTimer(D.dotTimer) end
     swapLastLine(C.sys, '*** connected ***')
     -- The map arrives with the first room rather than during the connect
@@ -1292,7 +2082,7 @@ function D.connected()
     -- the moment it lifted.
     D.buildMap()
     D.mapWidget()
-    registerAnonymousEventHandler('sysWindowResizeEvent', 'demo.mapWidget')
+    registerAnonymousEventHandler('sysWindowResizeEvent', function() D.mapWidget() end)
     D.look()
     say()
     say(C.sys, 'This is Mudlet, running in your browser — and this is mudlet.org,')
@@ -1300,4 +2090,4 @@ function D.connected()
         cmd('help', 'help', 'the short list of commands', C.sys), C.sys .. '.')
 end
 
-tempTimer(0.4, [[demo.boot()]])
+tempTimer(0.4, function() D.boot() end)

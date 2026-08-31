@@ -1,5 +1,5 @@
 mpackage = [[mudlet-demo]]
 author = [[Mudlet]]
 title = [[A tiny offline world for the mudlet.org demo client.]]
-description = [[mudlet.org as a four-room MUD: the front page, the release vault, the news room and the commons.]]
-version = [[0.18.0]]
+description = [[mudlet.org as a six-room MUD: the front page, the release vault, the news room, the commons, Makers Hall and the workshop.]]
+version = [[0.19.0]]
