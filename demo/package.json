@@ -1,0 +1,25 @@
+{
+  "name": "mudlet-web-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "package": "node scripts/build-package.mjs",
+    "dev": "npm run package && vite",
+    "build": "npm run package && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mudlet/mudlet-web": "^0.4.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "fflate": "^0.8.2",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0"
+  }
+}

@@ -1,0 +1,86 @@
+# Publishes the prototype to GitHub Pages with a working live demo.
+#
+# The hero embeds the Mudlet Web client as a same-origin iframe pointed at
+# "../demo/dist/index.html" (relative — the page has to work both from a file
+# server at the repo root and from a project Pages URL under /<repo>/). So the
+# deployed tree mirrors the repo exactly rather than flattening the prototype
+# to the site root, and the same relative hop keeps resolving:
+#
+#   /prototype/index.html  --(../demo/dist/index.html)-->  /demo/dist/index.html
+#
+# Same origin matters as much as the path: a cross-origin iframe gets no
+# IndexedDB in Safari/Firefox, and Mudlet Web keeps every profile in one.
+# The site root is a redirect into /prototype/ so the bare Pages URL lands
+# somewhere useful without moving the page and breaking that hop.
+name: Deploy prototype to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a superseded run is not worth finishing. In-flight
+# deploys are left alone so Pages is never interrupted mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+
+      - name: Install demo dependencies
+        working-directory: demo
+        run: npm ci
+
+      # Also rebuilds src/assets/*.mpackage from packages/ — those are
+      # generated, so they are not in the repo and the build needs them.
+      - name: Build demo client
+        working-directory: demo
+        run: npm run build
+
+      # prototype/index.html is committed pre-built: prototype/build.js inlines
+      # reference/assets/* as data: URIs, and reference/ is not in the repo.
+      - name: Assemble site
+        run: |
+          set -euo pipefail
+          test -f prototype/index.html
+          test -f demo/dist/index.html
+          mkdir -p _site/prototype _site/demo
+          cp prototype/index.html _site/prototype/index.html
+          cp -r demo/dist _site/demo/dist
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>Mudlet — redesign prototype</title>
+          <meta http-equiv="refresh" content="0; url=./prototype/">
+          <link rel="canonical" href="./prototype/">
+          <p><a href="./prototype/">Mudlet redesign prototype</a></p>
+          HTML
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

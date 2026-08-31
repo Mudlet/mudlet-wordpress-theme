@@ -1,0 +1,116 @@
+/* Embed chrome removal.
+ *
+ * BrandConfig can hide individual toolbar *buttons* (`toolbar.hide`) but not
+ * the bar itself — the root .mudix-toolbar still carries the wordmark,
+ * profile name, status dot and hamburger. Until the library grows a real
+ * embed/chrome flag, the bar and its fullscreen reveal strip are removed
+ * here. `.app` is a flex column, so the output area simply takes the height
+ * the bar gave up. */
+.mudix-toolbar,
+.app-topbar-hover-zone {
+    display: none !important;
+}
+
+/* Fills the frame while React and the Lua runtime come up, so the iframe
+ * never flashes white against the page's terminal-dark hero. */
+html, body, #root { height: 100%; margin: 0; background: #1e1813; }
+.demo-boot { height: 100%; background: #1e1813; }
+
+/* Mapper chrome. The demo floats a small createMapper panel in the corner of
+ * the console (see packages/mudlet-demo/world.lua), and the panel carries its
+ * own 37px toolbar — a hamburger menu and a collapse toggle — which is a
+ * quarter of a 140px corner map and a control surface the embed has no use
+ * for. The panel is a flex column with the canvas at flex:1, so dropping the
+ * bar hands those pixels straight to the map. The border is the hero
+ * terminal's own, so the map reads as an inset panel rather than a hole in
+ * the text it floats over. */
+.map-panel-toolbar { display: none !important; }
+.map-panel {
+    border: 1px solid #3a2f24;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* The command bar is sized for a full-window client; in a hero-sized frame a
+ * 44px bar with a 32px field eats an eighth of the console. Everything below
+ * is the same box model at ~0.8 scale — the ghost (autocomplete suffix
+ * overlay) has to mirror the input's metrics exactly or the suffix drifts off
+ * the typed text's baseline, so the two are kept in step here as well. */
+:root { --cmdbar-h: 32px; }
+
+.command-input.input,
+.command-input--multiline.input,
+.command-ghost {
+    height: 26px;
+    font-size: 12px;
+    line-height: 16px;
+    padding: 4px 8px 4px 22px;
+}
+.command-input--multiline.input { min-height: 26px; max-height: 96px; }
+
+.command-bar .prompt { top: 13px; font-size: 12px; left: 8px; }
+
+.command-bar .btn {
+    height: 24px;
+    padding: 0 9px;
+    font-size: 11px;
+}
+
+/* Console type. Mudlet Web's own console font is Bitstream Vera Sans Mono
+ * (Mudlet's default, bundled as base64 inside its stylesheet). The page draws
+ * its boot state in IBM Plex Mono, and every glyph would change shape at the
+ * handover — so the client takes the page's face rather than the page taking
+ * the client's 600KB one. Both tokens: --font-output drives the console and
+ * the command line's ghost overlay, --font-mono everything else. */
+:root {
+    --font-mono:   'IBM Plex Mono', ui-monospace, monospace;
+    --font-output: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* Console text. Mudlet Web writes the console font size inline from profile
+ * settings (Mudlet's 11pt default), so a plain rule can't reach it. This
+ * lives here rather than as a `setFontSize(9)` call in the demo package
+ * because it's a property of the embed, not of the world — it should survive
+ * the package being rewritten. */
+/* The hero terminal is .78rem of a 16px root — 12.48px — and 1.8 line-height.
+ * Stated in px because Mudlet Web's own root is 13px, so the same rem value
+ * would come out a quarter smaller here. Matching both means the swap from the
+ * scripted session to the live one doesn't move the type at all. */
+/* .output-sticky is the split-scrollback pane — the strip that pins the live
+ * tail to the bottom while you read back through the buffer. It is a *sibling*
+ * of .output-wrapper, not a child, and Mudlet Web writes the same inline
+ * `font-size: 11pt` onto both from profile settings. Naming only the wrapper
+ * left the type jumping a size the moment anyone scrolled up. */
+.output-wrapper,
+.output-sticky { font-size: 12.48px !important; }
+.output-container,
+.output-sticky-content { line-height: 1.8; }
+/* and the same horizontal gutter as the wrapper below, so the pinned lines sit
+ * in the same column as the ones they are pinning.
+ *
+ * Two things have to be said for that to happen. The pane is absolutely
+ * positioned at left:3px/right:9px — the console's own default gutters — so
+ * its insets go to zero first. And the gutter itself has to go on
+ * .output-sticky-content, not on the pane: the content is absolutely
+ * positioned inside the pane, which means padding on the pane is ignored
+ * outright. Setting it there and calling it done is why this looked fixed and
+ * wasn't. */
+.output-sticky { left: 0; right: 0; }
+/* Bottom as well as sides: the pane's own bottom edge is the command bar, so
+ * without it the pinned tail runs straight into the input — the one place in
+ * the console where text and chrome touch. */
+.output-sticky-content { padding: 0 18px 16px; }
+
+/* The console's own 3px gutter is a full-window metric. The hero frames this
+ * client in a padded terminal, and the page paints a boot state ("mudlet
+ * web / connecting…") at 16px/18px while the bundle loads — so matching that
+ * padding here is what puts the client's first printed line exactly where the
+ * boot line was, and the swap stops being visible. */
+.output-wrapper { padding: 16px 18px 16px !important; }
+
+/* .output-wrapper is also the scroll container, and it chains: reach the top
+ * of the scrollback and the wheel starts scrolling mudlet.org underneath the
+ * hero instead, which reads as the page grabbing the client mid-sentence.
+ * Contain keeps the gesture inside the frame it started in. */
+.output-wrapper { overscroll-behavior: contain; }
+html, body { overscroll-behavior: none; }
