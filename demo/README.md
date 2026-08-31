@@ -30,11 +30,47 @@ reveal strip) outright. This is the one hack here that wants an upstream fix:
 an `embed`/`chrome: false` flag in `BrandConfig` would replace both this and
 the dummy `mud` target above.
 
-**The world.** `packages/mudlet-demo/world.lua` plus a catch-all alias, zipped
+**The world.** `packages/mudlet-demo/` plus a catch-all alias, zipped
 into a `.mpackage` by `scripts/build-package.mjs` and listed in
 `brand.packages` — which *replaces* the stock defaults, so the mapper doesn't
 come along. Aliases run in `hostSend` whether or not a session is connected,
 which is what makes an offline profile playable.
+
+The package is a **directory of Lua modules**, not one file. mudlet-web unzips
+an `.mpackage` into `<profile>/<packageName>/` and seeds `package.path` with
+`<profile>/?.lua;<profile>/?/init.lua`, so the files `require` each other by
+path and the generated XML carries only three things that cannot be files: the
+catch-all alias, `embed.lua`, and a bootstrap that clears `package.loaded` and
+requires the package.
+
+| file | what is in it |
+| --- | --- |
+| `init.lua` | the entry: the requires, in the order the world reads |
+| `core.lua` | the palette, the two kinds of link, `say()`, numbers into words |
+| `urls.lua` | every link that leaves the world |
+| `site.lua` | `SITE` — the shape of the seed's answer, and the fallback |
+| `seed.lua` | the one request that replaces what it can reach |
+| `download.lua` | the crates and the orange button — one release, described twice |
+| `rooms/init.lua` | assembles `D.rooms` from one file per room |
+| `rooms/*.lua` | six rooms, one file each |
+| `people.lua` | `MAKERS`, and everything the sage says out of it |
+| `github.lua` | the clerk: the only thing here that talks to anything but the site |
+| `map.lua` | the mapper, the status bar, and the room ids they share |
+| `verbs.lua` | the parser and the verbs behind it; everything arrives at `D.input` |
+| `boot.lua` | the fake connect, and the first room on the other side of it |
+
+Two things follow from the files being real files. A Lua error names the file
+and the line it happened on — `mudlet-demo/rooms/home.lua:47` — which a script
+node holding two thousand lines cannot do. And a version bump wipes the package
+directory before unzipping, so a module you delete is actually gone from a
+returning visitor's profile.
+
+Shared state lives on the global `demo` table (`D` in every file): anything a
+visitor can reach — `D.input`, `D.look`, `D.tell`, `D.week` — is late-bound
+there, which is what lets the alias, the timers and the clickable links call
+into the world without any module having to require the one that defines them.
+Everything else is a module export, imported at the top of the file that needs
+it, so what a file depends on is the first thing you read in it.
 
 Mudlet's own `run-lua-code` **is** installed (copied out of `node_modules` at
 package-build time, so it tracks the installed library), which gives the demo
@@ -47,7 +83,7 @@ reply. Both patterns live in `scripts/build-package.mjs`.
 A profile whose installed copy claims a different version reinstalls the
 package on open, which is how an edited world reaches a returning visitor.
 That version used to be a number bumped by hand in two files, and forgetting
-either meant editing `world.lua`, rebuilding, reloading and reading the old
+either meant editing the world, rebuilding, reloading and reading the old
 world back. The build derives it instead: `config.lua`'s number plus a hash
 of the Lua being zipped, written into the packaged `config.lua` and into
 `src/assets/mudlet-demo.version.ts`, which `src/main.tsx` imports. Edit the
@@ -86,7 +122,7 @@ entry links out to mudlet.org/the-makers for the full text.
 Two kinds of clickable text, one rule: **underlined means clickable, orange
 means it leaves the site.** Every noun, exit and suggested command prints as a
 link, so the whole world is playable with a mouse, which is what most visitors
-will try first in a hero. `say()` in `world.lua` is the single output path —
+will try first in a hero. `say()` in `core.lua` is the single output path —
 adjacent strings coalesce into one `decho`, because both `decho` and
 `dechoLink` reset the format before printing and a colour tag passed as its own
 argument would be reset away by the very next call.
@@ -152,7 +188,7 @@ frame is served from the site's own origin anyway; a second spelling
 (`/?rest_route=…`) is tried when the first fails, since `/wp-json/` needs
 pretty permalinks.
 
-`SITE`, at the top of `world.lua`, is both the shape of that answer and the
+`SITE`, in `site.lua`, is both the shape of that answer and the
 fallback: the July 2026 snapshot the rooms were composed against. It has to be
 a fallback, because the demo also runs from the prototype page, a Vite dev
 server and `file://` copies, none of which have a WordPress behind them. There
@@ -169,7 +205,7 @@ Two consequences worth knowing:
 - **Descriptions that quote a fact are functions**, evaluated at print time, so
   an answer that arrives late is still right the next time somebody looks.
 
-The ledger is seeded too, prose included. `MAKERS` in `world.lua` keeps the
+The ledger is seeded too, prose included. `MAKERS` in `people.lua` keeps the
 names, the nouns the sage answers to and the GitHub handles; the sentence it
 says about each person comes from the site, which is the About dialog by way of
 the makers plugin. Somebody the hall has never heard of is seated rather than
@@ -208,7 +244,7 @@ refuses a direct fetch. Open issues are counted through the search API rather
 than the repo endpoint's `open_issues_count`, which adds pull requests to the
 total.
 
-Notes on the shape of it, all of them in `world.lua` under **The Workshop**:
+Notes on the shape of it, all of them in `github.lua`:
 
 - **One request in flight**, keyed on its url, with an 8s timeout — the
   browser's fetch has none of its own, and a hung request would otherwise leave
