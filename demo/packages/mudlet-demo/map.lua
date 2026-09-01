@@ -447,4 +447,60 @@ function D.mapHere()
     if D.mapOpen then centerview(ROOM[D.here]) end
 end
 
+
+-- Double-clicking a room on the map walks you to it ---------------------------
+--
+-- Mudlet pathfinds first and then hands the walk over: getPath fills
+-- speedWalkDir with one direction per step, and calls whatever global
+-- doSpeedWalk() the mapper package defines. Define none and mudix sends the
+-- directions itself, all at once - which in a world with no socket to send
+-- them down means double-clicking a room does nothing whatever.
+--
+-- So this is that function, and it walks rather than teleports: one step, a
+-- pause, the next. Three reasons, and only the first is cosmetic. A burst of
+-- commands is what a real game reads as spam and what gets a speedwalk
+-- throttled. The room descriptions arrive in order, which is the whole of
+-- what there is to watch. And a walk you can see is a walk you can stop --
+-- typing anything cancels the rest, the way it does in a real client.
+
+-- Slow enough to read a room title, fast enough not to feel like waiting.
+local STEP = 0.45
+
+local walkTimer
+
+-- Called from D.input on every command, so it has to be cheap and silent when
+-- there is nothing to stop.
+function D.stopWalk()
+    if walkTimer then killTimer(walkTimer) walkTimer = nil end
+end
+
+function doSpeedWalk()
+    D.stopWalk()
+
+    -- Copied out now: speedWalkDir is overwritten by the next getPath, and
+    -- this walk outlives its own call by design.
+    local dirs = {}
+    for i = 1, #speedWalkDir do dirs[i] = core.DIRS[speedWalkDir[i]] or speedWalkDir[i] end
+    if #dirs == 0 then return end
+
+    local function step(i)
+        walkTimer = nil
+        local dir = dirs[i]
+        if not dir then return end
+
+        -- The path was found against the map, and the map is drawn from these
+        -- same exits - so this should always hold. It is checked because the
+        -- alternative to checking is walking someone into a wall on the one
+        -- day it does not.
+        local room = D.rooms[D.here]
+        if not room or not room.exits[dir] then return end
+
+        D.go(dir)
+        if dirs[i + 1] then walkTimer = tempTimer(STEP, function() step(i + 1) end) end
+    end
+
+    step(1)
+end
+
+
 return { PLACE = PLACE }

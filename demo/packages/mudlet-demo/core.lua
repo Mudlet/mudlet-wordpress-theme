@@ -116,8 +116,18 @@ end
 -- so that the raise and the handler cannot drift apart.
 local ROOM_EVENT = 'mudlet-demo:room'
 
+-- Every way of naming a direction, long and short. Here rather than in
+-- verbs.lua because the mapper speaks the short forms: getPath fills
+-- speedWalkDir with "n"/"up", and the walk has to turn those into the words
+-- the rooms declare their exits with.
+local DIRS = {
+    n = 'north', s = 'south', e = 'east', w = 'west', u = 'up', d = 'down',
+    north = 'north', south = 'south', east = 'east', west = 'west',
+    up = 'up', down = 'down',
+}
+
 return {
-    C = C, U = U, SCRIPT_LINES = SCRIPT_LINES, ROOM_EVENT = ROOM_EVENT,
+    C = C, U = U, SCRIPT_LINES = SCRIPT_LINES, ROOM_EVENT = ROOM_EVENT, DIRS = DIRS,
     thousands = thousands, link = link, cmd = cmd, say = say,
     spell = spell, spellCap = spellCap,
 }

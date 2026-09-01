@@ -43,11 +43,7 @@ D.here = D.here or 'home'
 
 -- Verbs ----------------------------------------------------------------------
 
-local DIRS = {
-    n = 'north', s = 'south', e = 'east', w = 'west', u = 'up', d = 'down',
-    north = 'north', south = 'south', east = 'east', west = 'west',
-    up = 'up', down = 'down',
-}
+local DIRS = core.DIRS
 
 local function find(noun)
     if noun == '' then return nil end
@@ -282,6 +278,11 @@ REPLIES.credits = REPLIES.who
 function D.input(raw)
     local cmdline = (raw or ''):lower():gsub('^%s+', ''):gsub('%s+$', '')
     if cmdline == '' then return end
+
+    -- Anything typed ends a walk still in progress, the way it does in a real
+    -- client: the steps that are left belong to a room the visitor has just
+    -- stopped caring about. See D.walk() in map.lua.
+    D.stopWalk()
 
     local verb, rest = cmdline:match('^(%S+)%s*(.*)$')
     rest = rest:gsub('^at%s+', ''):gsub('^the%s+', '')
