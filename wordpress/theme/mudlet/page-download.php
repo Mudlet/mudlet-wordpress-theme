@@ -252,7 +252,7 @@ $icons  = array(
 					</p>
 				</div>
 				<div class="call">
-					<h3><?php mudlet_icon( 'access' ); ?><?php esc_html_e( 'Playing with a screen reader?', 'mudlet' ); ?></h3>
+					<h3><?php mudlet_icon( 'ear' ); ?><?php esc_html_e( 'Playing with a screen reader?', 'mudlet' ); ?></h3>
 					<p>
 						<?php
 						printf(

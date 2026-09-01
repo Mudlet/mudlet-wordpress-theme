@@ -82,7 +82,11 @@ function mudlet_icon_set(): array {
 		'code'     => array( $line18, '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>' ),
 		'history'  => array( $line18, '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>' ),
 		'flask'    => array( $line18, '<path d="M10 2v7.31M14 9.3V1.99M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>' ),
-		'access'   => array( $line18, '<circle cx="16" cy="4" r="1"/><path d="m18 19 1-7-6 1"/><path d="m5 8 3-3 5.5 3-2.36 3.5"/><path d="M4.24 14.5a5 5 0 0 0 6.88 6"/><path d="M13.76 17.5a5 5 0 0 0-6.88-6"/>' ),
+		// An ear, for the screen-reader note on the download page. The
+		// international access symbol stood here first and reads as a
+		// wheelchair, which is the one thing that heading is not about: a
+		// screen reader is something you listen to.
+		'ear'      => array( $line18, '<path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0"/><path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4"/>' ),
 	);
 }
 
