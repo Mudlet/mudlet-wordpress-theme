@@ -15,6 +15,9 @@ local URL = {
     packages = 'https://packages.mudlet.org/',
     forum    = 'https://forums.mudlet.org/',
     wiki     = 'https://wiki.mudlet.org/',
+    -- The manual's own account of what a trigger is, for the one room that
+    -- makes the visitor write one.
+    triggers = 'https://wiki.mudlet.org/w/Manual:Introduction#Triggers',
     discord  = 'https://discord.gg/kuYvMQ9',
     github   = 'https://github.com/Mudlet/Mudlet',
     -- The pages the clerk in the Workshop is reading off a wire. Every line

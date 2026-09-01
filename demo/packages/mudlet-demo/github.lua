@@ -338,15 +338,21 @@ function D.askClerk(noun)
     if noun == '' or noun == 'clerk' then
         say()
         say(C.text, 'The clerk looks up, pen still moving.')
-        say(C.say, '"Two things I keep: what has landed this week, and what is still open."')
+        say(C.say, '"Two things I keep: what has landed this week and what is still '
+            .. 'open. And one job going, if you want it."')
         say(C.dim, '  ', cmd('ask about this week', 'ask about this week',
                 'the last seven days, off github.com', C.dim),
             C.dim, '   ·   ', cmd('ask about issues', 'ask about issues',
-                'what is still open, off github.com', C.dim))
+                'what is still open, off github.com', C.dim),
+            C.dim, '   ·   ', cmd('ask about the job', 'ask about work',
+                'the one thing here that scripts the client', C.dim))
         return
     end
     if about(noun, { 'week', 'commit', 'land', 'chang', 'new', 'recent' }) then D.week() return end
     if about(noun, { 'issue', 'bug', 'open', 'board', 'first', 'todo', 'help' }) then D.issues() return end
+    -- The job is the clerk's too, and it is not GitHub's: see
+    -- mudlet-demo/trigger.lua for what it is for.
+    if about(noun, { 'job', 'work', 'coin', 'gold', 'pay', 'trigger' }) then D.commission() return end
 
     say()
     if findMaker(noun) then

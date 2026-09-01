@@ -34,6 +34,9 @@ return {
                         'what has landed in the last seven days', C.dim),
                     C.dim, ', or ', cmd('about what is open', 'ask about issues',
                         'what is still open', C.dim), C.dim, '.')
+                say(C.dim, 'Or ', cmd('ask about the job', 'ask about work',
+                        'the one thing here that scripts the client', C.dim),
+                    C.dim, ', which is the only work going.')
                 say(C.dim, 'Both answers come off github.com at the moment you ask for them. ',
                     'Nothing else in this world is that fresh.')
             end,

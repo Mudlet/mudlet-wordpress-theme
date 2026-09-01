@@ -37,6 +37,7 @@ local D = demo
 require('mudlet-demo.rooms')
 require('mudlet-demo.people')
 require('mudlet-demo.github')
+require('mudlet-demo.trigger')
 require('mudlet-demo.map')
 require('mudlet-demo.verbs')
 require('mudlet-demo.seed')

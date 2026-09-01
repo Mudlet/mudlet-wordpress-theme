@@ -307,6 +307,17 @@ function D.input(raw)
         -- person to ask in any room, so who is being asked is optional — and
         -- naming the wrong one of the two is not a correction worth printing.
         D.ask((rest:gsub('^sage%s*', ''):gsub('^clerk%s*', ''):gsub('^about%s+', '')))
+    elseif verb == 'trigger' or verb == 'trig' or verb == 'watch' then
+        -- `trigger on gold`, `trigger for gold`, `trigger gold` all land the
+        -- same place; `trigger off` takes it away again. See
+        -- mudlet-demo/trigger.lua, which is the only thing in this world
+        -- that scripts the client rather than describing it.
+        local word = rest:gsub('^on%s+', ''):gsub('^for%s+', '')
+        if word == 'off' or word == 'none' or word == 'stop' then
+            D.triggerOff()
+        else
+            D.watchFor(word)
+        end
     elseif verb == 'help' or verb == 'commands' or verb == '?' then
         D.help()
     elseif REPLIES[verb] then
