@@ -1,7 +1,8 @@
-// Minimal static server for local review: serves the repo root, so
-// prototype/index.html and demo/dist/ share one origin — which is what the
-// embed needs (a cross-origin iframe gets no IndexedDB in Safari/Firefox,
-// and Mudlet Web keeps every profile in one).
+// Minimal static server for local review of demo/dist/ on its own. The site
+// serves the client from the theme (assets/demo/, a bind-mount of dist/) so the
+// two share an origin — which is what the embed needs: a cross-origin iframe
+// gets no IndexedDB in Safari/Firefox, and Mudlet Web keeps every profile in
+// one. This is for looking at the client without booting WordPress.
 import { createServer } from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
 import { extname, join, normalize, dirname } from 'node:path';

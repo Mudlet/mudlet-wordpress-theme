@@ -1,0 +1,1112 @@
+/* The design.
+   Was generated from the prototype's one <style> block until the theme became
+   the product; it is hand-authored from here, and the tool that lifted it is
+   gone. Everything is scoped to #site (the prototype called that wrapper #vb).
+   wp.css loads after this file and holds the rules that only make sense once
+   WordPress is drawing the page - it is a companion, not an override layer, so
+   a rule about how the site looks belongs here. */
+
+:root{ color-scheme:light; --orange:#dc4c00; --ember:#f56c27; --rust:#b83d00; --cream:#f1e6c8; --teal:#82c0c7; }
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:#fffdf8}
+
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="dark"] body{background:#17130e}
+img{max-width:100%; display:block}
+button{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--ember); outline-offset:2px; border-radius:3px}
+
+/* ═══════════════════════════════════════════════════════════════
+   MUDLET — direction B, refined
+   ═══════════════════════════════════════════════════════════════ */
+#site{
+  --bg:#fffdf8; --band:#faf3e4; --ink:#211d17; --dim:#6f6656; --line:#e9dfc8;
+  --ink-d:#17130e; --ink-d2:#211b14; --line-d:#362c21; --on-d:#e8dcc6; --on-d-dim:#9c8f7c;
+  /* accent — the brand orange retuned for contrast. #dc4c00 gives white text
+     only 4.14:1 (needs 4.5) and 3.74:1 as link text on cream, which is why it
+     read as muddy; #c44400 clears both. */
+  --orange:#c44400; --rust:#a83800; --mark:#c44400;
+  --link:#a83800; --hl:#c44400; --accent2:#c44400;
+  --glow:rgba(196,68,0,.45);
+  background:var(--bg); color:var(--ink); font-size:1rem; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  /* surfaces, so the whole page can be repainted from one block */
+  --card:#ffffff; --hover:rgba(255,255,255,.6); --topbg:rgba(255,253,248,.93);
+  --on-accent:#ffffff; --sh:60,40,10;
+}
+
+/* ── DARK ─────────────────────────────────────────────────────────
+   Warm, not neutral: the same parchment hues turned down rather than
+   a grey theme wearing an orange hat. Ratios against --card #241d15
+   are body 12.74:1, dim 5.61:1, accent 5.59:1. The accent inverts —
+   #f56c27 is too bright to carry white text (2.98:1), so the button
+   takes dark text on bright orange instead (6.21:1).
+   --ink-d/--ink-d2 drive the "hop in" band and footer, which were the
+   dark slab in a light page; here they become the raised one, so they
+   are lifted ABOVE --bg rather than sunk below it. */
+:root[data-theme="dark"] #site{
+  --bg:#17130e; --band:#1e1811; --card:#241d15;
+  --ink:#ece0c9; --dim:#a2947e; --line:#332a1e;
+  --ink-d:#221b13; --ink-d2:#2b2318; --line-d:#3a2f22; --on-d:#ece0c9; --on-d-dim:#a2947e;
+  --orange:#f56c27; --rust:#ff8a4d; --mark:#f56c27;
+  --link:#f56c27; --hl:#f56c27; --accent2:#f56c27;
+  --on-accent:#17130e;
+  --glow:rgba(245,108,39,.3);
+  --hover:rgba(255,255,255,.05); --topbg:rgba(23,19,14,.93);
+  --sh:0,0,0;
+}
+/* game logos are drawn for a light ground, so their tile keeps the
+   cream in both themes rather than swallowing half the artwork */
+/* type: locked to Plex Mono headings + Figtree body */
+#site{ --display:'IBM Plex Mono',ui-monospace,monospace; --body:'Figtree',system-ui,sans-serif;
+  --dw:600; --dls:-.028em; --dlh:1.14 }
+
+#site{font-family:var(--body)}
+#site h1,#site h2,#site h3{margin:0; font-family:var(--display);
+  font-weight:var(--dw); letter-spacing:var(--dls); line-height:var(--dlh)}
+#site p{margin:0}
+#site a{color:inherit}
+#site .w{max-width:74rem; margin-inline:auto; padding-inline:clamp(1.1rem,4vw,2rem)}
+
+/* the > mark, carried through as a brand device */
+#site .mk{color:var(--mark); font-family:'IBM Plex Mono',ui-monospace,monospace; font-weight:600}
+
+#site .top{position:sticky; top:0; z-index:80; background:var(--topbg);
+  backdrop-filter:blur(12px); border-bottom:1px solid var(--line)}
+#site .top .w{display:flex; align-items:center; gap:1rem; height:3.7rem}
+#site .logo{display:flex; align-items:center; gap:.5rem; font-family:var(--display);
+  font-weight:var(--dw); font-size:1.1rem; letter-spacing:-.035em; text-decoration:none}
+#site .logo img{width:1.7rem; height:1.7rem}
+/* Places to read; Download is not among them, because the button already is
+   the download. Two controls pointing at /download/ half a centimetre apart
+   read as one control drawn twice. */
+#site .topnav{margin-left:auto; display:flex; gap:.25rem; align-items:center}
+#site .topnav a{font-size:.9rem; font-weight:500; text-decoration:none; color:var(--dim);
+  padding:.4rem .65rem; border-radius:7px}
+#site .topnav a:hover{color:var(--ink); background:var(--band)}
+@media (max-width:64rem){ #site .topnav a.lo{display:none} }
+
+/* — utilities: search, language, the one call to action — */
+#site .util{display:flex; align-items:center; gap:.45rem; padding-left:.85rem;
+  border-left:1px solid var(--line)}
+/* — search: an icon in the bar, a command palette on top — */
+#site .searchbtn{display:flex; align-items:center; justify-content:center; width:2.05rem; height:2.05rem;
+  color:var(--dim); background:transparent; border:1px solid transparent; border-radius:7px; cursor:pointer}
+#site .searchbtn:hover{color:var(--ink); background:var(--band)}
+#site .searchbtn svg{width:1.05rem; height:1.05rem}
+
+#site .palette{width:min(34rem,calc(100vw - 2rem)); max-height:min(28rem,calc(100vh - 8rem));
+  margin:11vh auto auto; padding:0; overflow:hidden; color:var(--ink);
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  box-shadow:0 40px 80px -28px rgba(var(--sh),.6)}
+#site .palette::backdrop{background:rgba(0,0,0,.45); backdrop-filter:blur(2px)}
+#site .palette[open]{display:flex; flex-direction:column; animation:palin .16s ease both}
+@keyframes palin{ from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:none} }
+@media (prefers-reduced-motion:reduce){ #site .palette[open]{animation:none} }
+
+#site .palette__in{display:flex; align-items:center; gap:.7rem; margin:0;
+  padding:.9rem 1rem; border-bottom:1px solid var(--line)}
+#site .palette__in svg{width:1.05rem; height:1.05rem; color:var(--dim); flex:none}
+#site .palette__in input{flex:1; min-width:0; font:inherit; font-size:1rem; color:var(--ink);
+  background:transparent; border:0; outline:none; padding:0}
+#site .palette__in input::placeholder{color:var(--dim)}
+#site .palette kbd{font-family:var(--display); font-size:.68rem; color:var(--dim);
+  background:var(--band); border:1px solid var(--line); border-radius:4px; padding:.05rem .34rem}
+
+#site .palette__list{flex:1; overflow-y:auto; margin:0; padding:.35rem; list-style:none}
+#site .palette__list button{display:flex; align-items:baseline; gap:.75rem; width:100%; text-align:left;
+  font-family:var(--body); font-size:.9rem; background:transparent; border:0; cursor:pointer;
+  padding:.5rem .65rem; border-radius:8px}
+#site .palette__list button .src{margin-left:auto; font-family:var(--display); font-size:.68rem;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--dim); flex:none}
+/* one highlight, driven by the keyboard — hover just mirrors it */
+#site .palette__list button[aria-selected="true"]{background:var(--band)}
+#site .palette__list button[aria-selected="true"] .t{color:var(--link)}
+#site .palette__empty{padding:1.6rem 1rem; text-align:center; color:var(--dim); font-size:.9rem}
+#site .palette__empty[hidden]{display:none}
+#site .palette__foot{display:flex; gap:1.1rem; padding:.55rem 1rem; font-size:.72rem; color:var(--dim);
+  border-top:1px solid var(--line); background:var(--band)}
+#site .palette__foot span{display:flex; align-items:center; gap:.35rem}
+
+#site .theme{display:flex; align-items:center; justify-content:center; width:2.05rem; height:2.05rem;
+  color:var(--dim); background:transparent; border:1px solid transparent; border-radius:7px; cursor:pointer}
+#site .theme:hover{color:var(--ink); background:var(--band)}
+#site .theme svg{width:1rem; height:1rem}
+/* show the theme you would switch TO, not the one you are in */
+#site .theme .sun{display:none}
+:root[data-theme="dark"] #site .theme .sun{display:block}
+:root[data-theme="dark"] #site .theme .moon{display:none}
+
+#site .lang{position:relative}
+#site .lang__btn{display:flex; align-items:center; gap:.3rem; font-family:var(--display);
+  font-size:.8rem; font-weight:600; color:var(--dim); background:transparent;
+  border:1px solid transparent; padding:.42rem .5rem; border-radius:7px; cursor:pointer}
+#site .lang__btn:hover,#site .lang__btn[aria-expanded="true"]{color:var(--ink); background:var(--band)}
+#site .lang__btn .glb{width:.95rem; height:.95rem}
+#site .lang__btn .crt{width:.7rem; height:.7rem; opacity:.7}
+#site .lang__menu{position:absolute; right:0; top:calc(100% + .5rem); z-index:5;
+  margin:0; padding:.3rem; list-style:none; min-width:10rem; background:var(--card);
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 18px 34px -18px rgba(var(--sh),.5)}
+#site .lang__menu[hidden]{display:none}
+#site .lang__menu a{display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+  text-decoration:none; font-size:.88rem; color:var(--dim); padding:.4rem .6rem; border-radius:6px}
+#site .lang__menu a:hover{background:var(--band); color:var(--ink)}
+#site .lang__menu a[aria-current="true"]{color:var(--ink); font-weight:600}
+#site .lang__menu code{font-family:var(--display); font-size:.7rem; letter-spacing:.06em; opacity:.75}
+@media (max-width:46rem){ #site .lang{display:none} }
+
+#site .btn{display:inline-flex; align-items:center; gap:.5rem; background:var(--orange); color:var(--on-accent);
+  text-decoration:none; font-weight:600; padding:.62rem 1.15rem; border-radius:999px; border:0; cursor:pointer}
+#site .btn:hover{background:var(--rust)}
+#site .btn--xl{font-size:1.05rem; padding:.9rem 1.8rem; box-shadow:0 14px 30px -14px var(--glow)}
+#site .btn--ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+#site .btn--ghost:hover{background:var(--band)}
+/* Sized off the label rather than in rem, so the glyph tracks whatever the
+   button's font-size is - the compact header variant included. */
+#site .btn svg{width:1em; height:1em; flex:none}
+/* the header button is a compact variant of .btn */
+#site .util .btn{font-size:.84rem; padding:.42rem .95rem}
+
+/* — hero — */
+#site .hero{padding-block:clamp(3rem,7vw,5rem)}
+#site .hero .w{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  gap:clamp(2rem,5vw,4rem); align-items:center}
+@media (max-width:60rem){ #site .hero .w{grid-template-columns:1fr} }
+#site .hero h1{font-size:clamp(1.8rem,4vw,2.75rem); margin-bottom:1.1rem}
+/* nowrap so "pure-text" never breaks across lines at its hyphen */
+#site .hero h1 em{font-style:normal; color:var(--hl); white-space:nowrap}
+#site .hero .lead{font-size:1.08rem; color:var(--dim); margin-bottom:1.9rem; max-width:40ch}
+#site .cta{display:flex; gap:.7rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem}
+#site .plat{font-size:.85rem; color:var(--dim)}
+#site .plat a{color:var(--link); text-decoration:none; font-weight:500}
+/* A session rather than a screenshot. Its palette is fixed rather than
+   themed: a terminal is dark in a light page and dark in a dark one. */
+/* align-self overrides the row's align-items:center so the terminal fills the
+   row instead of floating in the middle of it. The copy column to its left
+   already sets that row's height, so this costs no layout at all — it hands
+   the session the ~30px of dead gap that was sitting above and below it.
+   The negative margin then lets it bleed a little way into the section's own
+   padding: a third of it at most, so the hero keeps its breathing room and
+   the section's height never moves (the copy column still sizes the row).
+   Together that is about five more lines of world. Reset below the
+   single-column breakpoint, where the padding is the only thing separating
+   the terminal from the copy above it. */
+#site .heroterm{display:flex; align-self:stretch;
+  margin-block:calc(-1 * clamp(.75rem, 2vw, 1.75rem))}
+@media (max-width:60rem){ #site .heroterm{margin-block:0} }
+#site .heroterm{--t-bg:#1e1813; --t-bar:#2b231b; --t-line:#3a2f24; --t-fg:#e8dcc6;
+  --t-dim:#9c8f7c; --t-hot:#f56c27; --t-cool:#82c0c7; --t-sys:#8a9a5b;
+  flex-direction:column; min-height:23rem;
+  background:var(--t-bg); border:1px solid var(--t-line); border-radius:10px; overflow:hidden;
+  font-family:var(--display); font-size:.78rem; line-height:1.8; color:var(--t-fg);
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.7)}
+#site .term__bar{display:flex; align-items:center; gap:.5ch; padding:.5rem .8rem;
+  background:var(--t-bar); border-bottom:1px solid var(--t-line); font-size:.68rem; color:var(--t-dim)}
+#site .term__dot{width:.5rem; height:.5rem; border-radius:50%; background:var(--t-line)}
+#site .term__dot:first-child{background:#b83d00}
+#site .term__name{margin-left:.7ch; letter-spacing:.02em}
+
+/* Expand. Three hundred and forty pixels of console is enough to show what the
+   demo is and not enough to sit and play in, so the title bar carries the one
+   control that fixes that. */
+#site .vh{position:absolute; width:1px; height:1px; margin:-1px; padding:0;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
+#site .term__grow{margin-left:auto; display:grid; place-items:center; width:1.4rem;
+  height:1.4rem; padding:0; border:0; border-radius:4px; background:transparent;
+  color:var(--t-dim); cursor:pointer; transition:color .12s, background .12s}
+#site .term__grow svg{width:.85rem; height:.85rem}
+#site .term__grow:hover{color:var(--t-fg); background:rgba(255,255,255,.06)}
+#site .term__grow:focus-visible{outline:2px solid var(--t-hot); outline-offset:1px}
+
+/* Expanded, the terminal is taken out of flow and pinned over the page. The
+   grid row it leaves behind keeps its height — the copy column is what sizes
+   that row — so the page underneath does not reflow while the scrim is up.
+   Position, not re-parenting: moving a node that contains an iframe reloads
+   the iframe, and reloading this one would throw away the session. */
+/* Above the sticky header, which sits at 80. */
+#site .heroterm.is-wide{position:fixed; inset:8vh 10vw; width:auto; height:auto;
+  margin:0; z-index:201; box-shadow:0 40px 90px -30px rgba(0,0,0,.85)}
+/* Over everything, header included — the demo is the whole screen while it is
+   open, and a nav bar floating above a modal reads as a bug. The blur is what
+   makes it read as depth rather than as a dark rectangle; the flat colour
+   underneath is the fallback where backdrop-filter is unsupported, so it is
+   dark enough to stand on its own. */
+#site .termscrim{position:fixed; inset:0; z-index:200; border:0; padding:0;
+  background:rgba(12,9,7,.62);
+  -webkit-backdrop-filter:blur(6px) saturate(.9); backdrop-filter:blur(6px) saturate(.9);
+  animation:scrimin .22s ease-out}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #site .termscrim{background:rgba(12,9,7,.82)}
+}
+
+/* The panel travels by transform, never by its box. Animating inset or
+   width/height would relayout the iframe on every frame, and each relayout is
+   a console re-wrap for the client inside it — thirty of them in a quarter
+   second, for a shape nobody sees. The transform is set from script (see the
+   expand handler): the panel is snapped to its final box, then transformed
+   back onto the box it started in, then released. It grows out of the hero
+   rather than appearing in the middle of the screen. */
+@keyframes scrimin{from{opacity:0} to{opacity:1}}
+#site .termscrim.is-shrinking{animation:scrimout .2s ease-in forwards}
+@keyframes scrimout{from{opacity:1} to{opacity:0}}
+
+@media (prefers-reduced-motion:reduce){
+  #site .termscrim, #site .termscrim.is-shrinking{animation:none}
+}
+
+#site .term__stage{position:relative; flex:1; min-height:0}
+#site .term__body{padding:1rem 1.15rem 1.25rem}
+#site .term__body p{margin:0}
+#site .ln--sys{color:var(--t-sys); font-size:.9em; letter-spacing:.04em; text-transform:uppercase}
+#site .ln--room{color:var(--t-hot); font-weight:600}
+#site .ln--desc{color:var(--t-dim)}
+#site .ln--exits{color:var(--t-cool)}
+#site .ln--gap{height:1.2em}
+#site .ln--in{color:#f8f1df}
+#site .ln--in::before{content:"> "; color:var(--t-hot); font-weight:600}
+#site .caret{display:inline-block; width:.6ch; height:1em; background:var(--t-hot);
+  translate:0 .18em; margin-left:.3ch; animation:blink 1.15s steps(1,end) infinite}
+@keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+#site .heroterm .step{opacity:0}
+#site .heroterm .step.is-on{opacity:1; animation:rise .3s ease-out both}
+@keyframes rise{from{opacity:0; transform:translateY(.35em)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){
+  #site .heroterm .step{opacity:1; animation:none}
+  #site .caret{animation:none}
+}
+
+/* — the real thing: Mudlet Web, embedded — */
+/* The scripted session above is the poster frame. The client is a real build
+   of @mudlet/mudlet-web (demo/) in a same-origin iframe — same origin because
+   it keeps its profile in IndexedDB, which Safari and Firefox deny to
+   third-party frames. It boots after the page has loaded and only announces
+   itself once it has printed, so a slow or blocked frame leaves the poster
+   exactly as it is. */
+/* The frame sits *under* the poster, at full opacity, from the moment it is
+   created: it renders, boots and paints behind an opaque cover, and the swap
+   is the cover fading off it. Fading the frame in over the poster instead
+   left a beat where the poster was already hidden and the frame not yet
+   opaque — a visible blink in the middle of the hero. */
+#site .herolive{position:absolute; inset:0; z-index:0}
+#site .herolive iframe{display:block; width:100%; height:100%; border:0; background:var(--t-bg)}
+
+/* Everything the page draws itself is that cover: opaque, stage-filling, and
+   above the frame until the client has printed. */
+#site .term__body,#site .term__boot{position:absolute; inset:0; overflow:hidden;
+  background:var(--t-bg)}
+#site .term__body,#site .term__boot,#site .term__cmd{z-index:1}
+/* A hard cut, not a fade. The client prints the same two lines the cover is
+   showing, so lifting it changes nothing on screen — and then the client's
+   own "*** connected ***" arrives underneath them, which is what connecting
+   actually looks like. A cross-fade here read as a web page swapping an
+   image; this reads as a client. */
+#site .heroterm.is-live .term__body,
+#site .heroterm.is-live .term__boot,
+#site .heroterm.is-live .term__cmd{display:none}
+
+/* — the boot state the live client fades out of — */
+/* While the bundle is on the wire the frame shows what a client shows: its
+   name and a connect line. The scripted session is not played at all in this
+   state, so the visitor never reads a conversation that is about to be
+   replaced by a different one — they watch one client connect once. Every
+   metric here is the embedded console's: 16px/18px padding and the same
+   type, so "connecting" sits exactly where the client's first line lands. */
+#site .term__boot{display:none; padding:1rem 1.15rem 0}
+#site .heroterm.is-booting .term__body{display:none}
+#site .heroterm.is-booting .term__boot{display:block}
+#site .heroterm.is-booting .term__cmd{display:flex}
+/* Plain console type in the system colour — exactly what dfeedTriggers puts
+   on screen from the demo package. No text-transform, tracking or size shift,
+   or the cut would jump. */
+#site .ln--boot{color:var(--t-sys)}
+/* Dots on the same 300ms beat the demo package's timer uses, so the client
+   picks the animation up where the page left it. A dot or two of phase
+   difference at the handover is indistinguishable from the animation itself —
+   a moving line is the one thing that can't show a seam. */
+#site .dots i{font-style:normal; opacity:0; animation:dot 1.2s steps(1,end) infinite}
+#site .dots i:nth-child(2){animation-delay:.3s}
+#site .dots i:nth-child(3){animation-delay:.6s}
+@keyframes dot{0%{opacity:0} 8%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){ #site .dots i{opacity:1; animation:none} }
+
+/* A stand-in for the client's command bar, so the live frame doesn't arrive
+   with a control the poster never had. Colours are the flattened values of
+   the client's own tokens over the terminal ground. */
+/* Measured off the real bar rather than eyeballed — every number here is
+   one of Mudlet Web's own (.command-bar 6px/8px padding and 6px gap, a 26px
+   field with 4px/8px/22px padding at 12px/16px, a 24px button at 11px), so
+   the cut doesn't shift the control the visitor is about to type into. The
+   prompt is a fixed 14px inline box, which is what puts the placeholder at
+   the field's 22px text origin. */
+#site .term__cmd{display:none; position:absolute; left:0; right:0; bottom:0;
+  align-items:center; gap:6px; min-height:39px; padding:6px 8px;
+  border-top:1px solid var(--t-line)}
+#site .term__cmdbox{flex:1; height:26px; padding:4px 8px; font-size:12px; line-height:16px;
+  border:1px solid var(--t-line); border-radius:6px; background:#221b15;
+  color:var(--t-dim); white-space:nowrap; overflow:hidden}
+#site .term__cmdbox::before{content:">"; display:inline-block; width:14px; color:var(--t-hot)}
+/* system-ui, because that is what the client's buttons use — in the page's
+   mono the same word measures 1.5px wider, and a wider button is a narrower
+   field, which is a visible edge shifting at the cut. */
+#site .term__cmdbtn{height:24px; padding:0 9px; line-height:22px; font-size:11px;
+  font-family:system-ui,-apple-system,sans-serif;
+  border:1px solid var(--t-line); border-radius:6px; color:var(--t-fg)}
+@media (prefers-reduced-motion:reduce){ #site .dots i{opacity:1; animation:none} }
+
+/* — section heading, with the > mark — */
+#site .head{margin-bottom:2.25rem}
+#site .head .eyebrow{display:flex; align-items:baseline; gap:.55ch;
+  font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.78rem; letter-spacing:.02em;
+  color:var(--dim); padding-bottom:.65rem; border-bottom:1px solid var(--line); margin-bottom:1.25rem}
+#site .head .eyebrow::before{content:'>'; color:var(--mark); font-weight:600}
+#site .head .eyebrow span{margin-left:auto; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase}
+#site .head h2{font-size:clamp(1.55rem,3.4vw,2.1rem); margin-bottom:.5rem}
+#site .head .sub{color:var(--dim); max-width:52ch}
+/* a head with no .sub under it would otherwise carry h2's bottom margin
+   on top of .head's own, breaking the rhythm the other sections keep */
+#site .head h2:last-child{margin-bottom:0}
+
+/* — signature: feature switcher —
+   Autoplays, so each panel has to earn its six seconds. Hovering or
+   tabbing in holds it; a click hands it over for good. */
+#site .showcase{background:var(--band); border-block:1px solid var(--line); padding-block:clamp(3rem,7vw,5rem)}
+#site .sw{display:grid; grid-template-columns:minmax(0,19rem) minmax(0,1fr); gap:clamp(1.25rem,3vw,2.5rem); align-items:start}
+@media (max-width:56rem){ #site .sw{grid-template-columns:1fr} }
+#site .swlist{display:flex; flex-direction:column; gap:.3rem}
+#site .swbtn{position:relative; overflow:hidden; display:flex; align-items:center; gap:.75rem; width:100%;
+  text-align:left; font-family:var(--body); background:transparent; border:1px solid transparent;
+  padding:.7rem .85rem; border-radius:10px; cursor:pointer; transition:.15s; white-space:nowrap}
+#site .swbtn svg{width:1.35rem; height:1.35rem; flex:none; color:var(--dim); transition:color .15s}
+#site .swbtn[aria-selected="true"] svg{color:var(--mark)}
+#site .swbtn b{font-weight:600; font-size:.95rem}
+#site .swbtn:hover{background:var(--hover)}
+#site .swbtn[aria-selected="true"]{background:var(--card); border-color:var(--line); box-shadow:0 2px 10px -4px rgba(var(--sh),.25)}
+#site .swbtn[aria-selected="true"] b{color:var(--link)}
+/* Under the switcher's breakpoint the column becomes two columns of three,
+   not a horizontal strip. The strip was the obvious move and is wrong twice
+   over: the buttons inherit width:100% from the rule above, so in a flex row
+   they shrink to six equal slivers that clip their own labels to "Wor",
+   "Fas", "100" and never overflow enough to scroll; and once that is fixed
+   the strip hides half the tabs behind a scrollbar that is a grey slab on
+   Android and an invisible overlay on iOS. Six short labels fit two-up on a
+   phone, so all six stay on screen and nothing scrolls sideways at all.
+   Placed after the .swbtn block, not up beside the .sw one, because these
+   have to outrank it. */
+@media (max-width:56rem){
+  #site .swlist{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem}
+  /* narrow tracks: the longest label has to be allowed to take a second line
+     rather than run under .swbtn's overflow:hidden */
+  #site .swbtn{white-space:normal; padding:.55rem .7rem; gap:.55rem}
+  #site .swbtn svg{width:1.2rem; height:1.2rem}
+  #site .swbtn b{font-size:.9rem; line-height:1.25}
+}
+/* dwell meter — drawn only while autoplay is actually running. It restarts
+   on its own: the animation lands on whichever button has just become
+   selected, so a fresh element gets a fresh animation. No JS reflow trick. */
+#site .sw[data-auto="on"] .swbtn[aria-selected="true"]::after{
+  content:''; position:absolute; left:0; bottom:0; height:3px; width:0;
+  background:var(--hl); opacity:.75; animation:swdwell 6s linear forwards}
+@keyframes swdwell{ from{width:0} to{width:100%} }
+#site .swpanel{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+  animation:swfade .35s ease both}
+@keyframes swfade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+#site .swpanel[hidden]{display:none}
+#site .swpanel img{width:100%; aspect-ratio:16/9; object-fit:cover; object-position:top left; border-bottom:1px solid var(--line)}
+#site .swpanel .cap{padding:1.15rem 1.35rem 1.35rem}
+#site .swpanel h3{font-size:1.12rem; margin-bottom:.4rem}
+#site .swpanel p{color:var(--dim); font-size:.95rem}
+@media (prefers-reduced-motion:reduce){ #site .swpanel{animation:none} }
+
+/* the spec line: everything the six panels have no room to say. Set as a
+   run rather than its own section, so the full list costs three lines
+   instead of a screen, and reads as the spec sheet it is. */
+#site .specs{margin-top:clamp(1.75rem,3.5vw,2.5rem); padding-top:clamp(1.4rem,2.5vw,1.8rem);
+  border-top:1px solid var(--line); font-family:var(--display); font-size:.82rem;
+  line-height:1.9; color:var(--dim)}
+#site .specs b{font-weight:600; color:var(--ink); margin-inline:.55ch 1ch}
+#site .specs .sep{color:var(--mark); opacity:.55; margin-inline:.6ch}
+
+/* — page routing: the prototype carries two views in one document — */
+#site .page{display:none}
+#site[data-page="home"] .page--home{display:block}
+#site[data-page="dl"] .page--dl{display:block}
+#site[data-page="news"] .page--news{display:block}
+#site[data-page="post"] .page--post{display:block}
+
+/* — download — */
+#site .dl{padding-block:clamp(2.5rem,6vw,4rem)}
+/* this sub is a single 77-character line, not a paragraph; the 52ch measure
+   inherited from .head broke it in two on screens with room to spare */
+#site .dl .head .sub{max-width:none}
+/* the whole point of the page: one button, already pointed at your OS */
+#site .dlmain{background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:clamp(1.4rem,3.5vw,2.1rem); display:flex; gap:clamp(1.1rem,3vw,2rem);
+  align-items:center; flex-wrap:wrap; box-shadow:0 18px 40px -28px rgba(var(--sh),.5)}
+#site .dlmain__icon{width:2.6rem; height:2.6rem; flex:none; color:var(--ink)}
+#site .dlmain__icon svg{width:100%; height:100%}
+#site .dlmain__os{flex:1; min-width:13rem}
+#site .dlmain h3{font-size:clamp(1.15rem,2.6vw,1.45rem); margin-bottom:.35rem}
+#site .dlmain .meta{font-family:var(--display); font-size:.8rem; color:var(--dim)}
+#site .dlmain .alt{margin-top:.65rem; font-size:.86rem; color:var(--dim)}
+#site .dlmain .alt[hidden]{display:none}
+#site .dlmain .alt a{color:var(--link); font-weight:500; text-decoration:none}
+#site .dlmain .alt a:hover{text-decoration:underline; text-underline-offset:3px}
+
+/* The platform mark sits in a gutter of its own and everything else in one
+   column beside it. Both measurements are named here because the wrapped
+   layout has to put the size on that same column - see the query at the end
+   of the block - and an indent typed out there would drift the day this icon
+   changes size. */
+#site .dltable{margin-top:clamp(1.75rem,3.5vw,2.5rem); border-top:1px solid var(--line);
+  --dlmark:1.2rem; --dlgut:.8rem}
+/* No row gap: the drawer below is a row of this grid and sits at zero height
+   when it is shut, so a gap here would space every row out for a panel nobody
+   has opened. What the wrapped layout needs instead is a margin, in the query
+   at the end of the block. */
+#site .dlrow{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:0 1.5rem;
+  align-items:center; padding:1rem .9rem; border-bottom:1px solid var(--line)}
+/* the row matching the visitor gets marked, so the table agrees with the button */
+#site .dlrow[data-here="true"]{background:var(--band)}
+#site .dlrow__id{display:flex; gap:var(--dlgut); align-items:flex-start}
+#site .dlrow__id > svg{width:var(--dlmark); height:var(--dlmark); flex:none; margin-top:.2rem;
+  color:var(--ink)}
+#site .dlrow b{font-family:var(--display); font-weight:600; font-size:.98rem}
+#site .dlrow .note{color:var(--dim); font-size:.86rem; margin-left:.7ch}
+/* the checksum is shortened for the eye but carries the full 64 characters,
+   so clicking copies something usable rather than the truncation */
+#site .sha{display:flex; width:fit-content; align-items:center; gap:.55ch; margin:.5rem 0 0 -.4rem;
+  padding:.15rem .4rem; font-family:var(--display); font-size:.71rem; letter-spacing:.015em;
+  color:var(--dim); background:transparent; border:1px solid transparent; border-radius:5px;
+  cursor:pointer; transition:.15s; max-width:100%}
+#site .sha:hover{color:var(--ink); background:var(--band); border-color:var(--line)}
+#site .sha svg{width:.85rem; height:.85rem; flex:none; opacity:.55; transition:opacity .15s}
+#site .sha:hover svg{opacity:1}
+#site .sha__v{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+#site .sha[data-copied]{color:var(--mark); border-color:var(--mark); background:transparent}
+/* when the clipboard is unavailable the value is revealed to select by hand */
+#site .sha[data-revealed] .sha__v{white-space:normal; word-break:break-all}
+#site .sha[data-revealed]{cursor:text; user-select:text}
+#site .dlrow .size{font-family:var(--display); font-size:.82rem; color:var(--dim); white-space:nowrap}
+#site .dlrow .btn{font-size:.84rem; padding:.42rem .95rem}
+/* ── the hand-off, one row at a time ──────────────────────────────────
+   The build is not chosen twice. A row already names a platform, carries
+   its size and its checksum and links its installer, so the way to ask
+   for that build's code is a button in that row - not a select under the
+   table restating four rows the visitor is looking at.
+
+   Each row keeps a drawer, shut at zero height, and the icons above it
+   choose which face it shows. Rows are independent: two open drawers is
+   a visitor comparing two builds, not a mistake to correct. */
+#site .dlrow__acts{display:flex; align-items:center; gap:.45rem}
+/* Square, quiet, and the same height as the ghost button beside them, so
+   the three read as one control group rather than as decoration that
+   drifted into the row. */
+#site .dlact{display:grid; place-items:center; width:2rem; height:2rem; flex:none;
+  color:var(--dim); background:transparent; border:1px solid var(--line);
+  border-radius:8px; cursor:pointer; transition:.15s}
+#site .dlact[hidden]{display:none}   /* no script, no drawer to open */
+#site .dlact svg{width:1.05rem; height:1.05rem}
+#site .dlact:hover{color:var(--ink); background:var(--band)}
+/* The open one stays lit, because its drawer is the only thing on screen
+   saying which button opened it. */
+#site .dlact[aria-expanded="true"]{color:var(--on-accent); background:var(--orange);
+  border-color:var(--orange)}
+
+/* The drawer spans the row it belongs to, and slides on a grid track going
+   0fr -> 1fr. That animates to the pane's own height with nobody measuring
+   anything: no max-height to guess at, and none to go stale when the pane
+   grows a line it did not have - which the mail form does, every time it
+   reports back. The two faces are not the same height either, so swapping
+   between them animates for free.
+
+   The inner box is what clips; it also goes invisible when shut, which is
+   what keeps a closed drawer's button and field out of the tab order. */
+#site .dlmore{grid-column:1/-1; display:grid; grid-template-rows:0fr;
+  transition:grid-template-rows .28s cubic-bezier(.4,0,.2,1)}
+#site .dlmore[data-open="true"]{grid-template-rows:1fr}
+/* The side padding is room for a focus ring, and the negative margin puts
+   the content back where it was: what clips has to be the box the track
+   sizes, so anything drawn outside a control at the drawer's left edge -
+   the outline on the mail form's field, which starts there - is cut off
+   without it. Vertically the clip stays tight, which is the whole point. */
+#site .dlmore__in{overflow:hidden; padding:0 4px; margin:0 -4px;
+  visibility:hidden; transition:visibility 0s .28s}
+#site .dlmore[data-open="true"] .dlmore__in{visibility:visible; transition:visibility 0s}
+@media (prefers-reduced-motion:reduce){
+  #site .dlmore{transition:none}
+  #site .dlmore__in{transition:none}
+}
+/* One face at a time: the icons swap what the open drawer is showing
+   rather than each opening a drawer of its own. */
+#site .dlpane{display:none; padding:1.1rem 0 .35rem}
+#site .dlmore[data-face="qr"] .dlpane--qr{display:grid}
+#site .dlpane p{color:var(--dim); font-size:.88rem; max-width:52ch; margin:0}
+#site .dlpane__acts{display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; margin-top:.8rem}
+#site .dlpane__acts .btn{font-size:.84rem; padding:.42rem .95rem}
+
+/* The code is drawn dark on white whatever the theme is doing: a QR in
+   theme colours is one a phone has to work at, and the panel can afford
+   a white card in the middle of it. */
+#site .dlpane--qr{grid-template-columns:auto minmax(0,1fr); gap:1.15rem; align-items:center}
+#site .dlqr{width:7.4rem; height:7.4rem; padding:.4rem; border-radius:10px;
+  background:#fff; border:1px solid var(--line)}
+#site .dlqr svg{display:block; width:100%; height:100%}
+/* The link in full, because a code nobody can scan is still a link
+   somebody can read. It wraps rather than scrolls: this is a URL, and
+   the halves of a wrapped one are still usable. */
+#site .dlurl{font-family:var(--display); font-size:.78rem; color:var(--dim);
+  word-break:break-all}
+
+/* Narrow, the three controls no longer fit beside a platform name: the name
+   takes the width to itself, and what you can do with the build - its size,
+   the two hand-off buttons, the download - lines up on a row underneath.
+   The size is indented past the platform mark so that it, the name and the
+   checksum share one left edge; left where the grid puts it, it would sit
+   under the mark instead and give the row two ragged columns. */
+@media (max-width:40rem){
+  #site .dlrow{grid-template-columns:minmax(0,1fr) auto}
+  #site .dlrow__id{grid-column:1/-1; grid-row:1}
+  #site .dlrow .size{grid-column:1; grid-row:2; align-self:center; margin-top:.7rem;
+    margin-left:calc(var(--dlmark) + var(--dlgut))}
+  #site .dlrow__acts{grid-column:2; grid-row:2; margin-top:.7rem}
+  #site .dlmore{grid-row:3}
+  #site .dlpane--qr{grid-template-columns:1fr; justify-items:center; text-align:center}
+  #site .dlpane p{max-width:none}
+  #site .dlpane__acts{justify-content:center}
+}
+
+/* 17rem lands three per row, so five cards break 3+2 rather than
+   stranding the fifth alone on a second row */
+#site .ways{display:grid; gap:.85rem; grid-template-columns:repeat(auto-fit,minmax(17rem,1fr))}
+#site .way{background:var(--card); border:1px solid var(--line); border-radius:12px;
+  padding:1.15rem 1.25rem 1.25rem}
+#site .way > svg{width:1.3rem; height:1.3rem; color:var(--mark); margin-bottom:.7rem}
+#site .way h3{font-size:.98rem; margin-bottom:.4rem}
+#site .way p{font-size:.88rem; line-height:1.65; color:var(--dim)}
+#site .way a{color:var(--link); font-weight:500; text-decoration:none}
+#site .way a:hover{text-decoration:underline; text-underline-offset:3px}
+/* two columns once there is room for two, so the clone line fits on one */
+@media (min-width:40rem){ #site .way--wide{grid-column:span 2} }
+/* and never wrap it: scroll instead, on the narrow screens that still cannot */
+#site .way code{display:block; margin-top:.6rem; padding:.5rem .6rem; background:var(--band);
+  white-space:nowrap; overflow-x:auto;
+  border:1px solid var(--line); border-radius:6px; font-family:var(--display);
+  font-size:.72rem; color:var(--ink); word-break:break-all}
+
+/* said once, not once per platform tab as the current page does */
+#site .calls{display:grid; gap:.85rem; grid-template-columns:repeat(auto-fit,minmax(19rem,1fr))}
+#site .call{background:var(--band); border:1px solid var(--line); border-left:3px solid var(--mark);
+  border-radius:0 12px 12px 0; padding:1.15rem 1.3rem}
+#site .call h3{font-size:.98rem; margin-bottom:.35rem; display:flex; align-items:center; gap:.5rem}
+#site .call h3 svg{width:1.15rem; height:1.15rem; color:var(--mark); flex:none}
+#site .call p{font-size:.88rem; line-height:1.65; color:var(--dim)}
+#site .call a{color:var(--link); font-weight:500; text-decoration:none}
+#site .call a:hover{text-decoration:underline; text-underline-offset:3px}
+
+#site .fineprint{margin-top:clamp(1.75rem,3.5vw,2.5rem); padding-top:1.4rem;
+  border-top:1px solid var(--line); font-size:.79rem; line-height:1.75;
+  color:var(--dim); max-width:66ch}
+
+/* — games: modelled on Mudlet's own profile picker — */
+#site .games{padding-block:clamp(3rem,7vw,4.5rem)}
+#site .pgrid{display:grid; gap:.7rem; grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr))}
+#site .pcard{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:.85rem;
+  display:flex; flex-direction:column; gap:.6rem; text-decoration:none; transition:.15s}
+#site .pcard:hover{border-color:var(--accent2); box-shadow:0 8px 20px -12px rgba(var(--sh),.45)}
+#site .plogo{height:3.1rem; display:grid; place-items:center; background:var(--cream);
+  border-radius:7px; overflow:hidden; padding:.35rem}
+/* min-*:0 releases the grid item's automatic minimum size, which for an image
+   is its intrinsic pixels and outranks max-height. These tiles are narrow
+   enough that width binds first, so nothing overflows today — but a wider tile
+   with the same rule does, which is exactly what happened to .rgame__logo in
+   the theme's blocks.css. max-* only shrinks, so small logos still draw at
+   their own size rather than being upscaled to fill the tile. */
+#site .plogo img{min-width:0; min-height:0; max-height:100%; max-width:100%;
+  width:auto; height:auto; object-fit:contain}
+#site .pcard b{font-size:.88rem; font-weight:600; line-height:1.3}
+#site .pcard span{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.72rem; color:var(--dim);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+#site .pmore{background:var(--band); border-style:dashed; align-items:center; justify-content:center;
+  text-align:center; gap:.2rem}
+#site .pmore b{font-size:1.15rem; font-family:var(--display); color:var(--link)}
+#site .pmore span{font-family:var(--body); white-space:normal}
+
+/* — prose — */
+#site .sec{padding-block:clamp(3rem,7vw,4.5rem)}
+#site .split{display:grid; grid-template-columns:repeat(auto-fit,minmax(19rem,1fr)); gap:2.75rem}
+#site .split h2{font-size:clamp(1.4rem,3vw,1.85rem); margin-bottom:1rem}
+#site .split p{color:var(--dim); margin-bottom:1rem}
+#site .quote{background:var(--band); border-left:3px solid var(--accent2); border-radius:0 10px 10px 0;
+  padding:1.3rem 1.4rem; font-size:.97rem; line-height:1.65; color:var(--ink)}
+#site .quote cite{display:block; margin-top:.6rem; font-style:normal;
+  font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.75rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--dim)}
+
+/* — news — */
+#site .newsband{background:var(--band); border-block:1px solid var(--line); padding-block:clamp(3rem,6vw,4.5rem)}
+#site .ncards{display:grid; grid-template-columns:repeat(auto-fit,minmax(17rem,1fr)); gap:1.1rem}
+#site .ncard{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.3rem 1.35rem;
+  text-decoration:none; display:flex; flex-direction:column; gap:.5rem; transition:.15s}
+#site .ncard:hover{transform:translateY(-2px); box-shadow:0 14px 30px -18px rgba(var(--sh),.5)}
+#site .ncard .tag{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.7rem;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--link); font-weight:600}
+#site .ncard h3{font-size:1.05rem}
+#site .ncard p{font-size:.9rem; color:var(--dim); line-height:1.55}
+#site .ncard time{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.76rem;
+  color:var(--dim); margin-top:auto}
+
+/* — hop in: the v1 closing section, kept. Dark, so it reads as one
+     outro zone with the footer beneath it. Orange lifts to --ember
+     here because #c44400 is too dark to sit on the terminal ground. — */
+#site .hopin{background:var(--ink-d); color:var(--on-d);
+  padding-block:clamp(3rem,7vw,4.5rem); border-bottom:1px solid var(--line-d)}
+#site .hopin .eyebrow{color:var(--on-d-dim); border-bottom-color:var(--line-d)}
+#site .hopin .eyebrow::before{color:var(--ember)}
+#site .hopin h2{color:var(--on-d)}
+#site .hopin .sub{color:var(--on-d-dim)}
+#site .hops{display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(15.5rem,1fr))}
+#site .hop{border:1px solid var(--line-d); border-radius:12px; padding:1.4rem 1.35rem 1.5rem;
+  background:var(--ink-d2); display:flex; flex-direction:column; gap:.65rem; align-items:flex-start}
+#site .hop > svg{width:1.4rem; height:1.4rem; color:var(--ember)}
+#site .hop h3{font-size:1.02rem; color:var(--on-d)}
+#site .hop p{font-size:.93rem; line-height:1.65; color:var(--on-d-dim); flex:1}
+#site .hop__go{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.85rem; font-weight:500;
+  text-decoration:none; color:var(--ember); display:inline-flex; gap:.55ch; align-items:baseline}
+#site .hop__go::before{content:'>'; color:var(--ember); opacity:.7}
+#site .hop__go:hover{text-decoration:underline; text-underline-offset:3px}
+
+/* — footer: the v1 terminal footer, kept — */
+#site .foot{background:var(--ink-d); color:var(--on-d-dim);
+  font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.82rem; line-height:1.7}
+#site .foot .w{padding-block:3rem 0}
+#site .foot__grid{display:flex; gap:2.5rem 3.25rem; flex-wrap:wrap; margin-bottom:2.5rem}
+#site .foot__col{display:flex; flex-direction:column; gap:.45rem}
+#site .foot__col b{color:var(--on-d); font-weight:500; font-size:.72rem;
+  letter-spacing:.11em; text-transform:uppercase; margin-bottom:.35rem}
+#site .foot__col a{text-decoration:none; display:flex; align-items:center; gap:.55rem; width:fit-content}
+#site .foot__col a:hover{color:var(--ember)}
+#site .foot__col svg{width:1rem; height:1rem; flex:none; opacity:.75}
+#site .foot__col a:hover svg{opacity:1}
+#site .foot__brand{display:flex; align-items:center; gap:.5rem; color:var(--on-d);
+  font-size:1rem; font-weight:600; margin-bottom:.85rem}
+#site .foot__brand img{width:1.5rem; height:1.5rem}
+#site .foot__blurb{max-width:26ch; font-size:.79rem}
+#site .foot__end{display:flex; gap:1.2rem; flex-wrap:wrap; align-items:center;
+  border-top:1px solid var(--line-d); padding-block:1.4rem 3rem; font-size:.76rem}
+#site .foot__end a{text-decoration:none}
+#site .foot__end a:hover{color:var(--ember)}
+#site .langs{margin-left:auto; display:flex; gap:.8rem}
+#site .langs a[aria-current]{color:var(--ember)}
+
+@media (prefers-reduced-motion:reduce){ #site .ncard:hover{transform:none} }
+
+/* the nav gains a current state now that a nav item leads somewhere */
+#site .topnav a[aria-current]{color:var(--ink); background:var(--band)}
+
+/* ── archive ──────────────────────────────────────────────────────── */
+#site .archive{padding-block:clamp(2.5rem,6vw,4rem)}
+
+/* The newest post gets the room the list cannot give it — on a release day
+   it is the one thing anyone came for. Its right rail is the release itself
+   rather than a second helping of prose: the numbers off the changelog, set
+   in the console face, so the card says "4.22.0 shipped" before it is read. */
+#site .feat{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,14rem);
+  gap:clamp(1.5rem,4vw,2.75rem); align-items:center; text-decoration:none;
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:clamp(1.4rem,3.5vw,2.1rem); transition:border-color .15s, box-shadow .15s;
+  box-shadow:0 18px 40px -28px rgba(var(--sh),.5)}
+#site .feat:hover{border-color:var(--accent2); box-shadow:0 22px 46px -26px rgba(var(--sh),.55)}
+@media (max-width:52rem){ #site .feat{grid-template-columns:1fr} }
+#site .feat[hidden]{display:none}
+#site .feat__lead{min-width:0}
+#site .feat h3{font-size:clamp(1.3rem,3vw,1.75rem); margin:.6rem 0 .7rem; transition:color .15s}
+#site .feat:hover h3{color:var(--link)}
+#site .feat p{color:var(--dim); font-size:.98rem; line-height:1.65; max-width:52ch}
+#site .feat__m{display:flex; align-items:center; gap:.75ch; flex-wrap:wrap; margin-top:1rem;
+  font-family:var(--display); font-size:.78rem; color:var(--dim)}
+#site .feat__m .who{color:var(--ink); font-weight:600}
+#site .feat__m .dot{opacity:.4}
+/* the release, as a spec block */
+#site .relbox{border:1px solid var(--line); border-radius:11px; background:var(--band);
+  padding:1rem 1.1rem; font-family:var(--display)}
+#site .relbox b{display:block; font-size:1.5rem; font-weight:600; letter-spacing:-.03em; color:var(--link)}
+#site .relbox .when{font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--dim)}
+#site .relbox dl{display:grid; grid-template-columns:auto 1fr; gap:.15rem .8ch; margin:.85rem 0 0;
+  padding-top:.8rem; border-top:1px solid var(--line); font-size:.78rem}
+#site .relbox dt{color:var(--ink); font-weight:600; text-align:right}
+#site .relbox dd{margin:0; color:var(--dim)}
+
+/* ── the archive grid ──────────────────────────────────────────────
+   List and rail, with the featured post spanning full width above them.
+   The rail area spans both rows so the sticky sidebar has a containing
+   block to travel down — the standard grid recipe, and the reason the
+   pager is a grid item rather than a sibling below the grid. */
+#site .arch{display:grid; grid-template-columns:minmax(0,1fr) 15.5rem;
+  grid-template-areas:"list rail" "pager rail";
+  column-gap:clamp(1.75rem,3.5vw,3rem); align-items:start;
+  margin-top:clamp(2rem,4vw,2.75rem)}
+#site .plist{grid-area:list}
+#site .pager{grid-area:pager}
+#site .rail{grid-area:rail; position:sticky; align-self:start;
+  top:4.6rem;
+  display:flex; flex-direction:column; gap:1.6rem}
+/* The chip row is the narrow-screen half of the category filter, so it is off
+   by default and switched on in the query below — declared here, ahead of that
+   query, because a later same-specificity display:none would win over it. */
+#site .filters{display:none; align-items:center; gap:.4rem; flex-wrap:wrap;
+  padding-bottom:1.1rem; border-bottom:1px solid var(--line)}
+
+/* Below the two-column threshold the rail drops under the list, so the
+   category filter moves back into the chip row above it — one control,
+   never two on screen at once, and both driven by the same handler. */
+@media (max-width:68rem){
+  #site .arch{grid-template-columns:1fr; grid-template-areas:"filters" "list" "pager" "rail";
+    row-gap:1.75rem}
+  #site .filters{display:flex; grid-area:filters}
+  #site .rail__cats{display:none}
+  /* Stacked, the remaining panels land a column of links directly on top of
+     the footer's column of links. Laid across instead, the rail reads as a
+     closing strip and stays a third of the height. */
+  #site .rail{position:static; margin-top:1.25rem; padding-top:1.9rem;
+    border-top:1px solid var(--line); display:grid; align-items:start;
+    grid-template-columns:repeat(auto-fit,minmax(12rem,1fr)); gap:1.6rem 2.25rem}
+}
+
+/* ── the rail ──────────────────────────────────────────────────────
+   The original page carried Get Help, Recent Posts and Categories here.
+   Recent Posts is gone: its three entries are the first three rows of
+   the list beside it. What replaces it is the thing 178 posts across
+   eighteen years actually need — a way to jump to a year. */
+#site .rpanel > b{display:block; font-family:var(--display); font-size:.72rem;
+  font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:var(--dim);
+  padding-bottom:.55rem; margin-bottom:.7rem; border-bottom:1px solid var(--line)}
+#site .catlist{display:flex; flex-direction:column; gap:.05rem; margin-inline:-.5rem}
+#site .cat{display:flex; align-items:baseline; gap:.7ch; width:100%; text-align:left;
+  font-family:var(--body); font-size:.9rem; color:var(--dim); background:transparent;
+  border:0; padding:.38rem .5rem; border-radius:7px; cursor:pointer; transition:.13s}
+/* the same dot the list's tags carry, so the rail and the rows read as one system */
+#site .cat::before{content:''; width:.42rem; height:.42rem; border-radius:50%; flex:none;
+  background:currentColor; opacity:.4; translate:0 -.15em}
+#site .cat[data-cat="release"]::before{background:var(--mark); opacity:1}
+#site .cat[data-cat="informational"]::before{background:var(--teal); opacity:1}
+#site .cat[data-cat="press"]::before{background:#8a9a5b; opacity:1}
+#site .cat .n{margin-left:auto; font-family:var(--display); font-size:.72rem; opacity:.65}
+#site .cat:hover{background:var(--band); color:var(--ink)}
+#site .cat[aria-pressed="true"]{background:var(--band); color:var(--link); font-weight:600}
+
+#site .rsel{width:100%; font-family:var(--display); font-size:.84rem; color:var(--ink);
+  background:var(--card); border:1px solid var(--line); border-radius:8px;
+  padding:.5rem .6rem; cursor:pointer}
+#site .rsel:hover{border-color:var(--accent2)}
+
+#site .rlinks{display:flex; flex-direction:column; gap:.55rem; font-size:.89rem}
+#site .rlinks a{display:flex; gap:.6ch; color:var(--dim); text-decoration:none}
+#site .rlinks a::before{content:'>'; font-family:var(--display); color:var(--mark); opacity:.5}
+#site .rlinks a:hover{color:var(--link)}
+#site .rlinks a:hover::before{opacity:1}
+
+/* ── the chips themselves (see #site .filters above) ─────────────────── */
+#site .chip{display:inline-flex; align-items:baseline; gap:.6ch; font-family:var(--display);
+  font-size:.8rem; font-weight:500; color:var(--dim); background:transparent;
+  border:1px solid var(--line); border-radius:999px; padding:.34rem .85rem; cursor:pointer;
+  transition:.15s}
+#site .chip b{font-weight:600; font-size:.72rem; opacity:.65}
+#site .chip:hover{color:var(--ink); background:var(--band)}
+#site .chip[aria-pressed="true"]{background:var(--orange); border-color:var(--orange); color:var(--on-accent)}
+#site .chip[aria-pressed="true"] b{opacity:.75}
+/* ── the list ──────────────────────────────────────────────────────
+   Rows on a date rail, not a card grid. The homepage already spends a
+   grid of cards on three posts; an archive of 178 wants a log, and the
+   date is what people scan it by. */
+#site .pyear{display:flex; align-items:center; gap:1.1ch; margin:2.25rem 0 .25rem;
+  font-family:var(--display); font-size:.75rem; font-weight:600; letter-spacing:.14em; color:var(--dim)}
+#site .pyear::before{content:'>'; color:var(--mark)}
+#site .pyear::after{content:''; flex:1; height:1px; background:var(--line)}
+#site .pyear[hidden]{display:none}
+/* the rail's year jump scrolls to these, and the header is sticky over them */
+#site .pyear{scroll-margin-top:5.25rem}
+/* the first heading sets the top of the list, which has to line up with the
+   top of the rail beside it */
+#site .plist > .pyear:first-child{margin-top:0}
+
+#site .prow{display:grid; grid-template-columns:4.75rem minmax(0,1fr) auto; gap:.35rem 1.4rem;
+  align-items:baseline; padding:1.1rem .85rem; border-bottom:1px solid var(--line);
+  text-decoration:none; transition:background .15s}
+#site .prow:hover{background:var(--band)}
+#site .prow[hidden]{display:none}
+#site .prow__d{grid-row:1 / span 3; font-family:var(--display); font-size:.8rem; color:var(--dim);
+  padding-top:.1rem}
+#site .prow h3{font-size:1.02rem; transition:color .15s}
+/* the mark rides in from the rail on hover — the same > the eyebrows use */
+#site .prow h3::before{content:'>'; color:var(--mark); opacity:0; margin-left:-1.1ch;
+  margin-right:.35ch; transition:opacity .15s}
+#site .prow:hover h3{color:var(--link)}
+#site .prow:hover h3::before{opacity:1}
+#site .prow p{grid-column:2; font-size:.89rem; line-height:1.6; color:var(--dim);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+#site .prow__m{grid-column:2; margin-top:.3rem; font-family:var(--display); font-size:.75rem; color:var(--dim)}
+#site .prow__m .dot{opacity:.4; margin-inline:.6ch}
+#site .prow .tagpill{grid-column:3; grid-row:1; justify-self:end}
+@media (max-width:46rem){
+  #site .prow{grid-template-columns:1fr auto; gap:.3rem .9rem}
+  #site .prow__d{grid-row:1; grid-column:1; font-size:.74rem}
+  #site .prow h3,#site .prow p,#site .prow__m{grid-column:1 / -1}
+  #site .prow h3::before{display:none}
+  #site .prow .tagpill{grid-row:1; grid-column:2}
+}
+
+/* Category, as a dot and a word. Colour carries the category but never the
+   meaning — the label is always there, and the dot is decorative, which is
+   what lets it use the teal and the olive at their real values. */
+#site .tagpill{display:inline-flex; align-items:center; gap:.6ch; font-family:var(--display);
+  font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); white-space:nowrap}
+#site .tagpill::before{content:''; width:.42rem; height:.42rem; border-radius:50%;
+  background:currentColor; opacity:.5; flex:none}
+#site .tagpill[data-cat="release"]::before{background:var(--mark); opacity:1}
+#site .tagpill[data-cat="informational"]::before{background:var(--teal); opacity:1}
+#site .tagpill[data-cat="press"]::before{background:#8a9a5b; opacity:1}
+
+#site .pempty{padding:3rem .85rem; text-align:center; color:var(--dim); font-size:.92rem}
+#site .pempty[hidden]{display:none}
+
+/* ── pagination ───────────────────────────────────────────────────── */
+#site .pager{display:flex; align-items:center; gap:.3rem; flex-wrap:wrap; margin-top:2.25rem}
+#site .pager a,#site .pager .gap{display:grid; place-items:center; min-width:2.15rem; height:2.15rem;
+  padding-inline:.55rem; font-family:var(--display); font-size:.85rem; color:var(--dim);
+  text-decoration:none; border-radius:8px}
+#site .pager a:hover{background:var(--band); color:var(--ink)}
+#site .pager a[aria-current]{background:var(--orange); color:var(--on-accent); font-weight:600}
+#site .pager a[aria-disabled="true"]{opacity:.35; pointer-events:none}
+#site .pager .count{margin-left:auto; font-family:var(--display); font-size:.78rem; color:var(--dim)}
+@media (max-width:46rem){ #site .pager .count{margin-left:0; width:100%; order:-1; margin-bottom:.5rem} }
+
+/* ── single post ──────────────────────────────────────────────────── */
+/* The article column keeps its 53rem reading measure; the rail takes the
+   width beside it rather than the article growing into it. */
+#site .post{padding-block:clamp(2rem,5vw,3rem)}
+#site .postgrid{display:grid; grid-template-columns:minmax(0,1fr) 15.5rem;
+  column-gap:clamp(1.75rem,4vw,3.5rem); align-items:start}
+#site .postmain{min-width:0; max-width:53rem}
+
+#site .crumbs{display:flex; align-items:baseline; gap:.6ch; flex-wrap:wrap;
+  font-family:var(--display); font-size:.78rem; color:var(--dim); margin-bottom:1.6rem}
+#site .crumbs::before{content:'>'; color:var(--mark); font-weight:600}
+#site .crumbs a{text-decoration:none}
+#site .crumbs a:hover{color:var(--link)}
+#site .crumbs .sep{opacity:.4}
+#site .crumbs .here{color:var(--ink)}
+
+#site .phead{padding-bottom:1.6rem; border-bottom:1px solid var(--line); margin-bottom:2rem}
+#site .phead__top{display:flex; align-items:center; gap:1ch; flex-wrap:wrap}
+#site .verpill{font-family:var(--display); font-size:.7rem; font-weight:600; letter-spacing:.06em;
+  color:var(--link); background:var(--band); border:1px solid var(--line);
+  border-radius:999px; padding:.16rem .6rem}
+#site .phead h1{font-size:clamp(1.7rem,4vw,2.45rem); margin:.85rem 0 1.1rem}
+#site .byline{display:flex; align-items:center; gap:.75ch; flex-wrap:wrap;
+  font-family:var(--display); font-size:.8rem; color:var(--dim)}
+#site .byline .who{color:var(--ink); font-weight:600}
+#site .byline .dot{opacity:.4}
+#site .avatar{width:2rem; height:2rem; flex:none; margin-right:.35ch; border-radius:50%;
+  display:grid; place-items:center; font-size:.68rem; font-weight:600; letter-spacing:.02em;
+  color:var(--link); background:var(--band); border:1px solid var(--line)}
+
+/* ── the outline ──────────────────────────────────────────────────
+   Contents in the rail, where the rail's stickiness carries them: on a post
+   whose changelog runs three screens, an outline that scrolled away with the
+   lede was navigation you could only reach before you needed it.
+
+   The copy inside .prose is the narrow-screen half — off by default and
+   switched on under the breakpoint where the rail is gone, the same deal
+   .pactions strikes. One outline at any width, never two. It sits after the
+   lede rather than before it, so the post still opens with a sentence about
+   itself rather than with its own navigation. */
+#site .prose .outline{display:none; margin-block:1.9rem; padding:1.1rem 1.25rem 1.2rem;
+  background:var(--band); border:1px solid var(--line); border-radius:12px}
+#site .outline > b{display:block; font-family:var(--display); font-size:.72rem;
+  font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:var(--dim);
+  padding-bottom:.55rem; margin-bottom:.55rem; border-bottom:1px solid var(--line)}
+#site .olist{display:grid; grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));
+  gap:.1rem .9rem; counter-reset:o}
+/* The rail is 15.5rem, narrower than one auto-fit track asks for: say one
+   column rather than leave the grid to overflow its panel. */
+#site .outline--rail .olist{grid-template-columns:1fr}
+/* In the article these sit inside .prose, whose link rule matches them at
+   the same specificity and would win on source order — hence .outline in the
+   selector rather than .olist alone, which also lets one rule dress the rail
+   copy. These are navigation, not body links: no underline, no accent. */
+#site .outline .olist a{display:flex; align-items:baseline; gap:.85ch; counter-increment:o;
+  margin-inline:-.5rem; padding:.4rem .5rem; border-radius:7px; font-size:.93rem;
+  line-height:1.45; font-weight:400; color:var(--ink); text-decoration:none;
+  transition:background .13s, color .13s}
+#site .outline .olist a::before{content:counter(o,decimal-leading-zero); flex:none;
+  font-family:var(--display); font-size:.74rem; font-weight:600; color:var(--mark)}
+#site .outline .olist a:hover{background:var(--card); color:var(--link)}
+
+/* ── prose ────────────────────────────────────────────────────────
+   Body copy is --ink here, not --dim: this is the one place on the site
+   where someone reads six hundred words rather than scanning forty. */
+#site .prose{font-size:1.02rem; line-height:1.75; color:var(--ink)}
+#site .prose > * + *{margin-top:1.2rem}
+#site .prose .lede{font-size:1.14rem; line-height:1.65}
+/* the outline jumps to these, and the header is sticky over them */
+#site .prose h2{font-size:clamp(1.22rem,2.6vw,1.45rem); margin-top:2.6rem;
+  scroll-margin-top:5.25rem}
+#site .prose h3{font-size:1.06rem; margin-top:1.9rem}
+#site .prose h2 + p,#site .prose h3 + p{margin-top:.7rem}
+#site .prose a{color:var(--link); font-weight:500; text-decoration:underline;
+  text-underline-offset:3px; text-decoration-thickness:1px}
+#site .prose a:hover{color:var(--orange)}
+#site .prose ul,#site .prose ol{margin-left:0; padding-left:1.5rem; list-style:none}
+#site .prose ol{counter-reset:n}
+#site .prose li{position:relative; margin-top:.5rem}
+#site .prose ul li::before{content:'\2013'; position:absolute; left:-1.5rem; color:var(--mark)}
+#site .prose ol li{counter-increment:n}
+#site .prose ol li::before{content:counter(n) '.'; position:absolute; left:-1.5rem;
+  font-family:var(--display); font-size:.85em; color:var(--mark)}
+#site .prose code{font-family:var(--display); font-size:.88em; background:var(--band);
+  border:1px solid var(--line); border-radius:5px; padding:.1em .4em}
+#site .prose figure{margin-block:1.9rem}
+/* Screenshots arrive at whatever shape the author took them in. A width:100%
+   rule turns a portrait one into a two-screen-tall wall, so the cap is on the
+   height and the image centres itself in the measure instead. */
+#site .prose figure img{max-width:100%; max-height:28rem; width:auto; margin-inline:auto;
+  border:1px solid var(--line); border-radius:12px; background:var(--band)}
+#site .prose figcaption{margin-top:.7rem; font-family:var(--display); font-size:.76rem;
+  line-height:1.6; color:var(--dim)}
+#site .prose figcaption::before{content:'>'; color:var(--mark); margin-right:.6ch}
+#site .prose blockquote{margin-block:1.6rem; padding:1.15rem 1.3rem; background:var(--band);
+  border-left:3px solid var(--accent2); border-radius:0 10px 10px 0; font-size:.97rem}
+#site .prose blockquote p{margin:0}
+
+/* ── changelog ────────────────────────────────────────────────────
+   The one block on the page that stays dark in both themes, for the same
+   reason the hero terminal does: this is console output, and Mudlet's own
+   changelog is read in a console. Issue numbers are links, in the terminal
+   palette's cool, so a wall of fixes still has a way in. */
+#site .chlog{--c-bg:#1e1813; --c-bar:#2b231b; --c-line:#3a2f24; --c-fg:#e8dcc6;
+  --c-dim:#9c8f7c; --c-hot:#f56c27; --c-cool:#82c0c7; --c-sys:#8a9a5b;
+  margin-block:1.9rem; background:var(--c-bg); border:1px solid var(--c-line);
+  border-radius:12px; overflow:hidden; color:var(--c-fg);
+  font-family:var(--display); font-size:.83rem; line-height:1.75}
+#site .chlog__bar{display:flex; align-items:center; gap:.6ch; padding:.5rem .9rem;
+  background:var(--c-bar); border-bottom:1px solid var(--c-line);
+  font-size:.7rem; letter-spacing:.04em; color:var(--c-dim)}
+#site .chlog__bar .mk{color:var(--c-hot)}
+#site .chlog__bar .n{margin-left:auto}
+#site .chlog__body{margin:0; padding:1rem 1.1rem 1.15rem; overflow-x:auto}
+#site .chlog dt{margin-top:1.1rem; font-size:.7rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--c-sys)}
+#site .chlog dt:first-child{margin-top:0}
+#site .chlog dd{position:relative; margin:0 0 0 1.7ch; color:var(--c-dim)}
+#site .chlog dd::before{content:'-'; position:absolute; left:-1.7ch; color:var(--c-hot); opacity:.75}
+#site .chlog a{color:var(--c-cool); text-decoration:none}
+#site .chlog a:hover{text-decoration:underline; text-underline-offset:3px}
+
+/* Its scrollbar, too. The body scrolls — sideways here, and down the four
+   hundred lines of a real changelog in WordPress, which caps its height — and
+   left alone the browser draws that bar in the page's colours, so a light rail
+   runs down the dark box. Paint it in the terminal palette instead: thin, the
+   header bar as its track, a thumb a shade above the border. The standard pair
+   is set on the widget and inherits to whatever inside it scrolls; the -webkit-
+   rules say the same thing for Safari, which has neither of them (Chrome
+   ignores them once scrollbar-color is set). */
+#site .chlog{scrollbar-width:thin; scrollbar-color:#5b4a3a var(--c-bar)}
+#site .chlog__body::-webkit-scrollbar{width:11px; height:11px}
+#site .chlog__body::-webkit-scrollbar-track{background:var(--c-bar)}
+#site .chlog__body::-webkit-scrollbar-thumb{background:#5b4a3a; border-radius:99px;
+  border:3px solid var(--c-bar)}
+#site .chlog__body::-webkit-scrollbar-thumb:hover{background:#75604b}
+
+/* ── contributors ────────────────────────────────────────────────
+   Who the changelog above is by. Same source — the compare between
+   two tags knows the author of every commit in it — so this sits
+   directly under it, wearing the same bar.
+
+   Light, though, where the changelog is dark. That block is console
+   output and reads like it; this one is a list of people, and a
+   second dark slab would turn the pair into one undifferentiated
+   wall. The chips carry the avatar where there is one and the
+   person's initials where there is not, so a contributor GitHub
+   could not match to an account still gets a face-shaped space
+   rather than a gap. */
+#site .credits{margin-block:1.9rem; background:var(--card); border:1px solid var(--line);
+  border-radius:12px; overflow:hidden}
+#site .credits__bar{display:flex; align-items:center; gap:.6ch; padding:.45rem .9rem;
+  background:var(--band); border-bottom:1px solid var(--line);
+  font-family:var(--display); font-size:.7rem; letter-spacing:.04em; color:var(--dim)}
+#site .credits__bar .mk{color:var(--mark)}
+#site .credits__bar .n{margin-left:auto}
+/* Doubled class, not for fun: this block lives inside .prose on a post, and
+   #site .prose ul / .prose ul li::before are more specific than a single class
+   would be. Prose hangs an en dash off every list item and indents the list;
+   these are chips in a row, not a list of points. */
+#site .credits .credits__body{list-style:none; margin:0; padding:.6rem .65rem;
+  display:flex; flex-wrap:wrap; gap:.3rem}
+#site .credits .credits__body li{margin:0; padding:0; position:static}
+#site .credits .credits__body li::before{content:none}
+/* Borderless: at twenty-odd people a ring around every chip is twenty-odd
+   more lines than the block needs, and the avatar already gives each one an
+   edge. The hover tint is what marks a chip as a link. */
+#site .credits__p{display:flex; align-items:center; gap:.4rem;
+  padding:.12rem .5rem .12rem .12rem; border-radius:999px;
+  text-decoration:none; transition:background .15s}
+#site a.credits__p:hover{background:var(--band)}
+#site .credits__av{width:1.25rem; height:1.25rem; flex:none; border-radius:50%; overflow:hidden;
+  display:grid; place-items:center; background:var(--band); color:var(--dim);
+  font-family:var(--display); font-size:.5rem; letter-spacing:.02em}
+#site .credits__av img{width:100%; height:100%; object-fit:cover; display:block}
+#site .credits__p b{font-size:.78rem; font-weight:500; color:var(--ink)}
+#site .credits__p .c{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.66rem;
+  color:var(--dim); font-variant-numeric:tabular-nums}
+
+/* ── the post rail ────────────────────────────────────────────────
+   The contents first, then what a release post is actually for: the
+   build, and the places to talk about it. Sticky, so the outline and the
+   download both stay in reach through three screens of changelog.
+
+   Which is why the end-of-article button row below is off by default and
+   comes back only under the breakpoint, where the rail is gone — the same
+   deal the archive strikes between its chip row and its category list.
+   One set of actions at any width, never two. */
+#site .prail{position:sticky; align-self:start; top:4.6rem;
+  display:flex; flex-direction:column; gap:1.6rem}
+/* the archive's release block, unframed: the panel around it is frame enough */
+#site .prail .relbox{border:0; background:transparent; padding:0}
+#site .prail .relbox dl{border-top-color:var(--line)}
+/* The panel's button goes to /download/, which is always the newest build —
+   so it says so, rather than naming this post's version and sending somebody
+   after a build that page will not hand them. Naming the version is the ghost
+   button's job: that release's own page on GitHub, assets and all. */
+#site .prail .btn{width:100%; justify-content:center; margin-top:1.05rem; font-size:.92rem}
+#site .prail .btn + .btn{margin-top:.55rem}
+
+/* ── what to do next ─────────────────────────────────────────────── */
+#site .pactions{display:none; gap:.7rem; flex-wrap:wrap; align-items:center;
+  margin-top:2.25rem; padding-top:1.75rem; border-top:1px solid var(--line)}
+
+@media (max-width:68rem){
+  #site .postgrid{grid-template-columns:1fr}
+  /* with the rail gone the container narrows too, so the article is centred
+     in the page rather than pinned to the left of a 74rem box */
+  #site .post .w{max-width:53rem}
+  /* Everything the rail holds has a home in the article at this width: the
+     version and date are in the header, the counts are in the changelog, and
+     the outline and the actions come back into the column. Nothing is lost
+     by dropping it. */
+  #site .prail{display:none}
+  #site .prose .outline{display:block}
+  #site .pactions{display:flex}
+}
+#site .postnav{display:grid; grid-template-columns:1fr 1fr; gap:.9rem; margin-top:2.25rem}
+#site .pnav{display:flex; flex-direction:column; gap:.35rem; padding:1rem 1.15rem;
+  border:1px solid var(--line); border-radius:12px; text-decoration:none; transition:.15s}
+#site .pnav:hover{border-color:var(--accent2); background:var(--band)}
+#site .pnav span{font-family:var(--display); font-size:.71rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--dim)}
+#site .pnav b{font-family:var(--display); font-weight:600; font-size:.95rem; line-height:1.35}
+#site .pnav--next{align-items:flex-end; text-align:right}
+@media (max-width:44rem){
+  #site .postnav{grid-template-columns:1fr}
+  #site .pnav--next{align-items:flex-start; text-align:left}
+}

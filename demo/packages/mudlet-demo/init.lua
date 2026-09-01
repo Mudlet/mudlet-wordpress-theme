@@ -19,8 +19,7 @@
 -- headlines and counts are asked of the site this is framed in, once, over one
 -- REST call while the console animates its connect — see mudlet-demo/site.lua.
 -- What is written into SITE is the July 2026 snapshot, and it is what the world
--- says anywhere there is no site to ask: the prototype page, a dev server, a
--- file:// copy.
+-- says anywhere there is no site to ask: a dev server, a file:// copy.
 --
 -- The package is a directory of modules, loaded from the profile's own copy of
 -- it: an .mpackage is unzipped into <profile>/<packageName>/, and Mudlet Web

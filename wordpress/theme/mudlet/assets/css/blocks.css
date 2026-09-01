@@ -1,0 +1,168 @@
+/* Blocks.
+ *
+ * The looks belonging to mudlet/games and to the two block styles registered in
+ * inc/blocks.php. Hand-written, like wp.css and unlike theme.css — these
+ * components have no prototype to be generated from.
+ *
+ * Loaded twice: on the page after wp.css, and inside the block editor's canvas
+ * through add_editor_style(). That is the whole reason nothing here is scoped
+ * to #site. The editor canvas has no #site wrapper and no .prose, and
+ * add_editor_style rewrites selectors by prefixing .editor-styles-wrapper — so
+ * an #site rule would leave an author editing unstyled boxes while the page
+ * looked right.
+ *
+ * The cost of dropping #site is that the post stylesheet's own rules, which are
+ * written `#site .prose …` and carry an id, outrank everything below on the
+ * front end. Those collisions are answered in wp.css, which only the page
+ * loads. Keep this file free of them.
+ *
+ * The custom properties come from theme.css, where they are declared on #site.
+ * assets/css/editor.css restates the ones used here for the canvas.
+ */
+
+/* ── mudlet/games ─────────────────────────────────────────────────────
+   Two to a row, which is as narrow as a card can be and still have room for
+   the sentence that makes somebody want to try the game. Below that the row
+   would rather stack than squeeze: auto-fit does it without a media query.
+   19rem is measured against .postmain, which is 53rem wide: wide enough for
+   two and not for three. */
+.rgames {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
+
+.rgame {
+	display: flex;
+	flex-direction: column;
+	gap: .6rem;
+	padding: 1rem;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+
+/* Game art is a banner — 480x120 upstream, sometimes 120x30 — drawn for a
+   light ground, so the tile keeps the cream in both themes rather than
+   swallowing half the artwork. Same reasoning as .plogo in theme.css. */
+.rgame__logo {
+	display: grid;
+	place-items: center;
+	height: 3.6rem;
+	padding: .4rem;
+	overflow: hidden;
+	background: var(--cream);
+	border-radius: 8px;
+}
+/* min-*: 0 is load-bearing, not tidying. The img is a grid item, and a grid
+   item's automatic minimum size is its content size — for a replaced element,
+   its intrinsic pixels. That minimum beats max-height, so the two 480x120
+   banners (Rites of Passage, PhoenixMUD, served at 300x75) drew at full height
+   and hung 17px out of a 58px tile while the smaller logos fitted by luck.
+   Releasing the minimum lets max-height cap them: 300x75 becomes 179x45.
+   Nothing is upscaled — max-* only ever shrinks, so a 120x30 logo still draws
+   at 120x30 rather than being blown up to fill the tile. */
+.rgame__logo img {
+	min-width: 0;
+	min-height: 0;
+	max-height: 100%;
+	max-width: 100%;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+}
+
+.rgame__name {
+	margin: 0;
+	font-family: var(--display);
+	font-size: 1rem;
+	font-weight: 600;
+	line-height: 1.3;
+	letter-spacing: var(--dls);
+}
+
+.rgame__blurb {
+	margin: 0;
+	color: var(--dim);
+	font-size: .92rem;
+	line-height: 1.62;
+}
+
+/* Not margin-top:auto, which is what this was. It never reached the front end -
+   `#site .prose .rgame .rgame__links` in wp.css zeroes margin-top for the prose
+   rhythm and outranks it - so the canvas was previewing a card the published
+   post does not draw. That only became visible once the blurbs stopped being
+   cut to 38 words: with one card in a row three times the length of another,
+   the pin puts the slack between the blurb and the links instead of after them.
+   The card is as tall as its row either way, grid stretches it; the question is
+   only where the space lands. Below the links it reads as padding. */
+.rgame__links {
+	margin: 0;
+	padding-top: .2rem;
+	font-family: var(--display);
+	font-size: .76rem;
+	line-height: 1.5;
+}
+.rgame__links .dot {
+	margin-inline: .6ch;
+	opacity: .45;
+}
+
+/* A card's links read as parts of the card. Underlining all six in a two-by-two
+   grid turns it into a wall of orange. wp.css repeats this against #site,
+   which is the only way to outrank `#site .prose a`; this copy is what the
+   editor canvas sees. */
+.rgame__name a,
+.rgame__links a {
+	color: var(--link);
+	font-weight: 600;
+	text-decoration: none;
+}
+.rgame__name a:hover,
+.rgame__links a:hover {
+	text-decoration: underline;
+}
+
+/* ── core/media-text, "Feature section" ───────────────────────────────
+   Core already owns the two-column grid, the image/video picker, the
+   left-right swap and the mobile stack. This is only the card it sits in. */
+.wp-block-media-text.is-style-mudlet-feature {
+	padding: 1.15rem;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.wp-block-media-text.is-style-mudlet-feature .wp-block-media-text__media img,
+.wp-block-media-text.is-style-mudlet-feature .wp-block-media-text__media video {
+	border-radius: 10px;
+}
+.wp-block-media-text.is-style-mudlet-feature .wp-block-media-text__content {
+	padding-inline: 1.4rem;
+}
+
+/* ── core/group, "Highlights" ─────────────────────────────────────────
+   The band, not the card: this sits at the top of a post as a summary of what
+   follows, and reads better recessed than raised. */
+.wp-block-group.is-style-mudlet-highlights {
+	padding: 1.15rem 1.35rem 1.3rem;
+	background: var(--band);
+	border: 1px solid var(--line);
+	border-left: 3px solid var(--mark);
+	border-radius: 12px;
+}
+.wp-block-group.is-style-mudlet-highlights > :first-child {
+	margin-top: 0;
+}
+.wp-block-group.is-style-mudlet-highlights > :last-child {
+	margin-bottom: 0;
+}
+.wp-block-group.is-style-mudlet-highlights h2,
+.wp-block-group.is-style-mudlet-highlights h3,
+.wp-block-group.is-style-mudlet-highlights h4 {
+	font-family: var(--display);
+	font-size: .8rem;
+	font-weight: 600;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--dim);
+}

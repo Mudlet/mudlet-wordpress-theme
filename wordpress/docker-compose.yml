@@ -1,0 +1,131 @@
+name: mudlet-wp
+
+# A disposable mudlet.org: WordPress with the theme mounted live, the pages and
+# menus created by a script, and the news imported from a WXR export.
+#
+#   docker compose up -d          # first run provisions, then serves :8080
+#   docker compose logs -f seed   # watch the provisioning
+#   docker compose down           # stop, keep the database
+#   docker compose down -v        # stop and throw the database away
+#
+# The theme is a bind mount, so editing wordpress/theme/mudlet on the host is
+# live in the container - no rebuild, no copy step.
+
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-mudlet}
+      MARIADB_USER: ${DB_USER:-mudlet}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-mudlet}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      # The seed script runs exactly once and assumes a database that answers,
+      # so the dependency below waits on this rather than on the container.
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    image: wordpress:6.8-php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${SITE_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:-mudlet}
+      WORDPRESS_DB_USER: ${DB_USER:-mudlet}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:-mudlet}
+      WORDPRESS_DEBUG: ${WP_DEBUG:-1}
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_HOME', '${SITE_URL:-http://localhost:8080}' );
+        define( 'WP_SITEURL', '${SITE_URL:-http://localhost:8080}' );
+        define( 'WP_ENVIRONMENT_TYPE', 'local' );
+        define( 'SCRIPT_DEBUG', true );
+        /* The theme is bind-mounted from the host, so the container has no
+           business offering to update or edit it in place. */
+        define( 'DISALLOW_FILE_EDIT', true );
+    volumes:
+      - wp:/var/www/html
+      - ./theme/mudlet:/var/www/html/wp-content/themes/mudlet
+      # The releases plugin, bind-mounted the same way as the theme so it can be
+      # edited on the host. It lives in this repo for now; the intent is to move
+      # it into Mudlet/mudlet-release-plugin once it has settled.
+      - ./plugin/mudlet-releases:/var/www/html/wp-content/plugins/mudlet-releases
+      # The games plugin, likewise. It reads Mudlet's own src/TGameDetails.h and
+      # turns each bundled profile into a post, which is where the front page's
+      # logo grid and /games/ both come from.
+      - ./plugin/mudlet-games:/var/www/html/wp-content/plugins/mudlet-games
+      # The makers plugin, likewise. It reads the credits out of the client's
+      # own src/dlgAboutDialog.cpp and turns each person into a post, which is
+      # what /the-makers/ is drawn from.
+      - ./plugin/mudlet-makers:/var/www/html/wp-content/plugins/mudlet-makers
+      # The hero's embedded client, served from the site's own origin - which is
+      # a hard requirement, not a preference: Mudlet Web keeps profiles in
+      # IndexedDB, which Safari and Firefox deny to cross-origin frames.
+      # Build it first with `cd demo && npm ci && npm run build`; without it the
+      # hero simply stays on its scripted session.
+      - ../demo/dist:/var/www/html/wp-content/themes/mudlet/assets/demo:ro
+
+  seed:
+    image: wordpress:cli-php8.3
+    depends_on:
+      db:
+        condition: service_healthy
+      wordpress:
+        condition: service_started
+    # wp-cli's image runs as uid 33 (www-data), which is what owns the files
+    # apache writes; running as root here would leave uploads apache cannot
+    # touch afterwards.
+    user: "33:33"
+    environment:
+      # uid 33 has no home directory in this image, so wp-cli warns on every
+      # command that it cannot create its cache. Point it somewhere writable.
+      HOME: /tmp
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:-mudlet}
+      WORDPRESS_DB_USER: ${DB_USER:-mudlet}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:-mudlet}
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      SITE_TITLE: ${SITE_TITLE:-Mudlet}
+      SITE_TAGLINE: ${SITE_TAGLINE:-A cross-platform, open source, and super fast MUD client with scripting in Lua.}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      SEED_LANGUAGES: ${SEED_LANGUAGES:-1}
+      SEED_RELEASE_PLUGIN: ${SEED_RELEASE_PLUGIN:-1}
+      SEED_DEMO_POSTS: ${SEED_DEMO_POSTS:-1}
+      SEED_GAMES: ${SEED_GAMES:-1}
+      SEED_MAKERS: ${SEED_MAKERS:-1}
+      IMPORT_MEDIA: ${IMPORT_MEDIA:-0}
+    volumes:
+      - wp:/var/www/html
+      - ./theme/mudlet:/var/www/html/wp-content/themes/mudlet
+      # The releases plugin, bind-mounted the same way as the theme so it can be
+      # edited on the host. It lives in this repo for now; the intent is to move
+      # it into Mudlet/mudlet-release-plugin once it has settled.
+      - ./plugin/mudlet-releases:/var/www/html/wp-content/plugins/mudlet-releases
+      # The games plugin, likewise. It reads Mudlet's own src/TGameDetails.h and
+      # turns each bundled profile into a post, which is where the front page's
+      # logo grid and /games/ both come from.
+      - ./plugin/mudlet-games:/var/www/html/wp-content/plugins/mudlet-games
+      # The makers plugin, likewise. It reads the credits out of the client's
+      # own src/dlgAboutDialog.cpp and turns each person into a post, which is
+      # what /the-makers/ is drawn from.
+      - ./plugin/mudlet-makers:/var/www/html/wp-content/plugins/mudlet-makers
+      - ./seed:/seed:ro
+    entrypoint: ["/bin/sh", "/seed/setup.sh"]
+    # One shot. It is idempotent, so `docker compose up seed` re-runs it safely
+    # after you drop a WXR export into seed/wxr/.
+    restart: "no"
+
+volumes:
+  db:
+  wp:

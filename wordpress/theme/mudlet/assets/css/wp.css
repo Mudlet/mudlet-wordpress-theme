@@ -1,0 +1,1014 @@
+/* WordPress glue.
+ *
+ * Everything here exists because WordPress emits markup the prototype never
+ * had: core block classes in post content, paginate_links' own class
+ * vocabulary, the admin bar. Nothing in this file belongs in the prototype, and
+ * nothing the prototype owns belongs here - theme.css is generated and would
+ * overwrite it. */
+
+/* ── the fifth view ───────────────────────────────────────────────────
+   The prototype carried four (home, dl, news, post). A WordPress site also has
+   ordinary pages: about, contribute, the legal ones. */
+#site[data-page="page"] .page--page { display: block; }
+
+/* ── controls that became links ───────────────────────────────────────
+   The category filter is a set of <a> to real archives rather than buttons that
+   hide rows, so it can be bookmarked and paged through. The chip and cat rules
+   in theme.css are class-based and carry over; only the underline has to go. */
+#site .chip,
+#site .cat { text-decoration: none; }
+
+/* ── pagination ───────────────────────────────────────────────────────
+   paginate_links names the current page and the ellipsis with classes, and puts
+   the current one in a <span>, so theme.css's `.pager a[aria-current]` never
+   matches. Map the vocabulary rather than rewriting the markup. */
+#site .pager .page-numbers {
+	display: grid;
+	place-items: center;
+	min-width: 2.15rem;
+	height: 2.15rem;
+	padding-inline: .55rem;
+	font-family: var(--display);
+	font-size: .85rem;
+	color: var(--dim);
+	text-decoration: none;
+	border-radius: 8px;
+}
+#site .pager a.page-numbers:hover { background: var(--band); color: var(--ink); }
+#site .pager .page-numbers.current {
+	background: var(--orange);
+	color: var(--on-accent);
+	font-weight: 600;
+}
+#site .pager .page-numbers.dots { color: var(--dim); }
+
+/* ── skip link ────────────────────────────────────────────────────────
+   Off screen until focused, then a real control in the corner. */
+.skip {
+	position: absolute;
+	left: -9999px;
+	top: 0;
+	z-index: 300;
+	padding: .7rem 1.1rem;
+	font: 600 .9rem/1 system-ui, sans-serif;
+	color: #fff;
+	background: #c44400;
+	border-radius: 0 0 8px 0;
+	text-decoration: none;
+}
+.skip:focus {
+	left: 0;
+}
+
+/* ── admin bar ────────────────────────────────────────────────────────
+   The header is sticky at top:0, which puts it under the admin bar for a
+   logged-in editor. Every offset measured from that header moves with it --
+   the archive rail and the post rail both, or the panel parks where the
+   header now is and its first heading reads as cut off. */
+.admin-bar #site .top { top: 32px; }
+.admin-bar #site .rail,
+.admin-bar #site .prail { top: calc(4.6rem + 32px); }
+/* and the same for what those rails jump to: a heading with only the
+   header's worth of scroll margin lands beneath a taller one. */
+.admin-bar #site .pyear,
+.admin-bar #site .prose h2 { scroll-margin-top: calc(5.25rem + 32px); }
+@media screen and (max-width: 782px) {
+	.admin-bar #site .top { top: 46px; }
+	.admin-bar #site .rail,
+	.admin-bar #site .prail { top: calc(4.6rem + 46px); }
+	.admin-bar #site .pyear,
+	.admin-bar #site .prose h2 { scroll-margin-top: calc(5.25rem + 46px); }
+}
+/* Above 600px wide the admin bar is fixed; below it, it scrolls with the page,
+   so a fixed offset would leave a gap. */
+@media screen and (max-width: 600px) {
+	.admin-bar #site .top { top: 0; }
+	.admin-bar #site .pyear,
+	.admin-bar #site .prose h2 { scroll-margin-top: 5.25rem; }
+}
+
+/* ── block editor output inside .prose ────────────────────────────────
+   theme.css styles the elements a post is made of; these are the wrappers and
+   alignment classes the editor adds around them. */
+#site .prose .alignleft {
+	float: left;
+	margin: .3rem 1.4rem 1rem 0;
+}
+#site .prose .alignright {
+	float: right;
+	margin: .3rem 0 1rem 1.4rem;
+}
+#site .prose .aligncenter {
+	margin-inline: auto;
+	text-align: center;
+}
+#site .prose .alignwide {
+	width: min(64rem, 100vw - 2rem);
+	margin-inline: calc(50% - min(32rem, 50vw - 1rem));
+}
+#site .prose .alignfull {
+	width: 100vw;
+	margin-inline: calc(50% - 50vw);
+	max-width: none;
+}
+#site .prose .wp-block-image,
+#site .prose figure { margin-block: 1.9rem; }
+#site .prose .wp-block-image img { border-radius: 10px; }
+#site .prose .wp-caption-text,
+#site .prose figcaption {
+	margin-top: .7rem;
+	font-size: .84rem;
+	color: var(--dim);
+	text-align: center;
+}
+#site .prose .wp-block-embed__wrapper,
+#site .prose .wp-block-embed iframe { max-width: 100%; }
+
+/* A release body carries its demo video as plain <video> markup with the
+   recording's own width on it -- 880px, wider than the measure -- so nothing
+   above caps it and the post scrolls sideways. Sized to the measure instead,
+   with the height capped the way theme.css caps a screenshot so a tall capture
+   cannot become a two-screen wall. The ratio is 'auto 16/9': the file's own
+   once its metadata arrives, and 16/9 until then, because a <video> with no
+   metadata yet is 300x150 and the box would otherwise resize under the reader.
+   The remote .mp4 takes its time, so that wait is the normal case. */
+#site .prose video {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	height: auto;
+	max-height: 32rem;
+	aspect-ratio: auto 16 / 9;
+	margin-inline: auto;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--band);
+}
+
+/* A code block is a block, not the inline <code> theme.css already styles. */
+#site .prose pre,
+#site .prose .wp-block-code {
+	overflow-x: auto;
+	padding: 1rem 1.15rem;
+	font-family: var(--display);
+	font-size: .86rem;
+	line-height: 1.6;
+	background: var(--band);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+#site .prose pre code {
+	padding: 0;
+	background: none;
+	font-size: inherit;
+}
+
+/* Tables in post content, which the prototype never had to draw. */
+#site .prose table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: .92rem;
+}
+#site .prose th,
+#site .prose td {
+	padding: .6rem .8rem;
+	text-align: left;
+	border-bottom: 1px solid var(--line);
+}
+#site .prose th {
+	font-family: var(--display);
+	font-weight: 600;
+	color: var(--ink);
+}
+
+/* Clear a float that would otherwise run past the end of the article. */
+#site .prose::after {
+	content: '';
+	display: block;
+	clear: both;
+}
+
+/* The empty state on an archive holds a link back, which reads as a chip. */
+#site .pempty .chip { margin-left: .5ch; }
+
+/* ── changelog height ─────────────────────────────────────────────────
+   The prototype's changelog was eleven hand-written lines; a real one is four
+   hundred. Left alone, that puts ten thousand pixels between the article and
+   the footer and nobody ever reaches the end of the page.
+
+   So the list scrolls inside its own box. No toggle: the cap already solves the
+   problem a toggle would, and it does it with no JavaScript, so the changelog is
+   complete and usable with scripting off.
+
+   These rules are here rather than in theme.css because that file is generated
+   from the prototype and would overwrite them. */
+#site .chlog__body {
+	max-height: min(60vh, 34rem);
+	overflow-y: auto;
+	overscroll-behavior: contain; /* reaching its end must not scroll the page on */
+}
+
+/* The count in the bar links to the compare page — the one place a link out is
+   the right answer, since it is where the whole diff lives. */
+#site .chlog__bar .n a {
+	color: inherit;
+	text-decoration: none;
+}
+#site .chlog__bar .n a:hover { color: var(--c-fg); }
+
+/* ── the makers roster ────────────────────────────────────────────────
+   /the-makers/ draws thirty people read out of Mudlet's About dialog. The
+   prototype has no people grid to inherit, so the card is described here — and
+   it is here rather than in theme.css for the usual reason: that file is
+   generated from the prototype and would overwrite it.
+
+   Built out of the same parts as .pcard so the page still looks like the rest
+   of the site: same --card ground, same --line border, same hover lift. What
+   differs is the shape of the content - a face, a name, and a sentence that
+   runs to three lines - so it is a two-column card rather than a stacked one. */
+#site .head--tight { margin-block: 2.6rem 1.1rem; }
+#site .head--tight h3 {
+	font-family: var(--display);
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: var(--ink);
+	margin-bottom: .35rem;
+}
+
+#site .mkgrid {
+	display: grid;
+	gap: .7rem;
+	grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+}
+#site .mkcard {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: .25rem .85rem;
+	align-items: start;
+	/* Cards in a row are stretched to the tallest, and without this the short
+	   ones push their sentence to the bottom of the box. */
+	align-content: start;
+	padding: 1rem 1.05rem;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 11px;
+	text-decoration: none;
+	color: inherit;
+	transition: .15s;
+}
+#site a.mkcard:hover {
+	border-color: var(--accent2);
+	box-shadow: 0 8px 20px -12px rgba(var(--sh), .45);
+}
+
+/* The face. Two thirds of the makers publish a GitHub handle and get their
+   avatar; the rest get their initials, which is why the monogram is styled as
+   carefully as the picture rather than treated as a missing image. */
+#site .mkface {
+	grid-row: span 2;
+	display: grid;
+	place-items: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 50%;
+	overflow: hidden;
+	background: var(--band);
+	border: 1px solid var(--line);
+}
+#site .mkface img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+#site .mkinit {
+	font-family: var(--display);
+	font-size: .82rem;
+	font-weight: 600;
+	color: var(--dim);
+	letter-spacing: .02em;
+}
+
+#site .mkwho { display: block; padding-top: .15rem; }
+#site .mkwho b {
+	display: block;
+	font-size: .95rem;
+	font-weight: 600;
+	line-height: 1.3;
+}
+#site .mkhandle {
+	font-family: 'IBM Plex Mono', ui-monospace, monospace;
+	font-size: .72rem;
+	color: var(--dim);
+}
+#site .mkdid {
+	grid-column: 2;
+	font-size: .87rem;
+	line-height: 1.55;
+	color: var(--dim);
+}
+#site .mkdid a { color: var(--link); }
+
+/* The past contributors are twenty-two of the thirty. Same card, tighter: the
+   sentences are shorter and the grid would otherwise run down the page. */
+#site .mkgrid--past { grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+#site .mkgrid--past .mkcard { padding: .8rem .9rem; }
+#site .mkgrid--past .mkface { width: 2.1rem; height: 2.1rem; }
+#site .mkgrid--past .mkinit { font-size: .68rem; }
+#site .mkgrid--past .mkwho b { font-size: .88rem; }
+#site .mkgrid--past .mkdid { font-size: .82rem; }
+
+/* The "Also credited" region under the roster — hand-written in wp-admin, so
+   it is .prose like the body above. The rule only separates it from the cards,
+   which is what the acknowledgements block already does further down. */
+#site .mktail {
+	margin-top: 2.6rem;
+	padding-top: 1.4rem;
+	border-top: 1px solid var(--line);
+}
+#site .mktail h3 {
+	font-family: var(--display);
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: var(--ink);
+	margin-bottom: .6rem;
+}
+
+/* The prose Mudlet prints under its own credits: that the list is incomplete,
+   who drew the icons, and thanks to people who never committed a line. */
+#site .mknotes {
+	margin-top: 2.6rem;
+	padding-top: 1.4rem;
+	border-top: 1px solid var(--line);
+	font-size: .9rem;
+	color: var(--dim);
+}
+
+/* The patreon names. A row of names, not cards - there is nothing else known
+   about them and a card would be mostly empty. */
+#site .mkpatrons {
+	font-family: var(--display);
+	font-size: .9rem;
+	color: var(--ink);
+	line-height: 2;
+}
+#site .mkpatrons .sep { color: var(--dim); margin-inline: .5ch; }
+
+/* A maker's own page leads with their face at reading size. */
+#site .mkface--big {
+	width: 4.5rem;
+	height: 4.5rem;
+	margin-bottom: .9rem;
+}
+#site .mkface--big .mkinit { font-size: 1.3rem; }
+
+/* ── /games/, the showcase ────────────────────────────────────────────
+   The design this grew out of had no games page, only the front page's grid
+   of logo tiles - so this one is WordPress's alone.
+
+   It deliberately does not extend .pcard. That card is a logo, a name and a
+   hostname packed fifteen to a screen; this one carries a blurb and a row of
+   tags and comes four to a row at most. Two different objects that happen to
+   both be a game. What it does reuse is .plogo, because the cream tile that
+   keeps a logo readable in dark mode is the same problem in both places, and
+   .chip, because the facet toggles are the news filter's chips doing the news
+   filter's job. */
+
+/* the panel: one game, picked per request, rebuilt in place by the shuffle */
+#site .gfeat {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: start;
+	gap: clamp(1rem, 3vw, 1.75rem);
+	margin-bottom: clamp(2rem, 4vw, 2.75rem);
+	padding: clamp(1.1rem, 3vw, 1.6rem);
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+#site .gfeat__logo { width: 9rem; height: 4.6rem; }
+#site .gfeat__body { min-width: 0; }
+#site .gfeat__eyebrow {
+	font-family: var(--display);
+	font-size: .74rem;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--dim);
+	margin: 0 0 .35rem;
+}
+/* ── the panel does not move ──────────────────────────────────────────
+   Every row below is a fixed number of lines tall, because the shuffle
+   replaces the game in place: a panel that grew or shrank would throw the grid
+   under it up and down the screen while the pointer is still over the button
+   that did it. Nothing here clips anything a visitor needs - the blurb's
+   remaining lines are on the game's own page, one click away. */
+#site .gfeat__name {
+	font-size: clamp(1.2rem, 2.6vw, 1.5rem);
+	margin: 0 0 .5rem;
+	line-height: 1.25;
+	/* Two of the forty-three names wrap on a mid-width screen. One line,
+	   ellipsised, so the panel keeps its height there too - the full name is
+	   the link's own text, so it is still read out in full and still in the
+	   tooltip. */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+#site .gfeat__name a { color: inherit; text-decoration: none; }
+#site .gfeat__name a:hover { color: var(--link); }
+#site .gfeat__lede {
+	margin: 0 0 .85rem;
+	color: var(--dim);
+	max-width: 62ch;
+	line-height: 1.6;
+	/* exactly four lines: the shortest blurb here is "In Achaea, your name
+	   carries weight." and the longest runs past a screen */
+	height: calc(4 * 1.6em);
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 4;
+	line-clamp: 4;
+	overflow: hidden;
+}
+#site .gfeat__connect {
+	display: flex;
+	align-items: baseline;
+	gap: .6ch;
+	margin: 0 0 .7rem;
+	/* the address and its hint stay on one line; a long host scrolls nothing
+	   and wraps nothing, it just runs out of room like a terminal would */
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+}
+#site .gfeat__tags {
+	display: flex;
+	gap: .35rem;
+	margin: 0;
+	/* one row: a game with seven tags must not push the panel taller than one
+	   with two */
+	min-height: 1.35rem;
+	overflow: hidden;
+}
+
+/* "another" — the panel redraws from a card already on the page, so this is
+   free; it is hidden until theme.js is there to make it do anything */
+#site .gfeat__again {
+	font-family: var(--display);
+	font-size: .78rem;
+	color: var(--dim);
+	background: transparent;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	padding: .34rem .85rem;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: .15s;
+}
+#site .gfeat__again:hover { color: var(--ink); background: var(--band); border-color: var(--accent2); }
+
+@media (max-width: 46rem) {
+	#site .gfeat { grid-template-columns: 1fr; }
+	#site .gfeat__again { justify-self: start; }
+}
+
+/* ── the telnet:// link ───────────────────────────────────────────────
+   Mudlet registers itself for telnet:// and telnets://, so the address is a
+   button as much as a fact. It is styled as the command it looks like rather
+   than as a link, because that is what a reader is being invited to run - and
+   the hint beside it says where it goes, since a scheme link that finds no
+   handler does nothing at all and nothing on screen would explain why. */
+#site .gplay {
+	font-family: var(--display);
+	color: var(--dim);
+	text-decoration: none;
+	border-radius: 6px;
+	padding: .1rem .3rem;
+	margin-inline: -.3rem;
+	transition: .15s;
+}
+#site .gplay b { font-weight: 600; color: var(--ink); margin-inline: .55ch 1ch; }
+#site .gplay .sep { color: var(--mark); opacity: .55; margin-inline: .6ch; }
+#site .gplay__addr { border-bottom: 1px dashed var(--line); }
+#site a.gplay:hover { background: var(--band); color: var(--ink); }
+#site a.gplay:hover .gplay__addr { border-bottom-color: var(--accent2); }
+#site .gplay__hint {
+	font-family: var(--display);
+	font-size: .7rem;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--dim);
+	opacity: .7;
+	margin-left: .8ch;
+}
+/* nothing to open: the anchor carries no href and is text, so drop the affordances */
+#site .gplay:not([href]) .gplay__addr { border-bottom: 0; }
+#site .gplay:not([href]) ~ .gplay__hint { display: none; }
+
+/* ── the toolbar ──────────────────────────────────────────────────────
+   Hidden in the markup and revealed by theme.js: a search field that cannot
+   search is worse than no search field. Everything under it works without. */
+#site .gbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .5rem .75rem;
+	margin-bottom: 1.25rem;
+	padding-bottom: 1.1rem;
+	border-bottom: 1px solid var(--line);
+}
+#site .gfind {
+	display: flex;
+	align-items: center;
+	flex: 1 1 14rem;
+	min-width: 0;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	padding: .34rem .95rem;
+}
+#site .gfind::before { content: '>'; color: var(--mark); font-family: var(--display); font-weight: 600; margin-right: .6ch; }
+#site .gfind:focus-within { border-color: var(--accent2); }
+#site .gfind input {
+	flex: 1;
+	min-width: 0;
+	font: inherit;
+	font-size: .88rem;
+	color: var(--ink);
+	background: transparent;
+	border: 0;
+	outline: none;
+	padding: 0;
+}
+#site .gfind input::placeholder { color: var(--dim); }
+#site .gfind input::-webkit-search-cancel-button { filter: grayscale(1); opacity: .5; }
+#site .gfacets { display: flex; flex-wrap: wrap; gap: .35rem; }
+#site .gcount {
+	margin: 0;
+	font-family: var(--display);
+	font-size: .76rem;
+	color: var(--dim);
+	white-space: nowrap;
+}
+
+/* ── the shelf ────────────────────────────────────────────────────────
+   Wider than .pgrid because these cards carry a paragraph. */
+#site .gshelf {
+	display: grid;
+	gap: .8rem;
+	grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+}
+#site .gshelf__cta { margin-top: clamp(2rem, 4vw, 2.75rem); }
+
+#site .gcard {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: .5rem;
+	padding: .9rem;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 11px;
+	transition: .15s;
+}
+#site .gcard:hover { border-color: var(--accent2); box-shadow: 0 8px 20px -12px rgba(var(--sh), .45); }
+#site .gcard[hidden] { display: none; }
+#site .gcard__logo { flex: none; }
+#site .gcard__name { font-size: .95rem; font-weight: 600; line-height: 1.3; margin: 0; }
+#site .gcard__name a { color: inherit; text-decoration: none; }
+/* one stretched link rather than a card-sized <a>: the card holds a whole
+   paragraph, and wrapping that in the anchor would read the blurb out as the
+   link's name on every card */
+#site .gcard__name a::after { content: ''; position: absolute; inset: 0; border-radius: 11px; }
+#site .gcard:hover .gcard__name a { color: var(--link); }
+#site .gcard__domain {
+	font-family: var(--display);
+	font-size: .72rem;
+	color: var(--dim);
+	margin: -.3rem 0 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+#site .gcard__lede {
+	margin: 0;
+	font-size: .84rem;
+	line-height: 1.55;
+	color: var(--dim);
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
+	overflow: hidden;
+}
+/* the four profiles upstream ships with no blurb print their address instead,
+   so the slot is never empty and the rows never go ragged */
+#site .gcard__lede--connect { font-family: var(--display); font-size: .78rem; }
+#site .gcard__tags { display: flex; flex-wrap: wrap; gap: .3rem; margin: auto 0 0; padding-top: .25rem; }
+
+/* the tags themselves. On a card they are spans - a link inside a stretched
+   link is a click target fighting the card - and on the panel they are real
+   links, which is the one place their URL is reachable. */
+#site .gtag {
+	font-family: var(--display);
+	font-size: .68rem;
+	letter-spacing: .02em;
+	color: var(--dim);
+	background: var(--band);
+	border: 1px solid transparent;
+	border-radius: 999px;
+	padding: .16rem .55rem .16rem .45rem;
+	white-space: nowrap;
+	/* the chip is a glyph and a word on one baseline, and the glyph never
+	   shrinks: gap in ch so it tracks the display face, not the root size */
+	display: inline-flex;
+	align-items: center;
+	gap: .45ch;
+}
+/* Sized in em so it follows the chip's own font-size, and dimmed a touch so a
+   row of six reads as a row of words with marks on them rather than a row of
+   icons. It inherits currentColor, which is what carries it through the hover
+   state and both themes. */
+#site .gtag__i { width: 1em; height: 1em; flex: none; opacity: .75; }
+#site a.gtag:hover .gtag__i { opacity: 1; }
+#site .gtag[data-tag="secure"],
+#site .gtag[data-tag="own-ui"] { color: var(--link); background: transparent; border-color: var(--line); }
+/* Every one of the forty-three has a website, and the card prints its domain
+   two lines up, so the tag distinguishes nothing there. It stays in the markup
+   because the panel's shuffle builds its one real link out of these, and it is
+   the only place that URL is reachable. */
+#site .gcard__tags .gtag[data-tag="site"] { display: none; }
+#site .gcard__tags:not(:has(.gtag:not([data-tag="site"]))) { display: none; }
+#site a.gtag { text-decoration: none; }
+#site a.gtag:hover { color: var(--on-accent); background: var(--orange); border-color: var(--orange); }
+
+/* One game's page: the spec run is a line of prose, so its glyphs sit on the
+   baseline as inline marks rather than as flex items. Same set and same
+   classification as the chips above, so a link a card showed as "Discord"
+   keeps the mark it had under whatever upstream chose to call it here. */
+#site .specs__i { width: 1em; height: 1em; vertical-align: -.14em; margin-right: .5ch; opacity: .75; }
+
+#site .gnone {
+	margin: 2rem 0 0;
+	padding: 1.5rem;
+	background: var(--band);
+	border: 1px dashed var(--line);
+	border-radius: 11px;
+	color: var(--dim);
+	text-align: center;
+	max-width: 52ch;
+	margin-inline: auto;
+}
+
+/* ── the hand-off's email form ────────────────────────────────────────
+   The row, the drawer it slides open and the code inside it came from the
+   prototype and live in theme.css. The mail face could not have: a static page
+   has nowhere to send an address, so these rules live here for that reason and
+   no other. Which is also why theme.css knows only
+   how to show the `qr` face - the other one is declared below. */
+#site .dlmore[data-face="mail"] .dlpane--mail {
+	display: block;
+}
+#site .dlmail {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .5rem;
+	margin-top: .8rem;
+}
+#site .dlmail input[type="email"] {
+	font-family: var(--display);
+	font-size: .84rem;
+	color: var(--ink);
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: .45rem .6rem;
+	min-width: 15rem;
+}
+#site .dlmail .btn {
+	font-size: .84rem;
+	padding: .42rem .95rem;
+}
+/* The honeypot: off the page rather than display:none, which is the first
+   thing a bot checks for. Nothing focusable follows it into the tab order —
+   it carries tabindex="-1". */
+#site .dlmail__hp {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+}
+/* Its own line under the field. Two classes rather than one because the cap
+   this has to lift - the 52ch theme.css puts on every paragraph in a drawer,
+   which keeps its prose readable and would otherwise leave this line short
+   enough to sit beside the button - is written `#site .dlpane p`. */
+#site .dlmail .dlmail__msg {
+	flex: none;
+	width: 100%;
+	max-width: none;
+	margin: 0;
+	font-size: .84rem;
+	color: var(--dim);
+}
+#site .dlmail .dlmail__msg[data-state="bad"] {
+	color: var(--mark);
+}
+/* The drawer opens on a row that is already narrow on a phone; the field
+   would otherwise force the table wider than the screen. */
+@media (max-width: 40rem) {
+	#site .dlmail input[type="email"] {
+		min-width: 0;
+		flex: 1 1 12rem;
+	}
+}
+
+/* WordPress's own label-hiding class, which this theme had no occasion to
+   define until the games filter needed a label nobody has to read. */
+#site .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ── /contact/ ────────────────────────────────────────────────────────
+   Two panels — Discord and the message form — over a row of link cards.
+   The design this grew out of had no contact page: this one is WordPress's
+   alone, for the same reason the download page's mail form is.
+
+   Built out of the same parts as .mkcard and .gcard so the page still looks
+   like the rest of the site: --card ground, --line border, the same 11-12px
+   radius and the same hover lift.
+
+   align-items:start, so the two panels are each their own height. A grid
+   stretches its items to the tallest row by default, and the form is half
+   again as tall as the Discord panel - which left the Join button alone at
+   the bottom of 250px of nothing, with the panel's border drawn around the
+   gap. Two cards of honest heights read better than one padded out to match
+   the other. */
+#site .ctgrid {
+	display: grid;
+	align-items: start;
+	gap: 1rem;
+	/* min() so a narrow screen gets one column rather than a track wider than
+	   the viewport - the message form's two-up row is already the widest thing
+	   in here. */
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+	margin-top: 2.4rem;
+}
+#site .ctpanel {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: .85rem;
+	padding: 1.35rem 1.4rem 1.5rem;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+#site .ctpanel__top {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: .85rem;
+	align-items: center;
+	width: 100%;
+}
+/* The glyph gets a tile rather than sitting loose, so the two panels have the
+   same left edge whatever the icon's own proportions are. */
+#site .ctpanel__mark {
+	display: grid;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 10px;
+	background: var(--band);
+	border: 1px solid var(--line);
+	color: var(--mark);
+}
+#site .ctpanel__mark svg { width: 1.15rem; height: 1.15rem; }
+#site .ctpanel h3 { font-size: 1.05rem; }
+#site .ctpanel__meta {
+	font-family: var(--display);
+	font-size: .79rem;
+	color: var(--dim);
+	margin-top: .2rem;
+}
+#site .ctpanel__meta .sep { margin-inline: .35ch; }
+#site .ctpanel p { color: var(--dim); font-size: .94rem; line-height: 1.65; max-width: 52ch; }
+/* A little more air above the button than between the lines above it: it is
+   the one thing in the panel that is not prose. */
+#site .ctpanel > .btn { margin-top: .35rem; }
+
+/* The presence dot. A fixed Discord green in both themes - it is a status
+   light quoting another product's vocabulary, not a site colour. */
+#site .ctdot {
+	display: inline-block;
+	width: .45rem;
+	height: .45rem;
+	border-radius: 50%;
+	background: #3ba55d;
+	margin-right: .45rem;
+	vertical-align: .08em;
+}
+
+/* Avatars of whoever is online, overlapped. No names: see inc/discord.php.
+   The 2px ring is --card and not a colour, so the overlap reads as depth in
+   both themes; the row is padded by the same amount it pulls each face back,
+   which keeps the first one flush with everything above it. */
+#site .ctfaces {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	padding-left: .4rem;
+}
+#site .ctfaces img {
+	width: 1.9rem;
+	height: 1.9rem;
+	border-radius: 50%;
+	margin-left: -.4rem;
+	border: 2px solid var(--card);
+	background: var(--band);
+	object-fit: cover;
+}
+#site .ctmore {
+	margin-left: .6rem;
+	font-family: var(--display);
+	font-size: .78rem;
+	color: var(--dim);
+}
+
+/* The form. Whatever a plugin puts in the slot inherits the field rules below,
+   which is the point of styling by element rather than by class - a shortcode
+   brings its own markup and none of our class names. */
+#site .ctform {
+	display: grid;
+	gap: .65rem;
+	width: 100%;
+}
+#site .ctform__row {
+	display: grid;
+	gap: .65rem;
+	grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 34rem) {
+	#site .ctform__row { grid-template-columns: 1fr; }
+}
+#site .ctfield { display: grid; gap: .3rem; }
+#site .ctform label {
+	font-family: var(--display);
+	font-size: .73rem;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--dim);
+}
+#site .ctform input,
+#site .ctform textarea,
+#site .ctform select {
+	font-family: var(--body);
+	font-size: .92rem;
+	color: var(--ink);
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: .5rem .65rem;
+	width: 100%;
+}
+#site .ctform textarea { min-height: 6rem; resize: vertical; line-height: 1.6; }
+/* The placeholder's controls are disabled, and have to look it. A form that
+   reads as live and goes nowhere is worse than no form at all. */
+#site .ctform :disabled {
+	opacity: .5;
+	cursor: not-allowed;
+}
+#site .ctform--soon { user-select: none; }
+
+/* And it has to say so in words, not only in opacity. Dashed, because a dashed
+   box is the one border on this site that means "not finished". */
+#site .ctsoon {
+	display: flex;
+	gap: .55rem;
+	align-items: flex-start;
+	width: 100%;
+	padding: .7rem .8rem;
+	background: var(--band);
+	border: 1px dashed var(--line);
+	border-radius: 9px;
+	font-size: .86rem;
+	line-height: 1.55;
+	color: var(--dim);
+	max-width: none;
+}
+#site .ctsoon svg {
+	width: 1rem;
+	height: 1rem;
+	flex: none;
+	margin-top: .22rem;
+	color: var(--mark);
+}
+#site .ctsoon a { color: var(--link); font-weight: 500; }
+
+/* The address, under whichever of the two the panel is showing. Small and
+   dim - it is the way round for people who would rather use their own mail
+   client, not a second call to action competing with the Send button. */
+#site .ctmail {
+	font-size: .86rem;
+	line-height: 1.55;
+	color: var(--dim);
+}
+#site .ctmail a {
+	color: var(--link);
+	font-weight: 500;
+	/* The address is entity-encoded and can wrap mid-word on a narrow screen;
+	   breaking it anywhere but at the @ or a dot reads as a typo. */
+	word-break: break-word;
+}
+
+/* The forum, GitHub and the wiki. Three destinations with a sentence each,
+   which is a card and not a paragraph with a heading over it - which is what
+   the forum had on the old page, and why it is down here now. */
+#site .ctlinks {
+	display: grid;
+	gap: .7rem;
+	grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+#site .ctlink {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: .2rem .8rem;
+	align-items: start;
+	align-content: start;
+	padding: .95rem 1.05rem 1.05rem;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 11px;
+	text-decoration: none;
+	color: inherit;
+	transition: .15s;
+}
+#site .ctlink:hover {
+	border-color: var(--accent2);
+	box-shadow: 0 8px 20px -12px rgba(var(--sh), .45);
+}
+#site .ctlink svg {
+	grid-row: span 2;
+	width: 1.15rem;
+	height: 1.15rem;
+	margin-top: .2rem;
+	color: var(--mark);
+}
+#site .ctlink b { font-size: .95rem; font-weight: 600; line-height: 1.3; }
+#site .ctlink span { font-size: .87rem; line-height: 1.55; color: var(--dim); }
+
+/* ── blocks inside .prose ─────────────────────────────────────────────
+   assets/css/blocks.css carries these components' looks and is deliberately
+   written without #site, because the block editor loads the same file and has
+   no #site to match. The consequence is that theme.css's post rules — all of
+   them `#site .prose …`, all of them carrying an id — outrank it on the page.
+   These are those collisions and nothing else: they exist only where a prose
+   rule reaches inside a component it knows nothing about. */
+
+/* A card's name and blurb are card parts, not the article's headings and
+   paragraphs; the prose rhythm would push them apart by two lines. */
+#site .prose .rgame .rgame__name {
+	margin-top: 0;
+	font-size: 1rem;
+}
+#site .prose .rgame .rgame__blurb,
+#site .prose .rgame .rgame__links {
+	margin-top: 0;
+}
+
+/* Links in a card read as parts of the card. Underlining all four in a
+   two-by-two grid turns it into a wall of orange. */
+#site .prose .rgame a {
+	font-weight: 600;
+	text-decoration: none;
+}
+#site .prose .rgame a:hover {
+	text-decoration: underline;
+}
+#site .prose .rgame__blurb {
+	color: var(--dim);
+}
+
+/* The highlights card sets its heading in the eyebrow face; the prose heading
+   rule would otherwise hand it the article's h3 size and top margin. */
+#site .prose .is-style-mudlet-highlights h2,
+#site .prose .is-style-mudlet-highlights h3,
+#site .prose .is-style-mudlet-highlights h4 {
+	margin-top: 0;
+	font-size: .8rem;
+}
+
+/* media-text puts its own padding on the content column; .prose's vertical
+   rhythm would add a second one above the heading inside it. */
+#site .prose .is-style-mudlet-feature .wp-block-media-text__content > :first-child {
+	margin-top: 0;
+}

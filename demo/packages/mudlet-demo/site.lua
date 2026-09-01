@@ -22,8 +22,8 @@ local URL = require('mudlet-demo.urls')
 --
 -- What is written below is both the fallback and the shape of the answer. It
 -- has to be a fallback, because the demo is not always inside mudlet.org: it
--- runs from the prototype page, from a Vite dev server and from a file:// copy,
--- none of which have a WordPress behind them. There, and on any request that
+-- runs from a Vite dev server and from a file:// copy, neither of which has a
+-- WordPress behind it. There, and on any request that
 -- fails or arrives late, the world stays as written here — the July 2026
 -- snapshot the rooms were composed against — and says nothing about it. A hero
 -- has no business showing a visitor an error.

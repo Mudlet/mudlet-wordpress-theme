@@ -8,8 +8,8 @@ open, so the whole thing is a static site — no telnet proxy, nothing to run.
 ```
 npm install
 npm run build          # -> dist/  (also rebuilds the .mpackage)
-node scripts/serve.mjs # serves the repo root at :8765
-                       # http://localhost:8765/prototype/index.html
+node scripts/serve.mjs # the client on its own at :8765
+                       # the site serves it from the theme - see ../README.md
 ```
 
 `npm run dev` for the Vite dev server; `npm run package` rebuilds only the
@@ -209,8 +209,8 @@ pretty permalinks.
 
 `SITE`, in `site.lua`, is both the shape of that answer and the
 fallback: the July 2026 snapshot the rooms were composed against. It has to be
-a fallback, because the demo also runs from the prototype page, a Vite dev
-server and `file://` copies, none of which have a WordPress behind them. There
+a fallback, because the demo also runs from a Vite dev server and `file://`
+copies, neither of which has a WordPress behind it. There
 the request fails, the world keeps what is written, and the visitor is told
 nothing — a hero has no business showing an error.
 
@@ -236,9 +236,9 @@ One entry is marked `own` and keeps its written line: it describes Mudlet Web as
 the thing the visitor is standing in, which is a joke only available from inside
 the demo — there is no upstream version of it to take instead.
 
-The hero's scripted fallback in `prototype/index.src.html` shows the same room
-this world opens in, so the two halves don't disagree when the frame never
-loads.
+The hero's scripted fallback, in the theme's `template-parts/home/hero.php`,
+shows the same room this world opens in, so the two halves don't disagree when
+the frame never loads.
 
 ## The one thing it fetches live
 
@@ -257,8 +257,7 @@ GET https://api.github.com/search/issues?…+label:"good first issue"
 ```
 
 No token, and no server of ours in the middle: `api.github.com` allows any
-origin, so this works from the prototype page and a `file://` copy as readily as
-from WordPress, and mudlet-web falls back to its own proxy for any origin that
+origin, so this works from a `file://` copy as readily as from WordPress, and mudlet-web falls back to its own proxy for any origin that
 refuses a direct fetch. Open issues are counted through the search API rather
 than the repo endpoint's `open_issues_count`, which adds pull requests to the
 total.
@@ -303,5 +302,5 @@ load at all (the Artifact preview, `file://`) — the hero falls back to its
 scripted session.
 
 That handshake is the one contract between the two halves of this: `src/main.tsx`
-posts `{ type: 'mudlet-demo:ready', ok }` to `window.parent`, and
-`prototype/index.src.html` listens for it.
+posts `{ type: 'mudlet-demo:ready', ok }` to `window.parent`, and the theme's
+`assets/js/theme.js` listens for it.

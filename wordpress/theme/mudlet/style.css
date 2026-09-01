@@ -1,0 +1,19 @@
+/*
+Theme Name: Mudlet
+Theme URI: https://mudlet.org/
+Author: The Mudlet team
+Author URI: https://mudlet.org/
+Description: The mudlet.org theme - a hand-built replacement for Divi, with the homepage hero running a real build of Mudlet Web. Ships light and dark, and no jQuery.
+Version: 0.1.0
+Requires at least: 6.4
+Tested up to: 6.8
+Requires PHP: 8.1
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: mudlet
+Tags: blog, one-column, custom-menu, translation-ready
+*/
+
+/* Intentionally empty. WordPress requires this file for the header above; the
+   actual styles are assets/css/theme.css (the design) and assets/css/wp.css
+   (WordPress glue). */

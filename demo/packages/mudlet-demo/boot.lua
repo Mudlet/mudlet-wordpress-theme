@@ -14,8 +14,8 @@ local SEED_WAIT = seed.SEED_WAIT
 -- The page draws these same two lines while the client is still loading, in
 -- the same colour, metrics and dot rhythm, and drops its copy the moment these
 -- appear — so the handover is invisible and what the visitor sees is one client
--- connecting once. Change these and the markup in prototype/index.src.html
--- (.term__boot) has to change with them.
+-- connecting once. Change these and the markup in the theme's hero
+-- (template-parts/home/hero.php, .term__boot) has to change with them.
 function D.boot()
     -- Before the first line, not at connect: the page holds an identical bar
     -- over this frame while the bundle loads, so the client must already have

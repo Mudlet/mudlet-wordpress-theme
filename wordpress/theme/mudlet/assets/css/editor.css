@@ -1,0 +1,38 @@
+/* The block editor canvas, and nothing else.
+ *
+ * theme.css declares every custom property on #site. The editor canvas has no
+ * #site — it is a bare <body> the editor stamps .editor-styles-wrapper onto —
+ * so without this every var() in blocks.css resolves to nothing and an author
+ * edits white boxes with no borders while the published page looks right.
+ *
+ * `body` is the shape to write that in: WordPress rewrites an editor
+ * stylesheet's selectors by prefixing .editor-styles-wrapper, replacing body
+ * and :root rather than prefixing them. A rule written .editor-styles-wrapper
+ * here would come out doubled and match nothing.
+ *
+ * Deliberately only the tokens blocks.css uses, plus the two families. This is
+ * not an attempt to reproduce the site inside the editor: the point is that a
+ * game card and a feature panel look like themselves while being written, not
+ * that the canvas is a preview. Light theme only — the editor has no theme
+ * switch to follow.
+ */
+body {
+	--band: #faf3e4;
+	--ink: #211d17;
+	--dim: #6f6656;
+	--line: #e9dfc8;
+	--card: #ffffff;
+	--cream: #f1e6c8;
+	--mark: #c44400;
+	--link: #a83800;
+	--display: 'IBM Plex Mono', ui-monospace, monospace;
+	--body: 'Figtree', system-ui, sans-serif;
+	--dls: -.028em;
+}
+
+/* The canvas otherwise inherits the admin's own font stack, which makes every
+   preview read a size too large and a face too round. */
+body {
+	font-family: var(--body);
+	color: var(--ink);
+}
