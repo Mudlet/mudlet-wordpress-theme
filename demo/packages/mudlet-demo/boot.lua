@@ -6,7 +6,8 @@
 local D = demo
 local core = require('mudlet-demo.core')
 local seed = require('mudlet-demo.seed')
-local C, say, cmd = core.C, core.say, core.cmd
+local URL = require('mudlet-demo.urls')
+local C, say, cmd, link = core.C, core.say, core.cmd, core.link
 local SEED_WAIT = seed.SEED_WAIT
 
 -- Boot -----------------------------------------------------------------------
@@ -64,7 +65,8 @@ function D.connected()
     registerAnonymousEventHandler('sysWindowResizeEvent', function() D.mapWidget() end)
     D.look()
     say()
-    say(C.sys, 'This is Mudlet, running in your browser — and this is mudlet.org,')
+    say(C.sys, 'This is ', link('Mudlet Web', URL.web, 'Mudlet, built to run in a browser'),
+        C.sys .. ', running in your browser — and this is mudlet.org,')
     say(C.sys, 'laid out as a MUD. Click anything underlined, or type ',
         cmd('help', 'help', 'the short list of commands', C.sys), C.sys .. '.')
 end

@@ -6,6 +6,9 @@
 
 local URL = {
     home     = 'https://www.mudlet.org/',
+    -- Not a page this world is parodying: it is the thing the world is running
+    -- in. The visitor is already inside Mudlet Web, and the first line says so.
+    web      = 'https://mudlet.github.io/mudlet-web/',
     download = 'https://www.mudlet.org/download/',
     news     = 'https://www.mudlet.org/news/',
     makers   = 'https://www.mudlet.org/the-makers/',
