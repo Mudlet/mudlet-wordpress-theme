@@ -17,6 +17,7 @@ D.rooms = {
     commons  = require('mudlet-demo.rooms.commons'),
     workshop = require('mudlet-demo.rooms.workshop'),
     makers   = require('mudlet-demo.rooms.makers'),
+    stacks   = require('mudlet-demo.rooms.stacks'),
 }
 
 -- Returned as well as assigned, so map.lua can require the rooms rather than

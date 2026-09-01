@@ -15,9 +15,14 @@ local URL = {
     packages = 'https://packages.mudlet.org/',
     forum    = 'https://forums.mudlet.org/',
     wiki     = 'https://wiki.mudlet.org/',
-    -- The manual's own account of what a trigger is, for the one room that
-    -- makes the visitor write one.
+    -- The manual's own account of what a trigger is, and of what an alias is:
+    -- one room makes the visitor write each.
     triggers = 'https://wiki.mudlet.org/w/Manual:Introduction#Triggers',
+    aliases  = 'https://wiki.mudlet.org/w/Manual:Introduction#Aliases',
+    -- The index of everything Mudlet documents, one anchor per name, which is
+    -- what the imp in the Stacks writes on the lid of a box. The catalogue it
+    -- reads out of is the machine-readable half of this very page.
+    functions = 'https://wiki.mudlet.org/w/Manual:Lua_Functions',
     discord  = 'https://discord.gg/kuYvMQ9',
     github   = 'https://github.com/Mudlet/Mudlet',
     -- The pages the clerk in the Workshop is reading off a wire. Every line

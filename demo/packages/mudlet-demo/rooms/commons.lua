@@ -9,7 +9,7 @@ return {
     desc = 'Four doors and a cabinet, in a room that is otherwise all noticeboard. '
         .. 'None of the doors are locked. Two stand ajar, and you can hear the arguing '
         .. 'from here — amiably, about tabs. The cabinet is enormous and alphabetical.',
-    exits = { east = 'home', north = 'workshop', west = 'makers' },
+    exits = { east = 'home', north = 'workshop', west = 'makers', south = 'stacks' },
     things = {
         {
             name = 'the forum door',
@@ -29,6 +29,10 @@ return {
                 say(C.text, 'The manual. Every function, every event, every argument, with ',
                     'examples that run. This is the door people mean when they say Mudlet ',
                     'is approachable.')
+                say(C.dim, 'It is the second door here that goes somewhere. Behind it the ',
+                    'index carries on ', cmd('south', 'south', 'go south', C.dim), C.dim,
+                    ' for as long as you care to walk it, one box per name, and there is ',
+                    'somebody up a ladder in there who knows all of them.')
                 say(C.dim, '  ', link('wiki.mudlet.org', URL.wiki))
             end,
         },
@@ -61,10 +65,15 @@ return {
             name = 'the cabinet',
             keys = { 'cabinet', 'packages', 'drawers' },
             url = URL.packages,
+            -- No count, deliberately. It was "229 drawers from 123 authors" and
+            -- both halves were wrong within a month: the drawers are added to
+            -- weekly, and the authors were counted off a field that says
+            -- "tjurczyk, Delwing" for one package and counts it as two people.
             look = function()
-                say(C.text, '229 drawers from 123 authors: mappers, tabbed chat, curing systems, ',
-                    'a keepalive pinger, and one that turns :) into an emoji. Mudlet ',
-                    'installs any of them from its own command line.')
+                say(C.text, 'Hundreds of drawers, from more hands than anyone has counted: ',
+                    'mappers, tabbed chat, curing systems, a keepalive pinger, and one that ',
+                    'turns :) into an emoji. Mudlet installs any of them from its own ',
+                    'command line.')
                 say(C.dim, '  mpkg install carto        ', link('packages.mudlet.org', URL.packages))
             end,
         },

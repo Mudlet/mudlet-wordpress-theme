@@ -15,15 +15,21 @@ local crateLabel, press = dl.crateLabel, dl.press
 local findMaker = people.findMaker
 local PLACE = map.PLACE
 
--- Two people in this world answer questions, and they keep different books: the
--- sage has the past, off a fixed ledger, and the clerk has this week, off the
--- network. Which one answers is which room you are standing in.
-function D.ask(noun)
+-- Three people in this world answer questions, and no two of them keep the same
+-- kind of book: the sage has the past off a fixed ledger, the clerk has this
+-- week off the network, and the imp has every name this client answers to and
+-- keeps no book at all — it counts the shelves instead. Which one answers is
+-- which room you are standing in.
+--
+-- `raw` is the noun with its capitals still on, and only the imp has any use
+-- for it: see D.input.
+function D.ask(noun, raw)
     if D.here == 'workshop' then D.askClerk(noun) return end
+    if D.here == 'stacks' then D.askImp(noun, raw or '') return end
     if D.here ~= 'makers' then
-        say(C.text, 'There is nobody here to ask. Both books are kept off the commons: ',
-            'the sage\'s in Makers Hall to the west of it, the clerk\'s in the Workshop ',
-            'to the north.')
+        say(C.text, 'There is nobody here to ask. All three of them keep off the commons: ',
+            'the sage in Makers Hall to the west of it, the clerk in the Workshop to the ',
+            'north, and the imp in the Stacks below.')
         return
     end
     if noun == '' then D.ledger() return end
@@ -231,7 +237,7 @@ end
 
 function D.help()
     say()
-    say(C.sys, 'mudlet.org, walked instead of scrolled. Six rooms, one website.')
+    say(C.sys, 'mudlet.org, walked instead of scrolled. Seven rooms, one website.')
     say()
     say(C.text, '  ', cmd('look', 'look', 'look around'),
         C.text, '           ', C.desc, 'look around you')
@@ -245,6 +251,9 @@ function D.help()
     say(C.text, '  ', cmd('ask this week', 'ask about this week',
         'the clerk counts the last seven days'),
         C.text, '  ', C.desc, 'the clerk in the Workshop reads it off GitHub, live')
+    say(C.text, '  ', cmd('fetch <name>', 'fetch tempAlias',
+        'the imp keeps a box for every function this client has'),
+        C.text, '   ', C.desc, 'the imp in the Stacks deals only in exact names')
     say()
     -- The one place a colour tag is written by hand rather than by say(): the
     -- sample has to be closed with </u> as well as opened, because everything
@@ -276,7 +285,8 @@ REPLIES.inv = REPLIES.inventory
 REPLIES.credits = REPLIES.who
 
 function D.input(raw)
-    local cmdline = (raw or ''):lower():gsub('^%s+', ''):gsub('%s+$', '')
+    local typed = (raw or ''):gsub('^%s+', ''):gsub('%s+$', '')
+    local cmdline = typed:lower()
     if cmdline == '' then return end
 
     -- Anything typed ends a walk still in progress, the way it does in a real
@@ -284,8 +294,17 @@ function D.input(raw)
     -- stopped caring about. See D.walk() in map.lua.
     D.stopWalk()
 
-    local verb, rest = cmdline:match('^(%S+)%s*(.*)$')
-    rest = rest:gsub('^at%s+', ''):gsub('^the%s+', '')
+    -- Split off the raw line and lower it afterwards, rather than lowering
+    -- first: everything here matches in lower case — rooms, nouns, directions —
+    -- except the one room where the capitals are the whole point. A Mudlet
+    -- function is called registerAnonymousEventHandler and not
+    -- registeranonymouseventhandler, and an imp that pretended otherwise would
+    -- be teaching the wrong thing. Because `rest` is only ever `rawRest`
+    -- lowered, a prefix stripped from one can be cut off the other by length.
+    local verb, rawRest = typed:match('^(%S+)%s*(.*)$')
+    rawRest = rawRest:gsub('^[Aa][Tt]%s+', ''):gsub('^[Tt][Hh][Ee]%s+', '')
+    verb = verb:lower()
+    local rest = rawRest:lower()
 
     if DIRS[verb] and rest == '' then
         D.go(DIRS[verb])
@@ -306,13 +325,38 @@ function D.input(raw)
     elseif verb == 'ask' or verb == 'about' then
         -- 'ask sage about X' and 'ask X' both land here. There is at most one
         -- person to ask in any room, so who is being asked is optional — and
-        -- naming the wrong one of the two is not a correction worth printing.
-        D.ask((rest:gsub('^sage%s*', ''):gsub('^clerk%s*', ''):gsub('^about%s+', '')))
+        -- naming the wrong one of the three is not a correction worth printing.
+        local noun = rest:gsub('^sage%s*', ''):gsub('^clerk%s*', ''):gsub('^imp%s*', '')
+            :gsub('^about%s+', '')
+        D.ask(noun, rawRest:sub(#rawRest - #noun + 1))
+    elseif verb == 'fetch' or verb == 'box' then
+        -- The one verb in this world that is given the line as it was typed.
+        -- Refused outside the Stacks rather than answered, because an alias
+        -- made in there and used out here should say plainly that it worked and
+        -- that the imp is elsewhere.
+        if D.here == 'stacks' then
+            D.fetchBox(rawRest)
+        else
+            say(C.text, 'Your hands stay empty. The boxes — and the imp who will not ',
+                'reach for one without the name on its lid — are in the Stacks, south ',
+                'of the commons.')
+        end
+    elseif verb == 'alias' then
+        -- `alias b`, `alias on b`, `alias for b` all land the same place;
+        -- `alias off` takes it away again. See mudlet-demo/catalogue.lua, which
+        -- is the other half of what mudlet-demo/trigger.lua demonstrates.
+        local word = rest:gsub('^on%s+', ''):gsub('^for%s+', '')
+        if word == 'off' or word == 'none' or word == 'stop' then
+            D.aliasOff()
+        else
+            D.aliasFor(word)
+        end
     elseif verb == 'trigger' or verb == 'trig' or verb == 'watch' then
         -- `trigger on gold`, `trigger for gold`, `trigger gold` all land the
         -- same place; `trigger off` takes it away again. See
-        -- mudlet-demo/trigger.lua, which is the only thing in this world
-        -- that scripts the client rather than describing it.
+        -- mudlet-demo/trigger.lua — that and mudlet-demo/catalogue.lua are the
+        -- two things here that script the client rather than describing it, one
+        -- in each direction.
         local word = rest:gsub('^on%s+', ''):gsub('^for%s+', '')
         if word == 'off' or word == 'none' or word == 'stop' then
             D.triggerOff()

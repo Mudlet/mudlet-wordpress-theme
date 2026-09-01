@@ -52,9 +52,11 @@ requires the package.
 | `seed.lua` | the one request that replaces what it can reach |
 | `download.lua` | the crates and the orange button — one release, described twice |
 | `rooms/init.lua` | assembles `D.rooms` from one file per room |
-| `rooms/*.lua` | six rooms, one file each |
+| `rooms/*.lua` | seven rooms, one file each |
 | `people.lua` | `MAKERS`, and everything the sage says out of it |
 | `github.lua` | the clerk: the only thing here that talks to anything but the site |
+| `trigger.lua` | the clerk's other job, and the trigger the visitor writes for it |
+| `catalogue.lua` | the imp: two lists of names, and the alias that beats its wager |
 | `map.lua` | the mapper, the status bar, and the room ids they share |
 | `verbs.lua` | the parser and the verbs behind it; everything arrives at `D.input` |
 | `boot.lua` | the fake connect, and the first room on the other side of it |
@@ -97,10 +99,11 @@ uses IBM Plex Mono, the client Mudlet's Bitstream Vera Sans Mono.
 
 ## The world itself
 
-It is mudlet.org, walked instead of scrolled. Six rooms — the front page, the
+It is mudlet.org, walked instead of scrolled. Seven rooms — the front page, the
 release vault (`down`), the news room (`north`), the commons (`west`), the
-Makers Hall beyond it and the workshop north of it — each standing in for a part
-of the site, each thing in them linking out to the real page it parodies.
+Makers Hall beyond it, the workshop north of it and the Stacks south, behind the
+wiki door — each standing in for a part of the site, each thing in them linking
+out to the real page it parodies.
 `look windows` is the download page's Windows row, sha256 and all; `read board`
 is the three latest posts; the commons is the forum, wiki, Discord, GitHub and
 package-repository links, behind doors.
@@ -168,14 +171,14 @@ the visitor moved.
 
 Behind the pill is Mudlet's own mapper: the real widget, the real map database,
 `centerview` following you from room to room, floating in the corner over the
-text. Six rooms is a tiny map, but it is the same mapper a twelve-thousand-room
+text. Seven rooms is a tiny map, but it is the same mapper a twelve-thousand-room
 game drives, and "a real mapper" is one of the six claims the page makes two
 sections down. The vault is `down`/`up` only — it sits one square below the
 front page so it reads as a cellar, and the mapper draws the stair markers with
 no line, because a line would say you can walk south into it. The workshop goes
-north of the commons, inside the bounding box the other five already made, so
-adding it did not change the framing. Zoom is set so all six rooms stay in frame
-from *any* of them, not just from the middle.
+north of the commons and the Stacks south of it, both inside the bounding box
+the first five already made, so neither changed the framing. Zoom is set so
+every room stays in frame from *any* of them, not just from the middle.
 
 **None of that layout is written down.** `map.lua` walks the rooms breadth-first
 from the front page, one square per exit, so where a room is drawn is a
@@ -314,6 +317,57 @@ Notes on the shape of it, all of them in `github.lua`:
   and `mudlet-machine-account` as an ordinary user, so both are matched by name
   as well — "from seven hands and two machines" is the interesting half of the
   number.
+
+## The two rooms that write something
+
+The front page claims Mudlet is scriptable in Lua, and everything above
+demonstrates something else: a map, a real mapper, links, a clerk on a wire. Two
+rooms hand the visitor the thing itself, one for each direction a client points
+in — and they are two rooms rather than one because a trigger and an alias are
+opposites, and a room teaching both would teach neither.
+
+**North of the commons the clerk pays for a trigger** — the client reacting to
+what the world says. The word arrives plain, the visitor writes the trigger, and
+the same word comes back lit. It goes out through `dfeedTriggers` and not
+`say()`: a trigger fires on what arrives from the game, and a world colouring a
+word in and calling that a trigger would be proving nothing. `trigger.lua`.
+
+**South of it, behind the wiki door, an imp deals only in true names** — the
+client reshaping what the visitor says. The Stacks is the manual's function index
+with walls round it, one box per name, and the imp will not hand one over for a
+nickname, a near-miss, or the same word with the capitals rubbed off. It bets
+the visitor cannot say three of them properly in a row. The way to win is
+`tempAlias`, and the imp says so.
+
+Both lists it answers out of are counted rather than written:
+
+- **the catalogue** — Mudlet's own `src/lua-function-list.json`, every documented
+  name and the signature the editor completes your typing from, arriving with the
+  seed. 671 of them.
+- **the shelves** — `_G`, counted in the client the visitor is standing in.
+  1,105 functions against mudlet-web 0.4.5, of which 667 are the catalogue's and
+  the rest are Lua's own.
+
+So all four answers the imp can give are derived: on both lists, on neither, in
+the catalogue with no box behind it (four names, three of them about map
+perspective), or on the shelf with nobody having written it up — which is what
+`fetch table.concat` gets, and the reason the imp can tell the visitor where Lua
+stops and Mudlet starts without being told.
+
+The payoff is a thing the room genuinely cannot see. A temp alias is matched
+*before* the world's own catch-all — `processInputPass` tries the temp list
+first and stops there — so after the visitor writes one, `b tempAlias` never
+reaches this package at all and `fetch tempAlias` does. Both lines are echoed,
+because `hostSend` echoes what it sends; the imp only ever hears the second one,
+and says as much rather than pretending to know which way the visitor did it.
+
+The one lie the room refuses to tell is the useful one: `fetch` outside the
+Stacks is answered with the imp being elsewhere, not with a box, so an alias made
+in there and used in the vault still says plainly that it worked.
+
+`alias b` makes the same alias without the visitor reading any Lua, and prints
+the Lua it stood in for — the same bargain `trigger on gold` strikes in the
+Workshop, and for the same reason.
 
 ## Deploying it
 

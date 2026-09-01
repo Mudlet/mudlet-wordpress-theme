@@ -138,9 +138,10 @@ path. `init.lua` is the entry; the generated XML carries only the catch-all
 alias, `embed.lua` and a three-line bootstrap that requires the package. One
 file per concern — `core.lua` (the palette, the two kinds of link, the one
 `say()`), `urls.lua`, `site.lua` and `seed.lua`, `download.lua`,
-`people.lua` (the sage's ledger), `github.lua` (the clerk), `map.lua`,
-`verbs.lua`, `boot.lua`, and `rooms/<name>.lua` one per room, assembled by
-`rooms/init.lua`. The build globs `**/*.lua` and ships everything it finds,
+`people.lua` (the sage's ledger), `github.lua` (the clerk),
+`trigger.lua` and `catalogue.lua` (the two rooms that script the client),
+`map.lua`, `verbs.lua`, `boot.lua`, and `rooms/<name>.lua` one per room,
+assembled by `rooms/init.lua`. The build globs `**/*.lua` and ships everything it finds,
 but a file nothing requires is dead weight — reach a new module from one that
 already loads. Because the Lua is on disk rather than pasted into a script
 node, an error names the file and the line: `mudlet-demo/rooms/home.lua:47`.
@@ -185,6 +186,21 @@ the page has finished loading. Every way it can fail has a line in the clerk's
 own voice carrying the link to the page it could not read, GitHub's rate limit
 included, which the clerk owns up to. See `github.lua`, and
 `demo/README.md`.
+
+**Two rooms hand the visitor the scripting, one per direction.** The front page
+claims Lua and the hero would otherwise demonstrate everything but. The clerk
+pays for a **trigger** — the client reacting to what the world says — and south
+of the commons, behind the wiki door, an imp in the **Stacks** deals only in true
+names, which is an **alias**: the client reshaping what the visitor says. Two
+rooms and not one, because the two point opposite ways and a room teaching both
+would teach neither. The imp's stock is not typed either: the *catalogue* is
+Mudlet's own `src/lua-function-list.json` by way of the seed (671 names and their
+signatures), and the *shelves* are `_G`, counted in the client the visitor is
+standing in — so "in the book with no box behind it" and "on the shelf that
+nobody wrote up" are both worked out rather than written. The point of the room
+is a thing it cannot see: a temp alias matches ahead of the world's catch-all, so
+after the visitor writes one this package never hears the short word at all, and
+the imp says so instead of pretending. See `catalogue.lua` and `trigger.lua`.
 
 `demo/README.md` is thorough on the rest — how the embed strips the toolbar
 and login, the mapper, the link colour rules, the `say()` output path. Read it

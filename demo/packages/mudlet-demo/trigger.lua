@@ -5,6 +5,12 @@
 -- off the wire. So the Workshop gives the visitor a trigger to write, and pays
 -- them in the word it fires on.
 --
+-- Half the claim, and this is the half where the client reacts to what the
+-- world says. The other half — the client reshaping what the visitor says — is
+-- an alias, and it is in mudlet-demo/catalogue.lua, two rooms away, for the
+-- reason that a trigger and an alias point in opposite directions and one room
+-- teaching both would teach neither.
+--
 -- The demonstration is the order it happens in. The clerk names the fee first,
 -- in an ordinary line -- the word goes past in the same colour as everything
 -- around it, which is what a game looks like before anybody has scripted it.

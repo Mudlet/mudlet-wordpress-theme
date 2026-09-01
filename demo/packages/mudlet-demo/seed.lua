@@ -134,6 +134,21 @@ function D.applySeed(data)
     fill(SITE.makers, data.makers, { 'count', 'url' })
     if type(data.makers) == 'table' then roster(data.makers.people) end
 
+    -- Replaced wholesale rather than merged into: what is written in site.lua
+    -- is a dozen signatures standing in for the catalogue where there is no
+    -- site to ask, not a correction to be laid over the real one.
+    fill(SITE.functions, data.functions, { 'count', 'url' })
+    if type(data.functions) == 'table' and type(data.functions.list) == 'table' then
+        local list, found = {}, 0
+        for name, signature in pairs(data.functions.list) do
+            if type(name) == 'string' and type(signature) == 'string' then
+                list[name] = signature
+                found = found + 1
+            end
+        end
+        if found > 0 then SITE.functions.list = list end
+    end
+
     fill(SITE.news, data.news, { 'count', 'url' })
     if type(data.news) == 'table' then
         local board = notices(data.news.posts)

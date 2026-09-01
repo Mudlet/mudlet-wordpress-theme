@@ -53,6 +53,38 @@ local SITE = {
             'God Wars II' },
         url = URL.download,
     },
+    -- The shelves in the Stacks: what this client can be told to do.
+    --
+    -- The whole of it comes from the seed, which reads Mudlet's own
+    -- src/lua-function-list.json — every documented name, and the signature the
+    -- editor's autocomplete shows for it. Written out here it would be six
+    -- hundred lines of something upstream already keeps, so what is below is
+    -- not a snapshot of the catalogue: it is the dozen boxes the imp names out
+    -- loud, so the room still has signatures to show where there is no site to
+    -- ask.
+    --
+    -- A count of zero therefore means "no catalogue arrived", not "no
+    -- functions" — the imp counts the shelves themselves out of _G either way,
+    -- which is the number it trusts most anyway.
+    functions = {
+        count = 0,
+        url   = URL.functions,
+        list  = {
+            registerAnonymousEventHandler =
+                'registerAnonymousEventHandler(event name, functionReference, [one shot])',
+            permSubstringTrigger = 'permSubstringTrigger( name, parent, pattern table, lua code )',
+            getRoomUserDataKeys  = 'getRoomUserDataKeys(roomID)',
+            setBackgroundColor   = 'setBackgroundColor([windowName], r, g, b, [transparency])',
+            createMiniConsole    = 'createMiniConsole([name of userwindow], name, x, y, width, height)',
+            dfeedTriggers        = 'dfeedTriggers(str)',
+            tempAlias            = 'aliasID = tempAlias(regex, code to do)',
+            tempTrigger          = 'tempTrigger(substring, code, expireAfter)',
+            expandAlias          = 'expandAlias(command, [echoBackToBuffer])',
+            killAlias            = 'killAlias(aliasID)',
+            selectString         = 'selectString([windowName], text, number_of_match)',
+            getPath              = 'getPath(roomID from, roomID to)',
+        },
+    },
     -- The ledger, and what the sage says when asked about anyone in it. MAKERS
     -- in people.lua is the same list written out, and it is the fallback: the
     -- site's copy wins wherever there is a site, so nobody's credit depends on

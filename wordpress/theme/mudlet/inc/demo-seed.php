@@ -96,6 +96,63 @@ function mudlet_demo_seed(): array {
 		'games'     => mudlet_demo_seed_games(),
 		'makers'    => mudlet_demo_seed_makers(),
 		'news'      => mudlet_demo_seed_news(),
+		'functions' => mudlet_demo_seed_functions(),
+	);
+}
+
+/**
+ * The shelves in the Stacks: everything the client can be told to do.
+ *
+ * Mudlet keeps the list of its own Lua API in `src/lua-function-list.json` —
+ * name to signature, which is what the editor finishes your typing out of — and
+ * that file is the only honest answer to "what does this client know how to
+ * do". Read from upstream for the same reason the games and the makers are: a
+ * copy in this repository would only decide how stale a new site starts out.
+ *
+ * The demo does not take it as gospel. It counts the client's own globals for
+ * the number it quotes and uses this for the signatures and for the handful of
+ * names the catalogue has that the build does not — so a request that fails
+ * costs a signature, not a room.
+ *
+ * Cached for a day on success and ten minutes on failure, because an empty
+ * answer pinned to the busiest page on the site for a day is worse than asking
+ * again. It is 36 KB of JSON on a route the hero fetches at boot; gzip takes it
+ * to nine, which is less than any one of the images above it on the page.
+ *
+ * @return array<string, mixed>
+ */
+function mudlet_demo_seed_functions(): array {
+	$list = get_transient( 'mudlet_demo_lua_functions' );
+
+	if ( ! is_array( $list ) ) {
+		$list     = array();
+		$response = wp_remote_get(
+			'https://raw.githubusercontent.com/Mudlet/Mudlet/development/src/lua-function-list.json',
+			array( 'timeout' => 8 )
+		);
+
+		if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+			if ( is_array( $decoded ) ) {
+				foreach ( $decoded as $name => $signature ) {
+					if ( is_string( $name ) && '' !== $name && is_string( $signature ) ) {
+						$list[ $name ] = $signature;
+					}
+				}
+			}
+		}
+
+		set_transient(
+			'mudlet_demo_lua_functions',
+			$list,
+			$list ? DAY_IN_SECONDS : 10 * MINUTE_IN_SECONDS
+		);
+	}
+
+	return array(
+		'count' => count( $list ),
+		'list'  => $list,
+		'url'   => 'https://wiki.mudlet.org/w/Manual:Lua_Functions',
 	);
 }
 

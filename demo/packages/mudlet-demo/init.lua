@@ -1,15 +1,20 @@
 -- mudlet.org, walked instead of scrolled.
 --
--- Six rooms stand in for the site: the front page, the release downloads, the
--- news archive, the places the site links out to, the people who built it and
--- the workshop they build it in. Everything a visitor can open here opens the
--- real page it is parodying — the descriptions carry the links, so
--- `look windows` is the download page's Windows row and the link in it is that
--- row's button.
+-- Seven rooms stand in for the site: the front page, the release downloads, the
+-- news archive, the places the site links out to, the people who built it, the
+-- workshop they build it in and the index behind the manual's door. Everything a
+-- visitor can open here opens the real page it is parodying — the descriptions
+-- carry the links, so `look windows` is the download page's Windows row and the
+-- link in it is that row's button.
 --
--- One room is the exception to all of that, and it is the last one: the
+-- Two rooms are the exception to all of that, and they are the last two. The
 -- Workshop does not know what it says until somebody asks, because what landed
--- this week is not a fact about the site at all. See mudlet-demo/github.lua.
+-- this week is not a fact about the site at all (mudlet-demo/github.lua). The
+-- Stacks does not either, but for the opposite reason: what it keeps is a fact
+-- about the client the visitor is standing in, and it counts it rather than
+-- asking anyone (mudlet-demo/catalogue.lua). Between them they are the two
+-- halves of "scriptable in Lua" — a trigger written in one, an alias in the
+-- other.
 --
 -- Nothing has to be typed. Every noun, exit and suggested command prints as a
 -- clickable link, so the whole world is playable with a mouse — which is the
@@ -38,6 +43,7 @@ require('mudlet-demo.rooms')
 require('mudlet-demo.people')
 require('mudlet-demo.github')
 require('mudlet-demo.trigger')
+require('mudlet-demo.catalogue')
 require('mudlet-demo.map')
 require('mudlet-demo.verbs')
 require('mudlet-demo.seed')
