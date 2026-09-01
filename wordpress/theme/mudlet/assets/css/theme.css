@@ -14,6 +14,11 @@ body{margin:0; background:#fffdf8}
 :root[data-theme="dark"]{color-scheme:dark}
 :root[data-theme="dark"] body{background:#17130e}
 img{max-width:100%; display:block}
+/* The line above is an author rule, so it outranks the UA sheet's
+   [hidden]{display:none} and leaves a hidden <img> on the page taking up its
+   box. Every img here is display:block deliberately; this is the exception the
+   rule forgot. */
+img[hidden]{display:none}
 button{font:inherit; color:inherit}
 :focus-visible{outline:2px solid var(--ember); outline-offset:2px; border-radius:3px}
 
@@ -34,6 +39,13 @@ button{font:inherit; color:inherit}
   /* surfaces, so the whole page can be repainted from one block */
   --card:#ffffff; --hover:rgba(255,255,255,.6); --topbg:rgba(255,253,248,.93);
   --on-accent:#ffffff; --sh:60,40,10;
+  /* One vertical rhythm for every band on the page. It used to be typed into
+     nine rules in three barely-different clamps — 7vw here, 6vw there, a 4rem
+     cap on one and 4.5rem on the next — differences nobody could see and
+     nobody was maintaining. This is that value, unified and halved: the old
+     spacing was drawn for a page of three sections and reads as dead air on
+     one with six. Sections that genuinely want more room say so themselves. */
+  --secpad:clamp(1.5rem,3.5vw,2.25rem);
 }
 
 /* ── DARK ─────────────────────────────────────────────────────────
@@ -129,6 +141,99 @@ button{font:inherit; color:inherit}
   border-top:1px solid var(--line); background:var(--band)}
 #site .palette__foot span{display:flex; align-items:center; gap:.35rem}
 
+/* — the lightbox: the screenshot carousel's full-size view —
+   The second <dialog> on the site, and for the same reasons as the first:
+   showModal() brings the top layer, the backdrop, the focus trap, the
+   inert-page behaviour and Escape without any of it being written here.
+   It is built by assets/js/theme.js and appended inside #site, so it reads
+   the same custom properties as everything else and follows the theme
+   toggle; a dialog parked on <body> would come up in light mode on a dark
+   page. Dark-first regardless of theme, though — a picture is what the
+   visitor came to look at, and a cream sheet around it is a second thing
+   competing with it. */
+#site .mlb{width:100vw; max-width:none; height:100dvh; max-height:none; margin:0; padding:0;
+  background:transparent; border:0; color:#f3ece0; overflow:hidden}
+#site .mlb::backdrop{background:rgba(10,7,4,.92)}
+/* Two rows, not three: the bar is fixed like the arrows, because it is chrome
+   over the picture rather than a band above it — which is also what keeps the
+   close button in the corner of the screen where a visitor reaches for it in
+   both of the shapes below. */
+#site .mlb[open]{display:grid; grid-template-rows:minmax(0,1fr) auto;
+  padding-top:3.6rem; animation:mlbin .18s ease both}
+/* A picture is given the room and fills it. A video is a fixed shape that
+   cannot use the room, so the frame and its caption shrink to the video and
+   centre together — otherwise the player floats in the middle of a black field
+   with its own caption stranded an inch off the bottom of the screen. */
+#site .mlb[open][data-kind="video"]{grid-template-rows:auto auto; align-content:center;
+  padding-top:0}
+@keyframes mlbin{ from{opacity:0} to{opacity:1} }
+@media (prefers-reduced-motion:reduce){ #site .mlb[open]{animation:none} }
+
+#site .mlb__bar{position:fixed; top:0; left:0; right:0; z-index:2;
+  display:flex; align-items:center; gap:1rem; padding:.7rem .9rem}
+#site .mlb__n{margin-right:auto; font-family:var(--display); font-size:.75rem;
+  letter-spacing:.06em; color:#a2947e; font-variant-numeric:tabular-nums}
+/* Dark and solid rather than a light film, because these sit *on* the picture
+   and the picture is somebody's screenshot: a white Mudlet window one slide, a
+   black terminal the next. A 6%-white ground disappears entirely over the
+   second, which is a next button nobody can find. Dark with a bright rim reads
+   over both. */
+#site .mlb__btn{display:grid; place-items:center; width:2.4rem; height:2.4rem; padding:0;
+  color:#f3ece0; background:rgba(16,11,6,.62); border:1px solid rgba(255,255,255,.3);
+  border-radius:50%; cursor:pointer; backdrop-filter:blur(3px);
+  box-shadow:0 2px 10px rgba(0,0,0,.45);
+  transition:background .15s, border-color .15s}
+#site .mlb__btn:hover{background:rgba(16,11,6,.88); border-color:rgba(255,255,255,.6)}
+#site .mlb__btn[hidden]{display:none}
+#site .mlb__btn svg{width:1.15rem; height:1.15rem}
+
+/* The figure is the middle row and owns no height of its own: min-height:0 on
+   a grid item is what lets max-height:100% mean the row rather than the
+   dialog, which is the difference between a tall screenshot fitting and it
+   pushing the caption off the bottom of the screen. */
+#site .mlb__fig{position:relative; min-height:0; margin:0; padding:0}
+#site .mlb[data-kind="video"] .mlb__fig{display:block}
+/* Absolutely positioned, and that is the whole trick. Every percentage way of
+   writing "as big as the row and no bigger" fails here: the figure is a grid
+   item stretched into a 1fr row, and Chrome will not treat that height as
+   definite for a replaced child, so both height:100% and max-height:100% come
+   out as auto and a tall screenshot renders at its natural size and runs off
+   the bottom of the screen. An absolutely positioned box takes its size from
+   the containing block directly, with no percentage to resolve, and object-fit
+   shrinks the picture inside it. The 1rem inset is the breathing room the
+   figure's padding used to give. */
+#site .mlb__fig img{position:absolute; inset:0 1rem; width:calc(100% - 2rem); height:100%;
+  object-fit:contain; border-radius:10px}
+/* Sat over the picture, not beside it: the arrows are for moving through
+   fifteen shots quickly, and a hand that has found one should not have to
+   travel to find the other. */
+#site .mlb__arrow{position:fixed; top:50%; margin-top:-1.4rem; z-index:1;
+  width:2.8rem; height:2.8rem}
+#site .mlb__arrow--prev{left:max(.9rem,2vw)}
+#site .mlb__arrow--next{right:max(.9rem,2vw)}
+/* In the flow, unlike the picture, and that is the point: the row above is
+   sized to whatever this comes out as. Sized off the viewport rather than off
+   its parent for the same reason the picture is — an iframe is a replaced
+   element too, and the percentage would not resolve — so it is a 16:9 box
+   fitted to whichever runs out first, the width of the dialog or the height
+   left once the bar and the caption have taken theirs. */
+#site .mlb__frame{display:block; margin-inline:auto; border:0; border-radius:10px;
+  width:min(calc(100% - 2rem), calc((100dvh - 11rem) * 16 / 9)); aspect-ratio:16/9; height:auto;
+  background:#000}
+#site .mlb__frame[hidden]{display:none}
+#site .mlb__cap{min-height:2.6rem; padding:.8rem 1.2rem 1.2rem; text-align:center;
+  font-family:var(--display); font-size:.8rem; line-height:1.6; color:#a2947e}
+#site .mlb__out{margin-left:.9ch; color:#f3ece0; text-underline-offset:.2em}
+#site .mlb__out[hidden]{display:none}
+#site .mlb__out:hover{color:var(--ember)}
+@media (max-width:44rem){
+  /* At phone width there is no room beside the picture for a 2.8rem circle,
+     so the arrows come out of the overlay and join the bar at the top, where
+     the close button already is. */
+  #site .mlb__arrow{position:static; margin:0; width:2.4rem; height:2.4rem}
+  #site .mlb__fig{padding-inline:.5rem}
+}
+
 #site .theme{display:flex; align-items:center; justify-content:center; width:2.05rem; height:2.05rem;
   color:var(--dim); background:transparent; border:1px solid transparent; border-radius:7px; cursor:pointer}
 #site .theme:hover{color:var(--ink); background:var(--band)}
@@ -169,7 +274,7 @@ button{font:inherit; color:inherit}
 #site .util .btn{font-size:.84rem; padding:.42rem .95rem}
 
 /* — hero — */
-#site .hero{padding-block:clamp(3rem,7vw,5rem)}
+#site .hero{padding-block:var(--secpad)}
 #site .hero .w{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
   gap:clamp(2rem,5vw,4rem); align-items:center}
 @media (max-width:60rem){ #site .hero .w{grid-template-columns:1fr} }
@@ -370,7 +475,7 @@ button{font:inherit; color:inherit}
 /* — signature: feature switcher —
    Autoplays, so each panel has to earn its six seconds. Hovering or
    tabbing in holds it; a click hands it over for good. */
-#site .showcase{background:var(--band); border-block:1px solid var(--line); padding-block:clamp(3rem,7vw,5rem)}
+#site .showcase{background:var(--band); border-block:1px solid var(--line); padding-block:var(--secpad)}
 #site .sw{display:grid; grid-template-columns:minmax(0,19rem) minmax(0,1fr); gap:clamp(1.25rem,3vw,2.5rem); align-items:start}
 @media (max-width:56rem){ #site .sw{grid-template-columns:1fr} }
 #site .swlist{display:flex; flex-direction:column; gap:.3rem}
@@ -435,7 +540,7 @@ button{font:inherit; color:inherit}
 #site[data-page="post"] .page--post{display:block}
 
 /* — download — */
-#site .dl{padding-block:clamp(2.5rem,6vw,4rem)}
+#site .dl{padding-block:var(--secpad)}
 /* this sub is a single 77-character line, not a paragraph; the 52ch measure
    inherited from .head broke it in two on screens with room to spare */
 #site .dl .head .sub{max-width:none}
@@ -443,6 +548,7 @@ button{font:inherit; color:inherit}
 #site .dlmain{background:var(--card); border:1px solid var(--line); border-radius:14px;
   padding:clamp(1.4rem,3.5vw,2.1rem); display:flex; gap:clamp(1.1rem,3vw,2rem);
   align-items:center; flex-wrap:wrap; box-shadow:0 18px 40px -28px rgba(var(--sh),.5)}
+#site .dlmain[hidden]{display:none}   /* no build we can name: see theme.js */
 #site .dlmain__icon{width:2.6rem; height:2.6rem; flex:none; color:var(--ink)}
 #site .dlmain__icon svg{width:100%; height:100%}
 #site .dlmain__os{flex:1; min-width:13rem}
@@ -609,7 +715,7 @@ button{font:inherit; color:inherit}
   color:var(--dim); max-width:66ch}
 
 /* — games: modelled on Mudlet's own profile picker — */
-#site .games{padding-block:clamp(3rem,7vw,4.5rem)}
+#site .games{padding-block:var(--secpad)}
 #site .pgrid{display:grid; gap:.7rem; grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr))}
 #site .pcard{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:.85rem;
   display:flex; flex-direction:column; gap:.6rem; text-decoration:none; transition:.15s}
@@ -633,7 +739,7 @@ button{font:inherit; color:inherit}
 #site .pmore span{font-family:var(--body); white-space:normal}
 
 /* — prose — */
-#site .sec{padding-block:clamp(3rem,7vw,4.5rem)}
+#site .sec{padding-block:var(--secpad)}
 #site .split{display:grid; grid-template-columns:repeat(auto-fit,minmax(19rem,1fr)); gap:2.75rem}
 #site .split h2{font-size:clamp(1.4rem,3vw,1.85rem); margin-bottom:1rem}
 #site .split p{color:var(--dim); margin-bottom:1rem}
@@ -644,7 +750,7 @@ button{font:inherit; color:inherit}
   text-transform:uppercase; color:var(--dim)}
 
 /* — news — */
-#site .newsband{background:var(--band); border-block:1px solid var(--line); padding-block:clamp(3rem,6vw,4.5rem)}
+#site .newsband{background:var(--band); border-block:1px solid var(--line); padding-block:var(--secpad)}
 #site .ncards{display:grid; grid-template-columns:repeat(auto-fit,minmax(17rem,1fr)); gap:1.1rem}
 #site .ncard{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.3rem 1.35rem;
   text-decoration:none; display:flex; flex-direction:column; gap:.5rem; transition:.15s}
@@ -660,7 +766,7 @@ button{font:inherit; color:inherit}
      outro zone with the footer beneath it. Orange lifts to --ember
      here because #c44400 is too dark to sit on the terminal ground. — */
 #site .hopin{background:var(--ink-d); color:var(--on-d);
-  padding-block:clamp(3rem,7vw,4.5rem); border-bottom:1px solid var(--line-d)}
+  padding-block:var(--secpad); border-bottom:1px solid var(--line-d)}
 #site .hopin .eyebrow{color:var(--on-d-dim); border-bottom-color:var(--line-d)}
 #site .hopin .eyebrow::before{color:var(--ember)}
 #site .hopin h2{color:var(--on-d)}
@@ -705,7 +811,7 @@ button{font:inherit; color:inherit}
 #site .topnav a[aria-current]{color:var(--ink); background:var(--band)}
 
 /* ── archive ──────────────────────────────────────────────────────── */
-#site .archive{padding-block:clamp(2.5rem,6vw,4rem)}
+#site .archive{padding-block:var(--secpad)}
 
 /* The newest post gets the room the list cannot give it — on a release day
    it is the one thing anyone came for. Its right rail is the release itself
@@ -884,7 +990,7 @@ button{font:inherit; color:inherit}
 /* ── single post ──────────────────────────────────────────────────── */
 /* The article column keeps its 53rem reading measure; the rail takes the
    width beside it rather than the article growing into it. */
-#site .post{padding-block:clamp(2rem,5vw,3rem)}
+#site .post{padding-block:var(--secpad)}
 #site .postgrid{display:grid; grid-template-columns:minmax(0,1fr) 15.5rem;
   column-gap:clamp(1.75rem,4vw,3.5rem); align-items:start}
 #site .postmain{min-width:0; max-width:53rem}

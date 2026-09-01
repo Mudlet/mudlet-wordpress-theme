@@ -460,6 +460,19 @@
 		else if (/Mac/i.test(plat) || /Mac OS X/i.test(ua)) key = 'macarm';
 		else if (/Linux|X11/i.test(plat + ua)) key = 'linux';
 
+		// The Public Test Build's page takes the same platform this detection
+		// just made, so the visitor lands on their own build rather than a
+		// picker. Anything else - a phone, ChromeOS, an OS we did not
+		// recognise - drops the parameter: the snapshots page then offers all
+		// three, which is a better answer than a guessed platform.
+		var ptb = document.getElementById('ptb');
+		if (ptb) {
+			var snap = key === 'win' ? 'windows'
+			         : (key === 'macarm' || key === 'macx86') ? 'macos'
+			         : key === 'linux' ? 'linux' : '';
+			if (snap) ptb.href += (ptb.href.indexOf('?') < 0 ? '?' : '&') + 'platform=' + snap;
+		}
+
 		if (key === 'cros') {
 			if (os) os.textContent = str.crosName || 'Mudlet on ChromeOS';
 			if (meta) meta.textContent = str.crosMeta || '';
@@ -468,7 +481,16 @@
 			if (dl.crosUrl) btn.href = dl.crosUrl;
 			return;
 		}
-		if (!key || !dl.builds[key]) return;   // leave the generic copy
+		// A phone, a tablet, an OS we cannot name: there is no build to lead
+		// with, so the panel goes rather than standing there offering the site
+		// name and a version with nothing behind the button. The table below
+		// names all four builds, which is the honest answer to a platform we
+		// did not recognise.
+		if (!key || !dl.builds[key]) {
+			var panel = btn.closest ? btn.closest('.dlmain') : null;
+			if (panel) panel.hidden = true;
+			return;
+		}
 
 		var b = dl.builds[key];
 		if (os) os.textContent = (str.heading || 'Mudlet %1$s for %2$s')
@@ -1074,6 +1096,416 @@
 			if (!pick.length) pick = pool;
 
 			draw(pick[Math.floor(Math.random() * pick.length)]);
+		});
+	})();
+
+	// ── the screenshot carousel, the screencasts, and the lightbox ───────
+	// A core gallery carrying the "Screenshot carousel" block style. Core drew
+	// a grid of every image, each one linking to itself; this rearranges that
+	// into one-at-a-time with arrows, dots and a full-size view, and does it
+	// on the front end only. Nothing here runs in the editor and nothing here
+	// is required for the block to make sense — with the script gone the page
+	// still shows every screenshot and every click still reaches the full
+	// image. See assets/css/blocks.css, where the whole carousel hangs off the
+	// [data-carousel] this sets.
+	//
+	// The track is a scroll-snap scroller rather than a translated strip. That
+	// is the one decision the rest of this follows from: the browser keeps the
+	// position across a resize, a font swap and an image loading late, it
+	// handles the touch gesture, and moving is a scrollTo rather than arithmetic
+	// nothing else can see. What is left to do here is read which slide is
+	// showing and say so.
+	// The lightbox at the bottom of this serves both: the carousel opens it on a
+	// screenshot, a screencast list opens it on the video. Same dialog, same
+	// arrows, same counter — a visitor learns it once.
+	(function () {
+		var gals = document.querySelectorAll('#site .is-style-mudlet-carousel');
+		var casts = document.querySelectorAll('#site .is-style-mudlet-screencasts');
+		if (!gals.length && !casts.length) return;
+
+		var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+		var DWELL = 5000;
+		var box = null; // the lightbox, built once and shared by every gallery
+
+		function svg(d) {
+			var el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+			el.setAttribute('viewBox', '0 0 24 24');
+			el.setAttribute('fill', 'none');
+			el.setAttribute('stroke', 'currentColor');
+			el.setAttribute('stroke-width', '2');
+			el.setAttribute('stroke-linecap', 'round');
+			el.setAttribute('stroke-linejoin', 'round');
+			el.setAttribute('aria-hidden', 'true');
+			var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+			p.setAttribute('d', d);
+			el.appendChild(p);
+			return el;
+		}
+		var CHEV_L = 'M15 18l-6-6 6-6';
+		var CHEV_R = 'M9 18l6-6-6-6';
+		var CROSS = 'M18 6L6 18M6 6l12 12';
+
+		function button(cls, label, d) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = cls;
+			b.setAttribute('aria-label', label);
+			b.appendChild(svg(d));
+			return b;
+		}
+
+		// The full-size URL. linkTo:"media" is what the pattern and the seed
+		// both set, so the anchor is normally there and is also the no-script
+		// fallback; the srcset's own source is the backstop for a gallery
+		// somebody linked to nothing.
+		function full(slide) {
+			var a = slide.querySelector('a[href]');
+			var img = slide.querySelector('img');
+			if (a && a.href) return a.href;
+			return img ? (img.currentSrc || img.src) : '';
+		}
+
+		function caption(slide) {
+			var cap = slide.querySelector('figcaption');
+			return cap ? (cap.textContent || '').trim() : '';
+		}
+
+		// A YouTube watch URL turned into the embed for it, or '' for anything
+		// that is not one. Anything else stays an ordinary link and navigates:
+		// the day somebody adds a Vimeo or a write-up to that list, it works,
+		// because nothing here claims a link it cannot actually play.
+		//
+		// youtube-nocookie.com, not youtube.com: it is the same player without
+		// the cookie set on arrival, and the visitor has not asked to be counted
+		// yet — they have asked to watch a video about aliases.
+		function youtube(href) {
+			var u;
+			try { u = new URL(href, location.href); } catch (e) { return ''; }
+
+			var host = u.hostname.replace(/^www\./, '');
+			var id = '';
+			if (host === 'youtu.be') {
+				id = u.pathname.slice(1);
+			} else if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+				var m = u.pathname.match(/^\/(?:embed|v|shorts|live)\/([^/]+)/);
+				id = u.pathname === '/watch' ? (u.searchParams.get('v') || '') : (m ? m[1] : '');
+			}
+			if (!/^[\w-]{6,}$/.test(id)) return '';
+
+			// rel=0 keeps the end screen on the same channel. The playlist is
+			// carried through because three of these eight are one, and the
+			// start time because a link into the middle of a video means it.
+			var q = 'autoplay=1&rel=0';
+			var list = u.searchParams.get('list');
+			if (list) q += '&list=' + encodeURIComponent(list);
+			var at = u.searchParams.get('t') || u.searchParams.get('start');
+			if (at) q += '&start=' + encodeURIComponent(String(at).replace(/[^0-9]/g, ''));
+
+			return 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?' + q;
+		}
+
+		// ── the lightbox ─────────────────────────────────────────────────
+		// One <dialog>, built on the first open and reused. showModal() is what
+		// makes it a lightbox: the top layer, the backdrop, the focus trap, the
+		// rest of the page inert and Escape, none of which is written here.
+		function lightbox() {
+			if (box) return box;
+
+			var dlg = document.createElement('dialog');
+			dlg.className = 'mlb';
+			dlg.setAttribute('aria-label', S.galLabel || 'Screenshots');
+
+			var bar = document.createElement('div');
+			bar.className = 'mlb__bar';
+			var n = document.createElement('p');
+			n.className = 'mlb__n';
+			var x = button('mlb__btn mlb__x', S.galClose || 'Close', CROSS);
+			bar.appendChild(n);
+			bar.appendChild(x);
+
+			var prev = button('mlb__btn mlb__arrow mlb__arrow--prev', S.galPrev || 'Previous', CHEV_L);
+			var next = button('mlb__btn mlb__arrow mlb__arrow--next', S.galNext || 'Next', CHEV_R);
+
+			var fig = document.createElement('figure');
+			fig.className = 'mlb__fig';
+			var img = document.createElement('img');
+			img.alt = '';
+			var frame = document.createElement('iframe');
+			frame.className = 'mlb__frame';
+			frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+			frame.referrerPolicy = 'strict-origin-when-cross-origin';
+			frame.allowFullscreen = true;
+			frame.hidden = true;
+			fig.appendChild(img);
+			fig.appendChild(frame);
+
+			var cap = document.createElement('p');
+			cap.className = 'mlb__cap';
+			// Always an out. A video whose owner has disabled embedding plays
+			// nowhere but on YouTube, and the player says so inside a box the
+			// visitor cannot click past — so the way out is on our side of it,
+			// not inside the frame.
+			var out = document.createElement('a');
+			out.className = 'mlb__out';
+			out.target = '_blank';
+			out.rel = 'noopener external';
+			out.textContent = S.galWatch || 'Watch on YouTube';
+			out.hidden = true;
+
+			cap.appendChild(document.createTextNode(''));
+			cap.appendChild(out);
+
+			dlg.appendChild(bar);
+			dlg.appendChild(prev);
+			dlg.appendChild(next);
+			dlg.appendChild(fig);
+			dlg.appendChild(cap);
+
+			// Inside #site, not on <body>: every colour in the sheet is a custom
+			// property declared on #site, and the theme toggle sets its attribute
+			// on <html>. A dialog parked outside would come up unstyled.
+			(document.getElementById('site') || document.body).appendChild(dlg);
+
+			box = {
+				el: dlg, img: img, cap: cap, n: n,
+				items: [], i: 0,
+				show: function (i) {
+					var it = this.items[(i + this.items.length) % this.items.length];
+					if (!it) return;
+					this.i = (i + this.items.length) % this.items.length;
+
+					// Clearing the src is what stops the sound. Hiding an iframe
+					// leaves it playing, and moving from video three to video
+					// four has to end video three.
+					frame.removeAttribute('src');
+					// A picture takes the room it is given; a video keeps its own
+					// shape and the dialog closes up around it. See theme.css.
+					dlg.dataset.kind = it.embed ? 'video' : 'image';
+
+					if (it.embed) {
+						img.hidden = true;
+						img.removeAttribute('src');
+						frame.hidden = false;
+						frame.title = it.cap;
+						frame.src = it.embed;
+					} else {
+						frame.hidden = true;
+						img.hidden = false;
+						img.src = it.src;
+						img.alt = it.alt;
+					}
+
+					this.cap.firstChild.textContent = it.cap;
+					this.cap.hidden = !it.cap && !it.href;
+					out.hidden = !it.href;
+					if (it.href) out.href = it.href;
+
+					this.n.textContent = (S.galCount || '%1$s / %2$s')
+						.replace('%1$s', this.i + 1).replace('%2$s', this.items.length);
+					// A gallery of one is a picture with a close button.
+					prev.hidden = next.hidden = this.items.length < 2;
+				},
+				open: function (items, i, label) {
+					dlg.setAttribute('aria-label', label || (S.galLabel || 'Screenshots'));
+					this.items = items;
+					this.show(i);
+					if (!dlg.open) dlg.showModal();
+				}
+			};
+
+			x.addEventListener('click', function () { dlg.close(); });
+			prev.addEventListener('click', function () { box.show(box.i - 1); });
+			next.addEventListener('click', function () { box.show(box.i + 1); });
+			dlg.addEventListener('keydown', function (e) {
+				if (e.key === 'ArrowLeft') { e.preventDefault(); box.show(box.i - 1); }
+				if (e.key === 'ArrowRight') { e.preventDefault(); box.show(box.i + 1); }
+			});
+			// Clicking the ground closes it, the way every lightbox does. The
+			// picture, the caption and the buttons are all elements of their own,
+			// so a click that lands on the dialog itself landed on the backdrop
+			// or on the padding around the figure — either is "not the picture".
+			dlg.addEventListener('click', function (e) {
+				if (e.target === dlg || e.target === fig) dlg.close();
+			});
+			// Closing has to stop the video, however it was closed - the button,
+			// the backdrop or Escape, which never reaches this script at all.
+			//
+			// The guard is not paranoia: the close event is queued rather than
+			// fired inline, so closing and opening again before it is delivered
+			// - Escape, then a click on the next card - arrives after the new
+			// video has already been put in the frame, and would tear down the
+			// one that is playing.
+			dlg.addEventListener('close', function () {
+				if (dlg.open) return;
+				frame.removeAttribute('src');
+				frame.hidden = true;
+			});
+
+			return box;
+		}
+
+		Array.prototype.forEach.call(gals, function (gal) {
+			var slides = Array.prototype.filter.call(gal.children, function (el) {
+				return el.tagName === 'FIGURE';
+			});
+			if (!slides.length) return;
+
+			var track = document.createElement('div');
+			track.className = 'mgal__track';
+			slides.forEach(function (sl) { track.appendChild(sl); });
+			gal.insertBefore(track, gal.firstChild);
+
+			var prev = button('mgal__arrow mgal__arrow--prev', S.galPrev || 'Previous', CHEV_L);
+			var next = button('mgal__arrow mgal__arrow--next', S.galNext || 'Next', CHEV_R);
+			var dots = document.createElement('div');
+			dots.className = 'mgal__dots';
+
+			var buttons = slides.map(function (sl, i) {
+				var d = document.createElement('button');
+				d.type = 'button';
+				d.className = 'mgal__dot';
+				d.setAttribute('aria-label', (S.galGo || 'Screenshot %s').replace('%s', i + 1));
+				d.addEventListener('click', function () { surrender(); go(i); });
+				dots.appendChild(d);
+				return d;
+			});
+
+			if (slides.length > 1) {
+				gal.appendChild(prev);
+				gal.appendChild(next);
+				gal.appendChild(dots);
+			}
+			// "Cropped" is the gallery's default and it is a grid's answer, not a
+			// carousel's: core fills each tile with object-fit:cover, which on a
+			// full-width frame means a screenshot with its edges cut off. The
+			// class comes off rather than being out-specified, because core writes
+			// those rules as :not(#individual-image) — an id, deliberately, to
+			// make them hard to beat — and a stylesheet arms race over one class
+			// that is simply the wrong class is a fight worth not having.
+			gal.classList.remove('is-cropped');
+			gal.setAttribute('data-carousel', 'on');
+
+			var at = 0, timer = null, surrendered = reduce, ticking = false;
+
+			// Core marks all but the first image lazy, which is right for a grid
+			// and wrong for a strip: horizontally off-screen slides are not near
+			// the viewport, so arrowing to slide nine would arrive on a blank.
+			// The neighbours of wherever we are get loaded eagerly instead.
+			function warm(i) {
+				[-1, 0, 1].forEach(function (d) {
+					var sl = slides[(i + d + slides.length) % slides.length];
+					var img = sl && sl.querySelector('img[loading="lazy"]');
+					if (img) img.removeAttribute('loading');
+				});
+			}
+
+			function mark(i) {
+				at = i;
+				buttons.forEach(function (b, j) {
+					b.setAttribute('aria-current', j === i ? 'true' : 'false');
+				});
+				warm(i);
+			}
+
+			function go(i) {
+				i = (i + slides.length) % slides.length; // both ends wrap: it is a loop
+				track.scrollTo({ left: i * track.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+				mark(i);
+			}
+
+			function play() {
+				if (surrendered || slides.length < 2) return;
+				clearInterval(timer);
+				timer = setInterval(function () { go(at + 1); }, DWELL);
+			}
+			function hold() { clearInterval(timer); }
+			function surrender() { surrendered = true; hold(); }
+
+			prev.addEventListener('click', function () { surrender(); go(at - 1); });
+			next.addEventListener('click', function () { surrender(); go(at + 1); });
+
+			// Reading the position back out of the scroller, rather than trusting
+			// what we last asked for: a swipe, a shift-wheel and a focused image
+			// scrolled into view all move it without going through go().
+			track.addEventListener('scroll', function () {
+				if (ticking) return;
+				ticking = true;
+				requestAnimationFrame(function () {
+					ticking = false;
+					var w = track.clientWidth;
+					if (w) mark(Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / w))));
+				});
+			}, { passive: true });
+
+			// A hand on the strip is somebody driving it themselves.
+			['pointerdown', 'wheel', 'touchstart'].forEach(function (ev) {
+				track.addEventListener(ev, surrender, { passive: true });
+			});
+			gal.addEventListener('mouseenter', hold);
+			gal.addEventListener('mouseleave', play);
+			gal.addEventListener('focusin', hold);
+			gal.addEventListener('focusout', play);
+
+			// never cycle a gallery nobody is looking at
+			if (window.IntersectionObserver) {
+				new IntersectionObserver(function (entries) {
+					if (entries[0].isIntersecting) play(); else hold();
+				}, { threshold: 0.3 }).observe(gal);
+			} else {
+				play();
+			}
+
+			// The click that opens the full size. The anchor core wrote is the
+			// no-script path and stays exactly where it is — this only gets in
+			// front of it, so a middle click or ctrl-click still opens the image
+			// in a tab, which is what those gestures mean on a link.
+			track.addEventListener('click', function (e) {
+				if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+				var sl = e.target.closest ? e.target.closest('figure.wp-block-image') : null;
+				if (!sl) return;
+				var i = slides.indexOf(sl);
+				if (i < 0) return;
+				e.preventDefault();
+				surrender();
+				lightbox().open(slides.map(function (s2) {
+					var img = s2.querySelector('img');
+					return { src: full(s2), alt: img ? img.alt : '', cap: caption(s2) };
+				}), i);
+			});
+
+			mark(0);
+		});
+
+		// A screencast list plays where it is rather than sending the visitor to
+		// YouTube and expecting them to find their way back. The anchor keeps
+		// working for everything that is not a plain left click - a middle click
+		// or ctrl-click still opens the video in its own tab, which is what
+		// those gestures mean on a link, and with no script this list is exactly
+		// the eight links it has always been.
+		Array.prototype.forEach.call(casts, function (list) {
+			var links = Array.prototype.filter.call(
+				list.querySelectorAll('li > a[href]'),
+				function (a) { return youtube(a.href); }
+			);
+			if (!links.length) return;
+
+			var items = links.map(function (a) {
+				return {
+					embed: youtube(a.href),
+					href: a.href,
+					cap: (a.textContent || '').trim()
+				};
+			});
+
+			list.addEventListener('click', function (e) {
+				if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+				var a = e.target.closest ? e.target.closest('li > a[href]') : null;
+				if (!a) return;
+				var i = links.indexOf(a);
+				if (i < 0) return;   // a link in the list that is not a video
+				e.preventDefault();
+				lightbox().open(items, i, S.galCasts || 'Screencasts');
+			});
 		});
 	})();
 })();

@@ -366,6 +366,22 @@ anything:
   `mudlet_contact_email` option, not from `admin_email`, which only backstops
   it: the address a site publishes and the address that can reset it are not
   one fact.
+- **`/media/` is blocks in a page body, and nothing else.** No template, no
+  post type, no plugin — the one page whose whole content is content. Two block
+  styles in `inc/blocks.php` do it: *Screenshot carousel* over `core/gallery`
+  (`theme.js` turns it into one-at-a-time with arrows, dots and a lightbox;
+  without the script it stays the grid core drew, every image a link to itself)
+  and *Screencasts* over `core/list` (an `<a>` and then the sentence — a block
+  storing that would be storing prose, which is the same argument the release
+  post's two shapes make). A YouTube link plays in that same lightbox, over
+  `youtube-nocookie.com`, with a **Watch on YouTube** way out always in the
+  caption for a video whose owner disabled embedding; a link that is not YouTube
+  is left alone to navigate. Adding a screenshot is dragging it into the gallery;
+  adding a screencast is pressing Enter and pasting a URL; everything around
+  them is ordinary Gutenberg. `seed/php/media-page.php` writes that body once
+  and only while it is still empty — the single place this seed writes prose —
+  seeding the live page's eight screencasts and sideloading the fifteen
+  community screenshots from mudlet.org, which are not in this repo.
 - **The demo world reads the site through one endpoint.**
   `inc/demo-seed.php` registers `GET /wp-json/mudlet/v1/demo` and answers with
   the current release, the games, the makers and the latest posts, all through

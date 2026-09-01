@@ -45,6 +45,7 @@ $mudlet_languages = mudlet_languages();
 					array(
 						array( __( 'News', 'mudlet' ), mudlet_news_url() ),
 						array( __( 'Gallery', 'mudlet' ), mudlet_page_url( 'media', '/media/' ), 'lo' ),
+						array( __( 'Packages', 'mudlet' ), 'https://packages.mudlet.org/', 'lo' ),
 						array( __( 'Docs', 'mudlet' ), 'https://wiki.mudlet.org', 'lo' ),
 						array( __( 'Forum', 'mudlet' ), 'https://forums.mudlet.org', 'lo' ),
 					)

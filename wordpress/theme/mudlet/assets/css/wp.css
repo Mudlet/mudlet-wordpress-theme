@@ -1012,3 +1012,76 @@
 #site .prose .is-style-mudlet-feature .wp-block-media-text__content > :first-child {
 	margin-top: 0;
 }
+
+/* The screencast list is a <ul> inside .prose, and prose owns lists hard:
+   it strips the marker, indents by 1.5rem and hangs an en dash off every
+   item from an id-carrying selector. These are cards in a grid with a play
+   triangle, so all three have to go. Same collision the credits block
+   answers in theme.css, one stylesheet further out. */
+#site .prose ul.is-style-mudlet-screencasts {
+	padding-left: 0;
+}
+#site .prose ul.is-style-mudlet-screencasts > li {
+	margin-top: 0;
+}
+#site .prose ul.is-style-mudlet-screencasts > li::before {
+	content: '';
+	left: .85rem;
+	color: inherit;
+}
+
+/* A card's title is the card's, not the article's: prose underlines every
+   link in it and sets them in the body face at 500. */
+#site .prose ul.is-style-mudlet-screencasts > li > a {
+	font-family: var(--display);
+	font-weight: 600;
+	color: var(--ink);
+	text-decoration: none;
+}
+#site .prose ul.is-style-mudlet-screencasts > li > a:hover {
+	color: var(--mark);
+	text-decoration: underline;
+}
+
+/* The whole card opens the video, not just the four words of its title. The
+   link stretches over the card with a pseudo-element rather than by wrapping
+   the blurb in the anchor, which keeps the accessible name of the link the
+   name of the video — a screen reader announcing a title and a sentence as one
+   link is how a list of eight becomes unlistenable — and keeps the markup a
+   list of links with their descriptions, which is what it has to stay.
+   Hovering anywhere on the card is now hovering the anchor, so the title still
+   answers. The price is that the blurb is no longer selectable text; for one
+   sentence describing a video that is the right side of the trade.
+
+   In wp.css and not in blocks.css with the rest of the component, because
+   blocks.css is also the editor's stylesheet and an invisible overlay across
+   the card is an overlay across the box somebody is trying to type in. */
+#site .prose ul.is-style-mudlet-screencasts > li > a::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+}
+
+/* The carousel's slides are <figure>s nested inside the gallery <figure>,
+   and #site .prose figure reaches all of them: 1.9rem of margin between
+   slides that are supposed to be flush, and a 28rem height cap and
+   width:auto on an image the frame is already sizing. The outer figure
+   keeps its margin — that one is the block's spacing in the article. */
+#site .prose .is-style-mudlet-carousel[data-carousel] figure.wp-block-image {
+	margin-block: 0;
+}
+#site .prose .is-style-mudlet-carousel[data-carousel] figure.wp-block-image img {
+	max-height: 100%;
+	height: 100%;
+	width: auto;
+}
+#site .prose .is-style-mudlet-carousel[data-carousel] figure.wp-block-image figcaption {
+	margin-top: 0;
+}
+/* Prose prefixes every caption with a prompt >, which is the site's voice on
+   a screenshot under a paragraph. Centred under a carousel it reads as a
+   stray arrow next to the next-slide button, so the slides drop it and the
+   block's own caption keeps it. */
+#site .prose .is-style-mudlet-carousel[data-carousel] figure.wp-block-image figcaption::before {
+	content: none;
+}

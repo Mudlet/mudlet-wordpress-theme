@@ -261,7 +261,7 @@ The ledger is seeded too, prose included. `MAKERS` in `people.lua` keeps the
 names, the nouns the sage answers to and the GitHub handles; the sentence it
 says about each person comes from the site, which is the About dialog by way of
 the makers plugin. Somebody the hall has never heard of is seated rather than
-met with "not in this ledger", and who is on the team now comes across as well,
+met with "not in this ledger", and who is core developer comes across as well,
 so the eight at the front of the ledger are the eight the dialog draws large.
 Matching is on the full name, not on the sage's deliberately loose `keys`.
 

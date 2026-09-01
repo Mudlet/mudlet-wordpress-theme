@@ -87,6 +87,19 @@ function mudlet_script_data(): array {
 			'copied'     => __( 'copied', 'mudlet' ),
 			/* translators: %s: number of games currently matching the filter */
 			'gamesShown' => __( '%s shown', 'mudlet' ),
+			// The screenshot carousel and its lightbox. Every control on both is
+			// built in the browser, so this is the only place their labels can
+			// be translated from.
+			'galLabel'   => __( 'Screenshots', 'mudlet' ),
+			'galPrev'    => __( 'Previous screenshot', 'mudlet' ),
+			'galNext'    => __( 'Next screenshot', 'mudlet' ),
+			/* translators: %s: position of a screenshot in the gallery */
+			'galGo'      => __( 'Screenshot %s', 'mudlet' ),
+			'galClose'   => __( 'Close', 'mudlet' ),
+			'galCasts'   => __( 'Screencasts', 'mudlet' ),
+			'galWatch'   => __( 'Watch on YouTube', 'mudlet' ),
+			/* translators: 1: position of the screenshot shown, 2: how many there are */
+			'galCount'   => __( '%1$s / %2$s', 'mudlet' ),
 		),
 	);
 }

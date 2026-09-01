@@ -20,6 +20,14 @@
  * assets/css/editor.css restates the ones used here for the canvas.
  */
 
+/* An icon this file needs and inc/icons.php cannot give it: a mask has to be a
+   URL, and the block styles draw into prose that has no element to put an <svg>
+   in. Same path and same 24x24 line style as the set, kept here so there is one
+   place it is written. */
+:root {
+	--mudlet-icon-video: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m22 8-6 4 6 4V8Z'/%3E%3Crect x='2' y='6' width='14' height='12' rx='2'/%3E%3C/svg%3E");
+}
+
 /* ── mudlet/games ─────────────────────────────────────────────────────
    Two to a row, which is as narrow as a card can be and still have room for
    the sentence that makes somebody want to try the game. Below that the row
@@ -165,4 +173,265 @@
 	letter-spacing: .06em;
 	text-transform: uppercase;
 	color: var(--dim);
+}
+
+/* ── core/gallery, "Screenshot carousel" ──────────────────────────────
+   One shot at a time, arrows, dots, and the full image in a lightbox on
+   click — the shape /media/ has had for years, rebuilt out of a core
+   gallery instead of a Divi slider.
+
+   Everything the carousel needs beyond the grid hangs off [data-carousel],
+   which only assets/js/theme.js sets. That is the whole no-script and
+   editor story: without the attribute this is the gallery core drew, every
+   image visible, every one a link to itself. Nothing below is a fallback
+   maintained separately — it is the same markup, unenhanced.
+
+   The frame is a fixed height on purpose, and it is the argument the
+   /games/ panel already makes: a carousel that resized to each shot would
+   throw the rest of the page up and down the screen as it played.
+   Screenshots here run from 4:3 to ultrawide, so the height is the constant
+   and object-fit decides the rest. */
+.wp-block-gallery.is-style-mudlet-carousel figure.wp-block-image img {
+	border-radius: 8px;
+}
+
+.wp-block-gallery.is-style-mudlet-carousel[data-carousel] {
+	--mgal-h: clamp(15rem, 42vw, 29rem);
+	position: relative;
+	display: block;
+	margin: 0;
+}
+
+/* The scroller, not a transform. Scroll-snap means the browser owns the
+   position, the momentum and the touch gesture, so the script only ever asks
+   it to scroll somewhere — there is no track offset to keep in step with a
+   resize, and a phone swipes it without any of this running. */
+.is-style-mudlet-carousel[data-carousel] .mgal__track {
+	display: flex;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scroll-snap-type: x mandatory;
+	scroll-behavior: smooth;
+	gap: 0;
+	margin: 0;
+	background: var(--band);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	/* the arrows and the dots are the controls; a scrollbar under them is a
+	   third one saying the same thing */
+	scrollbar-width: none;
+}
+.is-style-mudlet-carousel[data-carousel] .mgal__track::-webkit-scrollbar {
+	display: none;
+}
+
+/* Rows, not centring: the picture gets what is left after the caption, so
+   every slide is exactly as tall as every other one and the captions line up
+   instead of floating under whichever image happens to be shortest. */
+.is-style-mudlet-carousel[data-carousel] .mgal__track > figure.wp-block-image {
+	flex: 0 0 100%;
+	scroll-snap-align: center;
+	scroll-snap-stop: always;
+	display: grid;
+	/* A floor under the caption row rather than plain auto: eleven of the
+	   fifteen shots on /media/ carry a caption and four do not, and an auto row
+	   would give the uncaptioned ones a taller picture than their neighbours —
+	   which reads, as the carousel plays, as the image resizing. */
+	grid-template-rows: 1fr minmax(1.2rem, auto);
+	justify-items: center;
+	gap: .5rem;
+	max-width: 100%;
+	height: var(--mgal-h);
+	margin: 0;
+	padding: .8rem .8rem .7rem;
+}
+.is-style-mudlet-carousel[data-carousel] .mgal__track > figure.wp-block-image > a,
+.is-style-mudlet-carousel[data-carousel] .mgal__track > figure.wp-block-image > img {
+	display: block;
+	min-height: 0;
+	height: 100%;
+}
+/* Beating core's .is-cropped rule, which is written to fill a grid cell:
+   width:100%, height:100%, object-fit:cover. A screenshot cropped to a frame
+   is a screenshot with its interface cut off. */
+.is-style-mudlet-carousel[data-carousel] .mgal__track figure.wp-block-image img {
+	width: auto;
+	max-width: 100%;
+	height: 100%;
+	max-height: 100%;
+	object-fit: contain;
+	border-radius: 8px;
+	cursor: zoom-in;
+}
+/* Core lays a gallery caption over the bottom of its picture: absolute, full
+   width, white on a black gradient, because a gallery tile is a cropped
+   thumbnail with a label on it. A carousel is showing the whole screenshot, and
+   the one thing that must not be covered is the bottom of somebody's interface.
+   So the caption comes out of the overlay and takes the row under the picture —
+   which is what the slide's second grid row is for. */
+.is-style-mudlet-carousel[data-carousel] .mgal__track figure.wp-block-image figcaption {
+	position: static;
+	width: auto;
+	padding: 0;
+	overflow: visible;
+	background: none;
+	margin: 0;
+	max-width: 60ch;
+	font-family: var(--display);
+	font-size: .74rem;
+	line-height: 1.5;
+	text-align: center;
+	color: var(--dim);
+}
+
+/* Over the picture rather than beside it: at 74rem the frame is already the
+   full measure, and arrows in the margin would either narrow it or hang off
+   the edge on a phone. */
+.is-style-mudlet-carousel[data-carousel] .mgal__arrow {
+	position: absolute;
+	top: calc(var(--mgal-h) / 2);
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	width: 2.4rem;
+	height: 2.4rem;
+	margin-top: -1.2rem;
+	padding: 0;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	color: var(--ink);
+	cursor: pointer;
+	opacity: .82;
+	transition: opacity .15s, border-color .15s;
+}
+.is-style-mudlet-carousel[data-carousel] .mgal__arrow:hover {
+	opacity: 1;
+	border-color: var(--accent2);
+}
+.is-style-mudlet-carousel[data-carousel] .mgal__arrow svg {
+	width: 1.1rem;
+	height: 1.1rem;
+}
+.is-style-mudlet-carousel[data-carousel] .mgal__arrow--prev { left: .7rem; }
+.is-style-mudlet-carousel[data-carousel] .mgal__arrow--next { right: .7rem; }
+
+.is-style-mudlet-carousel[data-carousel] .mgal__dots {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: .4rem;
+	margin-top: .7rem;
+}
+.is-style-mudlet-carousel[data-carousel] .mgal__dot {
+	width: 1.1rem;
+	height: 1.1rem;
+	padding: 0;
+	background: none;
+	border: 0;
+	border-radius: 50%;
+	cursor: pointer;
+}
+/* The button is a 1.1rem hit target; the dot inside it is 6px, because
+   fifteen 1.1rem circles under a screenshot read as a second gallery. */
+.is-style-mudlet-carousel[data-carousel] .mgal__dot::before {
+	content: '';
+	display: block;
+	width: 6px;
+	height: 6px;
+	margin: auto;
+	background: var(--line);
+	border-radius: 50%;
+	transition: background .15s, transform .15s;
+}
+.is-style-mudlet-carousel[data-carousel] .mgal__dot:hover::before { background: var(--dim); }
+.is-style-mudlet-carousel[data-carousel] .mgal__dot[aria-current="true"]::before {
+	background: var(--mark);
+	transform: scale(1.5);
+}
+
+/* The gallery's own caption — the one core puts under the whole block, not
+   under a picture. It is the section's line, so it sits under the dots. */
+.wp-block-gallery.is-style-mudlet-carousel[data-carousel] > figcaption {
+	margin-top: .6rem;
+	font-size: .84rem;
+	text-align: center;
+	color: var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.is-style-mudlet-carousel[data-carousel] .mgal__track { scroll-behavior: auto; }
+	.is-style-mudlet-carousel[data-carousel] .mgal__dot::before { transition: none; }
+}
+
+/* ── core/list, "Screencasts" ─────────────────────────────────────────
+   An item is <a>the title</a> followed by the sentence that says what the
+   video covers — no wrapper around the sentence, because there is nothing to
+   wrap it in that somebody writing the list would remember to type. The
+   anchor is a block, so the bare text after it becomes an anonymous flex item
+   and takes the card's blurb styling without any markup of its own.
+
+   Which means it survives losing this stylesheet as a list of links with
+   their descriptions, and survives losing the style name as a list of links
+   with their descriptions. That is the whole reason it is a list and not a
+   block. */
+ul.wp-block-list.is-style-mudlet-screencasts {
+	display: grid;
+	gap: .55rem;
+	grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+	/* margin-block, not margin: in the editor this element also carries
+	   .block-editor-block-list__block, which is centred in the canvas with
+	   auto inline margins. Zeroing all four sent the whole list to the left
+	   edge while the paragraphs around it stayed in the column. */
+	margin-block: 0;
+	padding: 0;
+	list-style: none;
+}
+ul.wp-block-list.is-style-mudlet-screencasts > li {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: .15rem;
+	margin: 0;
+	padding: .6rem .85rem .7rem 2.15rem;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	font-size: .83rem;
+	line-height: 1.5;
+	color: var(--dim);
+	transition: border-color .15s;
+}
+ul.wp-block-list.is-style-mudlet-screencasts > li:hover {
+	border-color: var(--accent2);
+}
+/* The camcorder from the theme's own icon set, in the line style inc/icons.php
+   uses everywhere else — 24x24, no fill, 2px round strokes. It is a mask rather
+   than a background so it takes var(--mark) and follows the theme toggle; the
+   colour in the data URI only has to produce alpha. Inline for the same reason
+   the icons are: the item is prose somebody typed in Gutenberg, and there is no
+   markup in it to hang an <svg> off. */
+ul.wp-block-list.is-style-mudlet-screencasts > li::before {
+	content: '';
+	position: absolute;
+	top: .68rem;
+	left: .85rem;
+	width: .95rem;
+	height: .95rem;
+	background: var(--mark);
+	-webkit-mask: var(--mudlet-icon-video) center / contain no-repeat;
+	mask: var(--mudlet-icon-video) center / contain no-repeat;
+}
+ul.wp-block-list.is-style-mudlet-screencasts > li > a {
+	font-family: var(--display);
+	font-size: .87rem;
+	font-weight: 600;
+	letter-spacing: -.01em;
+	line-height: 1.3;
+	color: var(--ink);
+	text-decoration: none;
+}
+ul.wp-block-list.is-style-mudlet-screencasts > li > a:hover {
+	color: var(--mark);
+	text-decoration: underline;
 }

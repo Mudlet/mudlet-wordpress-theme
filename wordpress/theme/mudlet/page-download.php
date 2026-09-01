@@ -8,7 +8,10 @@
  * matching row, so the button and the table agree. That detection stays in the
  * browser - doing it server-side would mean either a user-agent database or a
  * Vary header that defeats every page cache in front of the site - but every
- * string it puts on screen comes from inc/downloads.php.
+ * string it puts on screen comes from inc/downloads.php. On a platform it
+ * cannot name - a phone, or anything with no build of its own - it takes that
+ * panel off the page rather than leaving it restating the site name and a
+ * version with nothing behind the button; the table below names every build.
  *
  * Every row carries its own hand-off - a code for that build's URL, a copy
  * button, and (only here, never in the prototype) a form that mails the link -
@@ -235,10 +238,15 @@ $icons  = array(
 					<p>
 						<?php
 						printf(
-							/* translators: 1: version number, 2: link reading "Tell us how it goes" */
+							/* translators: 1: version number, 2: link reading "Download a snapshot" */
 							esc_html__( 'The Public Test Build carries everything that has landed since %1$s, on all three platforms. %2$s.', 'mudlet' ),
 							esc_html( mudlet_release_version() ),
-							'<a href="https://forums.mudlet.org/">' . esc_html__( 'Tell us how it goes', 'mudlet' ) . '</a>'
+							// theme.js appends the visitor's own platform to this
+							// URL, out of the same detection that leads the table
+							// above, and leaves it off for anything that is not
+							// Windows, macOS or Linux - the snapshots page then
+							// offers all three rather than a platform we guessed.
+							'<a id="ptb" href="https://make.mudlet.org/snapshots/?source=ptb">' . esc_html__( 'Download a snapshot', 'mudlet' ) . '</a>'
 						);
 						?>
 					</p>

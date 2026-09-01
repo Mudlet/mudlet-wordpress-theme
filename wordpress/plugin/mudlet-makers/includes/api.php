@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
  *   name        string  "Stephen Lyons"
  *   slug        string  "stephen-lyons"
  *   url         string  permalink to their page
- *   core        bool    on the team now, as opposed to having been
+ *   core        bool    core developer
  *   github      string  handle, '' if they publish none
  *   github_url  string  profile URL, '' likewise
  *   discord     string  handle in the retired "name#1234" form, often ''

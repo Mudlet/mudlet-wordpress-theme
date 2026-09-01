@@ -206,6 +206,7 @@ if ! $WP menu list --fields=slug --format=csv | grep -qx "header"; then
 	$WP menu create "Header" >/dev/null
 	$WP menu item add-post header "$NEWS_ID" --title="News" >/dev/null
 	$WP menu item add-post header "$MEDIA_ID" --title="Gallery" --classes="lo" >/dev/null
+	$WP menu item add-custom header "Packages" "https://packages.mudlet.org/" --classes="lo" >/dev/null
 	$WP menu item add-custom header "Docs" "https://wiki.mudlet.org" --classes="lo" >/dev/null
 	$WP menu item add-custom header "Forum" "https://forums.mudlet.org" --classes="lo" >/dev/null
 	$WP menu location assign header primary >/dev/null
@@ -333,6 +334,18 @@ if [ "${SEED_RELEASE_PLUGIN:-1}" = "1" ]; then
 			note "patched mudlet-release: releases/tags/\$content -> releases/\$content"
 		fi
 	fi
+fi
+
+# ── the media page ────────────────────────────────────────────────────
+# The one page this seed writes prose into, and it writes it only while the page
+# is still empty - see the file for why that exception is worth making. It is
+# also the only step that fetches anything from mudlet.org: fifteen community
+# screenshots into the media library, because a carousel with nothing in it
+# demonstrates nothing. SEED_MEDIA=0 skips the download and leaves the page with
+# its screencasts and an empty gallery to fill.
+if [ "${SEED_MEDIA_PAGE:-1}" = "1" ]; then
+	log "Media page"
+	$WP eval-file "$SEED/php/media-page.php"
 fi
 
 # ── news ──────────────────────────────────────────────────────────────

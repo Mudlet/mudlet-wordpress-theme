@@ -104,6 +104,11 @@ services:
       SEED_DEMO_POSTS: ${SEED_DEMO_POSTS:-1}
       SEED_GAMES: ${SEED_GAMES:-1}
       SEED_MAKERS: ${SEED_MAKERS:-1}
+      # Whether the Media page is written at all, and whether writing it also
+      # fetches the community screenshots it shows. Not to be confused with
+      # IMPORT_MEDIA below, which is about the news export's own attachments.
+      SEED_MEDIA_PAGE: ${SEED_MEDIA_PAGE:-1}
+      SEED_MEDIA: ${SEED_MEDIA:-1}
       IMPORT_MEDIA: ${IMPORT_MEDIA:-0}
     volumes:
       - wp:/var/www/html

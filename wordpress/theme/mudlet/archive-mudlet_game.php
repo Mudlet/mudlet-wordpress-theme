@@ -63,7 +63,7 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 				<p class="sub">
 					<?php
 					esc_html_e(
-						'Every one of these ships with Mudlet as a connection profile: pick it from the list on startup and you are in. The list comes from Mudlet itself, so it is whatever the client currently bundles.',
+						'Every one of these ships with Mudlet as a connection profile: pick it from the list on startup and you are in.',
 						'mudlet'
 					);
 					?>

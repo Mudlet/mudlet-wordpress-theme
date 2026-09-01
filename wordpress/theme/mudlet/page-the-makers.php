@@ -74,7 +74,7 @@ while ( have_posts() ) :
 
 				<?php if ( $mudlet_core ) : ?>
 					<div class="head head--tight">
-						<h3><?php esc_html_e( 'On the project now', 'mudlet' ); ?></h3>
+						<h3><?php esc_html_e( 'Core developers', 'mudlet' ); ?></h3>
 					</div>
 
 					<div class="mkgrid">

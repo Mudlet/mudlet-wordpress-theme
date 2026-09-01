@@ -50,7 +50,9 @@ Honest answer, because this is the thing that went wrong with Divi:
   footer-project menus, categories, the release version and download URLs
   (option `mudlet_release`), per-post release details (the "Release details"
   box in the post editor, which draws the version panel), and the contact
-  form shortcode (the "Contact form" box on `/contact/`).
+  form shortcode (the "Contact form" box on `/contact/`). `/media/` is the
+  furthest end of that: the screencasts and the whole screenshot gallery are
+  blocks in the page body, so all of it is Gutenberg — see **Media** below.
 - **Not editable — it is theme markup**: the homepage sections. The hero
   headline, the six feature panels, the games grid, the "hop in" cards. The copy
   there is load-bearing on the layout, so moving it into the database on day one
@@ -493,6 +495,71 @@ Theme code and not a plugin, both of them, for the same reason as
 transient is a cache, and the shortcode is a pointer at a form somebody else
 owns. Files: `page-contact.php`, `inc/discord.php`, `inc/contact.php`, and the
 `/contact/` block in `assets/css/wp.css`.
+
+## Media
+
+`/media/` is the one page that is nothing but its own content. There is no
+`page-media.php`, no post type and no plugin: the screencast list and the
+screenshot gallery are **core blocks wearing two of the theme's block styles**,
+sitting in the page body with prose above, between and after them. Somebody can
+rewrite the lot in Gutenberg without touching PHP, which is the whole thing that
+page was asked for.
+
+Both styles are registered in `inc/blocks.php`, beside the two a release post
+uses, and for the same reason: a style over a core block plus a pattern to
+insert it with, rather than blocks of the theme's own.
+
+- **Screenshot carousel** — `core/gallery` with the *Screenshot carousel*
+  style. Adding a screenshot is dragging an image into the gallery block;
+  reordering is dragging it; the caption is the image's own. On the page,
+  `theme.js` turns it into one-shot-at-a-time with arrows, dots, autoplay and
+  a lightbox. The editor and a browser with no JavaScript both get the plain
+  gallery core drew — every image visible, every one a link to itself, nothing
+  lost. It works in a release post too, which is most of why it is not a page
+  template.
+- **Screencasts** — `core/list` with the *Screencasts* style. An item is
+  `<a>the title</a>` and then the sentence saying what the video covers, and
+  that is deliberately all it is: a block storing that would be storing prose.
+  Adding one is pressing Enter and pasting a URL. The style lays them out as
+  cards and stretches the link across the whole card; drop the style and it is
+  still a legible list of links with their descriptions.
+
+  A YouTube link **plays in the same lightbox the carousel uses**, rather than
+  sending the visitor to YouTube and hoping they come back — arrows step through
+  the whole list, so it reads as one set. Three things about that are deliberate:
+  the embed is `youtube-nocookie.com`, because somebody who clicked a video
+  about aliases has not asked to be counted; a link that is *not* a YouTube URL
+  is left alone and navigates, so the day somebody adds a Vimeo or a write-up it
+  works; and the caption always carries a **Watch on YouTube** link out, because
+  a video whose owner disabled embedding plays nowhere else and says so inside a
+  box the visitor cannot click past. With no script, all eight are what they have
+  always been — links.
+
+The looks live in `assets/css/blocks.css` — which the block editor loads too,
+so both read as themselves while being written — with the `.prose` collisions
+in `wp.css` and the lightbox in `theme.css`, that being a dialog over the
+page rather than a block.
+
+### What the seed puts there
+
+`seed/php/media-page.php` writes that page's body, and it is the **only** page
+this seed writes prose into. The exception is narrow on purpose: it writes only
+while the page is still empty and never again, so re-running the seed over a
+page somebody has edited does nothing at all.
+
+It lands the live site's eight screencasts — real, still accurate, and nobody
+upstream owns the list, so losing it means somebody re-finding eight YouTube
+URLs by hand — and downloads the fifteen community screenshots from mudlet.org
+into the media library. The pictures are **not** in this repo, for the same
+reason the games plugin holds no copy of the game logos. `SEED_MEDIA=0` skips
+the download and leaves an empty gallery block to fill; `SEED_MEDIA_PAGE=0`
+skips the page entirely.
+
+Three of the fifteen go in without a caption, because their filenames do not say
+what game they are looking at and a guess about somebody else's MUD is worse
+than nothing. That is also the normal case for a screenshot somebody sends in,
+so the carousel has to look right with a few of them — which is easier to notice
+when some of them are there.
 
 ## Divi leftovers
 

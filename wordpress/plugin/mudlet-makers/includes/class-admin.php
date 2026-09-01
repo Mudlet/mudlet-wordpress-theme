@@ -228,7 +228,7 @@ class Mudlet_Makers_Admin {
 					<h2><?php echo esc_html( $maker['name'] ); ?></h2>
 					<p class="mudlet-rec__sub">
 						<?php if ( $maker['core'] ) : ?>
-							<span class="mudlet-rec__pill"><?php esc_html_e( 'on the team now', 'mudlet-makers' ); ?></span>
+							<span class="mudlet-rec__pill"><?php esc_html_e( 'core developer', 'mudlet-makers' ); ?></span>
 						<?php else : ?>
 							<span class="mudlet-rec__pill"><?php esc_html_e( 'has contributed', 'mudlet-makers' ); ?></span>
 						<?php endif; ?>
@@ -396,7 +396,7 @@ class Mudlet_Makers_Admin {
 
 			case 'mudlet_group':
 				echo get_post_meta( $post_id, $meta['core'], true )
-					? esc_html__( 'on the team now', 'mudlet-makers' )
+					? esc_html__( 'core developer', 'mudlet-makers' )
 					: esc_html__( 'has contributed', 'mudlet-makers' );
 				break;
 
