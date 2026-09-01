@@ -170,7 +170,8 @@ consequence of a label being unable to measure its own text.
 
 **The facts in the prose are not typed either.** The version chalked on the
 vault wall, the crate weights and hashes, the notices on the board, the count
-of boxed worlds and the size of the ledger come from one request the world
+of boxed worlds, the size of the ledger, the drawers in the cabinet and the
+imp's catalogue of function names come from one request the world
 makes while the console animates its connect — `GET /wp-json/mudlet/v1/demo`,
 answered by `wordpress/theme/mudlet/inc/demo-seed.php` out of the same plugins
 the pages use. `SITE` in `site.lua` is both the shape of that
@@ -401,9 +402,14 @@ anything:
 - **The demo world reads the site through one endpoint.**
   `inc/demo-seed.php` registers `GET /wp-json/mudlet/v1/demo` and answers with
   the current release, the games, the makers and the latest posts, all through
-  the same `function_exists()` seams the templates use. It is theme code and
-  not a plugin on purpose: unlike the data it serves it owns nothing, so there
-  is nothing in it for a theme rewrite to take with it.
+  the same `function_exists()` seams the templates use — plus two facts that
+  are not this site's to know and are read from upstream the way the games and
+  the makers are: Mudlet's own `lua-function-list.json`, which is the imp's
+  catalogue, and the package repository's index, which is how many drawers the
+  cabinet has and roughly how many hands filled them. Both are cached in a
+  transient, and a transient is a cache rather than a record — so this is still
+  theme code and not a plugin on purpose: unlike the data it serves it owns
+  nothing, and there is nothing in it for a theme rewrite to take with it.
 
 ## Not in the repo
 

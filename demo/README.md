@@ -228,8 +228,9 @@ downloads tray because somebody typed a word at a demo.
 
 The prose is written; the facts inside it are not. The version chalked on the
 vault wall, the four crate weights and hashes, the notices on the board, the
-number of boxed worlds on the shelf and the size of the ledger all come from
-one request, made while the console animates its fake connect:
+number of boxed worlds on the shelf, the size of the ledger, the drawers in the
+cabinet and the imp's catalogue of names all come from one request, made while
+the console animates its fake connect:
 
 ```
 GET /wp-json/mudlet/v1/demo

@@ -149,6 +149,8 @@ function D.applySeed(data)
         if found > 0 then SITE.functions.list = list end
     end
 
+    fill(SITE.packages, data.packages, { 'count', 'authors', 'url' })
+
     fill(SITE.news, data.news, { 'count', 'url' })
     if type(data.news) == 'table' then
         local board = notices(data.news.posts)

@@ -97,6 +97,75 @@ function mudlet_demo_seed(): array {
 		'makers'    => mudlet_demo_seed_makers(),
 		'news'      => mudlet_demo_seed_news(),
 		'functions' => mudlet_demo_seed_functions(),
+		'packages'  => mudlet_demo_seed_packages(),
+	);
+}
+
+/**
+ * The cabinet in the commons: how many packages there are, and how many people
+ * wrote them.
+ *
+ * Both counted off the package repository's own index rather than off anybody's
+ * memory of it. The cabinet used to say "229 drawers from 123 authors" and both
+ * halves were wrong inside a month.
+ *
+ * The two numbers are not equally good and the world does not treat them as
+ * though they were. The packages are countable: one entry, one drawer. The
+ * authors are a free-text field — `"tjurczyk, Delwing"` where two people wrote
+ * one package, and the same person under more than one spelling of themselves —
+ * so this splits it on commas and folds case, which is as close as anybody can
+ * get, and the world rounds what it gets down to the hundred before saying it
+ * out loud.
+ *
+ * Only the two numbers are kept. The index itself is 340 KB and there is
+ * nothing in it the hero wants.
+ *
+ * @return array<string, mixed>
+ */
+function mudlet_demo_seed_packages(): array {
+	$counted = get_transient( 'mudlet_demo_package_counts' );
+
+	if ( ! is_array( $counted ) ) {
+		$counted  = array( 'count' => 0, 'authors' => 0 );
+		$response = wp_remote_get(
+			'https://raw.githubusercontent.com/Mudlet/mudlet-package-repository/main/packages/mpkg.packages.json',
+			array( 'timeout' => 8 )
+		);
+
+		if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+			$decoded  = json_decode( wp_remote_retrieve_body( $response ), true );
+			$packages = is_array( $decoded ) && isset( $decoded['packages'] ) && is_array( $decoded['packages'] )
+				? $decoded['packages']
+				: array();
+
+			$hands = array();
+			foreach ( $packages as $package ) {
+				$field = is_array( $package ) && isset( $package['author'] ) ? (string) $package['author'] : '';
+				foreach ( explode( ',', $field ) as $name ) {
+					$name = trim( $name );
+					if ( '' !== $name ) {
+						$hands[ strtolower( $name ) ] = true;
+					}
+				}
+			}
+
+			$counted = array(
+				'count'   => count( $packages ),
+				'authors' => count( $hands ),
+			);
+		}
+
+		set_transient(
+			'mudlet_demo_package_counts',
+			$counted,
+			$counted['count'] ? DAY_IN_SECONDS : 10 * MINUTE_IN_SECONDS
+		);
+	}
+
+	return array(
+		'count'   => (int) $counted['count'],
+		'authors' => (int) $counted['authors'],
+		'url'     => 'https://packages.mudlet.org/',
 	);
 }
 

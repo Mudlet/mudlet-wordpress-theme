@@ -53,6 +53,14 @@ local SITE = {
             'God Wars II' },
         url = URL.download,
     },
+    -- The cabinet in the commons. Counted off the package repository's index by
+    -- the seed; zero here because there is no number to guess at, and the
+    -- cabinet has prose for that case rather than a hole in a sentence.
+    packages = {
+        count   = 0,
+        authors = 0,
+        url     = URL.packages,
+    },
     -- The shelves in the Stacks: what this client can be told to do.
     --
     -- The whole of it comes from the seed, which reads Mudlet's own

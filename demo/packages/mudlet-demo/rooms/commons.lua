@@ -2,7 +2,17 @@
 
 local core = require('mudlet-demo.core')
 local URL = require('mudlet-demo.urls')
+local SITE = require('mudlet-demo.site')
 local C, say, link, cmd = core.C, core.say, core.link, core.cmd
+local spell, thousands = core.spell, core.thousands
+
+-- Rounded down to the hundred, and spelled. See the cabinet: one of the two
+-- numbers on it can be stood behind and the other can only be floored.
+local function hundreds(n)
+    local h = math.floor((tonumber(n) or 0) / 100)
+    if h < 1 then return nil end
+    return h == 1 and 'a hundred' or (spell(h) .. ' hundred')
+end
 
 return {
     title = 'The Commons',
@@ -65,15 +75,28 @@ return {
             name = 'the cabinet',
             keys = { 'cabinet', 'packages', 'drawers' },
             url = URL.packages,
-            -- No count, deliberately. It was "229 drawers from 123 authors" and
-            -- both halves were wrong within a month: the drawers are added to
-            -- weekly, and the authors were counted off a field that says
-            -- "tjurczyk, Delwing" for one package and counts it as two people.
+            -- Both numbers come off the package repository's own index, by way
+            -- of the seed. It read "229 drawers from 123 authors" when it was
+            -- typed and both halves were wrong within a month.
+            --
+            -- They are not equally good numbers and the sentence does not
+            -- pretend they are. One entry is one drawer, so the drawers are
+            -- counted. The authors are a free-text field — two names in it
+            -- where two people wrote one package, one person under two
+            -- spellings elsewhere — so the hands are floored to the hundred,
+            -- which is a thing that stays true for as long as it takes to fill
+            -- another one. Where nothing arrived, neither is claimed.
             look = function()
-                say(C.text, 'Hundreds of drawers, from more hands than anyone has counted: ',
-                    'mappers, tabbed chat, curing systems, a keepalive pinger, and one that ',
-                    'turns :) into an emoji. Mudlet installs any of them from its own ',
-                    'command line.')
+                local drawers = tonumber(SITE.packages.count) or 0
+                local hands = hundreds(SITE.packages.authors)
+                local opening = 'Hundreds of drawers, from more hands than anyone has counted'
+                if drawers > 0 then
+                    opening = thousands(drawers) .. ' drawers'
+                        .. (hands and (', from more than ' .. hands .. ' hands') or '')
+                end
+                say(C.text, opening, ': mappers, tabbed chat, curing systems, ',
+                    'a keepalive pinger, and one that turns :) into an emoji. Mudlet ',
+                    'installs any of them from its own command line.')
                 say(C.dim, '  mpkg install carto        ', link('packages.mudlet.org', URL.packages))
             end,
         },

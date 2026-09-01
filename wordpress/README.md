@@ -612,10 +612,14 @@ curl -s localhost:8080/wp-json/mudlet/v1/demo | jq
 `inc/demo-seed.php` is the whole of it: the current release with per-platform
 sizes, URLs and hashes, every bundled game's name and the count, everyone the
 client credits with the sentence the About dialog gives them, the three most
-recent posts, and — for the imp in the Stacks — Mudlet's own list of its Lua
-API, read off `raw.githubusercontent.com` the way the games and the makers are
-and cached for a day. That last is 36 KB of JSON and about nine gzipped, which
-is less than any one image on the page above it. Every
+recent posts, and two things this site does not know and has no business
+holding a copy of: Mudlet's own list of its Lua API, which is what the imp in
+the Stacks keeps, and the package repository's index, which is how many drawers
+are in the cabinet in the commons and roughly how many people filled them. Both
+are read off `raw.githubusercontent.com` the way the games and the makers are,
+and cached for a day. The function list is the only one that travels — 36 KB of
+JSON, about nine gzipped, less than any one image on the page above it; of the
+package index only the two numbers survive the request. Every
 value is read back through the same `function_exists()` seams the templates
 use, so with the plugins deactivated the endpoint answers whatever the pages
 would draw. It is theme code rather than a plugin for that reason — unlike the
