@@ -5,6 +5,7 @@
 -- would mean exporting five private helpers across a seam that is not real.
 
 local D = demo
+local core = require('mudlet-demo.core')
 local rooms = require('mudlet-demo.rooms')
 
 -- The map --------------------------------------------------------------------
@@ -189,6 +190,52 @@ setBorderTop(BAR_H)
 -- the one thing that floats at every width.
 local ICON = { open = '#f56c27', shut = '#9c8f7c' }
 
+-- The exits, as text rather than as controls: the console already prints them
+-- as links, but that line scrolls away with the room it belongs to, and on the
+-- bar they stay where they can always be reached. Same colour as the console's
+-- exits so the two read as one thing, and no border or fill — a row of buttons
+-- across the top of a hero is louder than the thing it is pointing at.
+local EXIT_COLOUR = '#82c0c7'
+-- The bar's text metrics. A label cannot be asked how wide its text came out,
+-- so the row after the name is placed by counting characters: ui-monospace at
+-- 11px advances about 6.6px, and everything on the left of the bar is set in
+-- it. An error here shows up as the gap after the name being a pixel or two
+-- out, never as anything overlapping.
+local BAR_CHAR, BAR_GAP = 6.6, 8
+-- And a label insets its text before it draws it: Mudlet Web gives the echo
+-- the 4px Qt gives a QTextDocument's documentMargin, then clips at the label's
+-- own edge. A box measured to fit only the word therefore loses the right-hand
+-- pixels of its last character - which on a two-letter word is most of it, and
+-- 'up' was arriving as 'u' and a sliver.
+local BAR_INSET = 4
+-- No room here has more than three ways out. The pool is built once and the
+-- spares stay hidden: labels created per room would leak a set on every move.
+local EXIT_MAX = 4
+
+-- Nothing sets a vertical offset anywhere in this bar. A Mudlet label centres
+-- its text on its own — TLabel's default is Qt::AlignLeft | Qt::AlignVCenter —
+-- so a label given the bar's full height is centred in it by doing nothing,
+-- and a padding-top would be fighting that.
+local function exitCss()
+    return string.format([[
+        background-color: rgba(0,0,0,0);
+        color: %s;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+    ]], EXIT_COLOUR)
+end
+
+-- The pipe between the name and the exits, in the name's own colour: it
+-- belongs to neither and separating them is all it does.
+local function pipeCss()
+    return [[
+        background-color: rgba(0,0,0,0);
+        color: #6b6053;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+    ]]
+end
+
 local function iconCss(open)
     return string.format([[
         background-color: rgba(43,35,27,0.92);
@@ -199,7 +246,6 @@ local function iconCss(open)
         font-size: 9px;
         letter-spacing: 0.08em;
         text-align: center;
-        padding-top: 4px;
     ]], open and ICON.open or '#3a2f24', open and ICON.open or ICON.shut)
 end
 
@@ -264,7 +310,6 @@ function D.chrome()
         color: #9c8f7c;
         font-family: ui-monospace, monospace;
         font-size: 11px;
-        padding-top: 9px;
     ]])
 
     D.icon = Geyser.Label:new({
@@ -278,6 +323,26 @@ function D.chrome()
     -- A function, not the name of one: Geyser takes a string here in Mudlet,
     -- but this build never resolves it and the click goes nowhere.
     D.icon:setClickCallback(function() D.mapToggle() end)
+
+    -- The separator and one label per way out, hidden until a room says
+    -- otherwise. Built here so the set exists once; placed in D.barExits(),
+    -- which runs on every look. Full bar height, so each centres itself.
+    D.pipe = Geyser.Label:new({
+        name = 'demoBarPipe', x = 0, y = 0, width = '1px', height = BAR_H .. 'px',
+    })
+    D.pipe:setStyleSheet(pipeCss())
+    D.pipe:echo('|')
+    D.pipe:hide()
+
+    D.exits = {}
+    for i = 1, EXIT_MAX do
+        local exit = Geyser.Label:new({
+            name = 'demoExit' .. i, x = 0, y = 0, width = '1px', height = BAR_H .. 'px',
+        })
+        exit:setStyleSheet(exitCss())
+        exit:hide()
+        D.exits[i] = exit
+    end
 end
 
 -- The bar's left half. Prefixed with the site's own wordmark mark, so the
@@ -288,10 +353,90 @@ function D.barName()
     end
 end
 
+-- The width of the name's column, in characters, worked out once: the longest
+-- title in the world plus the '> ' D.barName() writes in front of it. Lazily,
+-- because this file is required before rooms/init.lua has finished assembling
+-- D.rooms - and by the time a bar is being painted it always has.
+local cols
+local function nameCols()
+    if not cols then
+        cols = 0
+        for _, room in pairs(D.rooms) do
+            cols = math.max(cols, #('> ' .. room.title))
+        end
+    end
+    return cols
+end
+
+-- The ways out of this room, written after its name.
+--
+-- Left to right from where the name ends, which is why BAR_CHAR exists: the
+-- name is a label of its own and its width is the count of what was echoed
+-- into it. The map control keeps the other end of the bar; nothing here can
+-- reach it, because three directions and the longest room name in the world
+-- come to less than half the console at its narrowest.
+function D.barExits()
+    if not D.exits then return end
+
+    local room = D.rooms[D.here]
+    local dirs = {}
+    if room then
+        for dir in pairs(room.exits) do dirs[#dirs + 1] = dir end
+        -- pairs() over the exit table has no order, and a row whose words
+        -- reshuffle on every look is worse than no row at all.
+        table.sort(dirs)
+    end
+
+    -- The name's column is as wide as the longest title in the world, not as
+    -- wide as this room's: walking from the Release Vault to Makers Hall is six
+    -- characters shorter, and exits that slid 40px left under the cursor would
+    -- be a worse thing to have fixed in place than a little empty bar.
+    local x = 12 + BAR_INSET + math.ceil(nameCols() * BAR_CHAR) + BAR_GAP
+
+    if #dirs > 0 then
+        D.pipe:resize((BAR_INSET + math.ceil(BAR_CHAR) + 1) .. 'px', BAR_H .. 'px')
+        D.pipe:move(x .. 'px', 0)
+        D.pipe:show()
+        x = x + BAR_INSET + math.ceil(BAR_CHAR) + 1 + BAR_GAP
+    else
+        D.pipe:hide()
+    end
+
+    for i, exit in ipairs(D.exits) do
+        local dir = dirs[i]
+        if dir then
+            local w = BAR_INSET + math.ceil(#dir * BAR_CHAR) + 1
+            exit:resize(w .. 'px', BAR_H .. 'px')
+            exit:move(x .. 'px', 0)
+            exit:echo(dir)
+            -- Re-set every time: the closure has to carry *this* room's
+            -- direction, not the one the label was showing in the last one.
+            exit:setClickCallback(function() D.go(dir) end)
+            exit:show()
+            x = x + w + BAR_GAP
+        else
+            exit:hide()
+        end
+    end
+end
+
+-- The bar follows the world by event rather than by being called from it, so
+-- that D.look() can announce the room without knowing a bar exists. In-profile:
+-- raiseEvent does not leave this client, and nothing outside it listens.
+--
+-- The event carries the room's name and its exits for anybody else who cares;
+-- this handler reads the world instead, because it also has to repaint on a
+-- resize, when no event has been raised.
+registerAnonymousEventHandler(core.ROOM_EVENT, function()
+    D.barName()
+    D.barExits()
+end)
+
 function D.mapWidget()
     D.chrome()
     D.bindKeys()
     D.barName()
+    D.barExits()
     -- Geyser holds the bar against its edges by itself; the mapper is a window
     -- and has to be repositioned by hand.
     D.mapPaint()

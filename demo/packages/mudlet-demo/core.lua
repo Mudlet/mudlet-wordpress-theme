@@ -111,8 +111,13 @@ local function spellCap(n)
     return word:sub(1, 1):upper() .. word:sub(2)
 end
 
+-- The world announces the room it is in under this name, and whatever draws a
+-- status line listens for it. In this package rather than in either end of it
+-- so that the raise and the handler cannot drift apart.
+local ROOM_EVENT = 'mudlet-demo:room'
+
 return {
-    C = C, U = U, SCRIPT_LINES = SCRIPT_LINES,
+    C = C, U = U, SCRIPT_LINES = SCRIPT_LINES, ROOM_EVENT = ROOM_EVENT,
     thousands = thousands, link = link, cmd = cmd, say = say,
     spell = spell, spellCap = spellCap,
 }

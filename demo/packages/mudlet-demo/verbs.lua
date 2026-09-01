@@ -79,7 +79,6 @@ function D.look(noun)
     end
 
     D.mapHere()
-    D.barName()
 
     say()
     say(C.room, room.title)
@@ -121,6 +120,14 @@ function D.look(noun)
         line[#line + 1] = cmd(dir, dir, 'go ' .. dir, C.exit)
     end
     say(unpack(line))
+
+    -- The bar above the console draws the same two facts these lines just
+    -- printed. Announced rather than drawn from here: the bar is map.lua's,
+    -- and a verb has no business knowing it exists. In look() and not enter()
+    -- because boot() opens the first room with a bare look() and never calls
+    -- enter(), so a bar filled from the latter would stay empty until the
+    -- visitor moved.
+    raiseEvent(core.ROOM_EVENT, room.title, table.concat(names, ','))
 end
 
 -- Every way into a room goes through here: a typed direction, a clicked exit,

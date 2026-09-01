@@ -128,10 +128,43 @@ adjacent strings coalesce into one `decho`, because both `decho` and
 argument would be reset away by the very next call.
 
 **The bar and the map.** `setBorderTop(BAR_H)` reserves a 30px strip across the
-top of the console and three Geyser labels furnish it: the strip itself, the
-room you are in on the left, and a `map` pill on the right. Reserved rather than
-overlaid, so console text never runs under the button. All of it is the package's
-own doing — border plus labels, the way any Mudlet package would build a HUD.
+top of the console and Geyser labels furnish it: the strip itself, the room you
+are in on the left, the ways out of it after that, and a `map` pill on the right.
+Reserved rather than overlaid, so console text never runs under any of it. All of
+it is the package's own doing — border plus labels, the way any Mudlet package
+would build a HUD.
+
+The exits are there because the console's own `Exits:` line scrolls away with the
+room that printed it, and in a hero most visitors click before they type. They are
+plain text in the colour that line uses, with no border or fill: a row of buttons
+across the top would be louder than the world underneath it.
+
+Three things about drawing them are not obvious.
+
+**Nothing sets a vertical offset.** A Mudlet label centres its own text — TLabel's
+default is `Qt::AlignLeft | Qt::AlignVCenter` — so a label given the bar's full
+height is centred in it by doing nothing at all. The bar used to carry a
+`padding-top` on two of its labels, which was fighting that default rather than
+helping it.
+
+**A label cannot be asked how wide its text came out**, in Mudlet or in Mudlet
+Web, so the row is placed by counting characters against a 6.6px advance. Two
+things follow. The name gets a fixed column, as wide as the longest room title in
+the world rather than as wide as this room's — otherwise walking from the Release
+Vault to Makers Hall slid the exits 40px left under the cursor. And every box
+carries the 4px a label insets its text by before drawing it: Qt gives a
+`QTextDocument` that `documentMargin` and Mudlet Web reproduces it, so a box
+measured for the glyphs alone loses the last character's right-hand pixels — which
+on `up` is most of the `p`.
+
+**The bar follows the world by event.** `D.look()` raises `core.ROOM_EVENT` with
+the room's name and its exits, and `map.lua` listens with
+`registerAnonymousEventHandler`, so a verb can announce where the visitor is
+without knowing a bar exists. `raiseEvent` and not `raiseGlobalEvent`: this stays
+inside the profile, and nothing outside the client is listening. In `look()`
+rather than `enter()` because `boot()` opens the first room with a bare `look()`
+and never calls `enter()`, so a bar filled from the latter would stay empty until
+the visitor moved.
 
 Behind the pill is Mudlet's own mapper: the real widget, the real map database,
 `centerview` following you from room to room, floating in the corner over the

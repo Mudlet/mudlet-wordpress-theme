@@ -155,6 +155,18 @@ coordinate you have misread this. Exits that contradict each other, point at
 nothing, or leave a room unreachable are reported to the debug console and the
 map is drawn without them, because the visitor must never see it.
 
+**The bar over the console is the world's, not the page's.** The room you are in,
+the ways out of it and the `map` pill are Geyser labels the package draws into the
+strip `setBorderTop` reserves. The exits are clickable, and they are the same
+directions the console prints because both come out of one `D.look()`: it raises
+`core.ROOM_EVENT` and `map.lua` listens. **`raiseEvent`, not `raiseGlobalEvent`** —
+the display and the world are one package in one profile, so nothing crosses a
+frame and no page-side listener exists. An earlier attempt put the exits in the
+hero's HTML title bar and reached them over the BroadcastChannel behind
+`raiseGlobalEvent`, which is a cross-profile bus borrowed for a job it does not
+mean. `demo/README.md` has the drawing rules, and every one of them is a
+consequence of a label being unable to measure its own text.
+
 **The facts in the prose are not typed either.** The version chalked on the
 vault wall, the crate weights and hashes, the notices on the board, the count
 of boxed worlds and the size of the ledger come from one request the world
@@ -321,8 +333,11 @@ anything:
   address, and `mudlet_download_email_verify` for a site that wants one anyway.
 - The hero points at `assets/demo/`, which is `demo/dist` bind-mounted in. Same
   origin, for the reasons below. Without the build the theme leaves the hero
-  scripted rather than framing a 404. (Docker on Windows loses that mount when
-  Vite replaces `dist/`; `docker compose restart wordpress` re-resolves it.)
+  scripted rather than framing a 404. A rebuild reaches the container without a
+  restart — Vite empties `dist/` rather than replacing the directory, so the
+  mount survives it. (This was once written down as needing
+  `docker compose restart wordpress` on Windows; measured on Docker Desktop
+  with Vite 8 it does not, so try a reload before reaching for that.)
 - **The contact page draws Discord rather than embedding it, and its form is a
   slot.** `/contact/` is `page-contact.php`: two panels over a row of link
   cards. The Discord one is the theme's own markup fed by two anonymous
