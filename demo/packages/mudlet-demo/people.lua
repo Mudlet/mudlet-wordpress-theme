@@ -193,16 +193,72 @@ function D.ledger()
         C.dim, ', or read the roll at ', link('mudlet.org/the-makers', URL.makers), C.dim .. '.')
 end
 
--- Three columns, read downwards, so the eight stay together at the top of the
--- first one. The whole point of the list is seeing all thirty at once: one
--- column is thirty lines of scrolling, two is fifteen, three is ten and fits a
--- hero-sized console without moving. COL_W is the longest name — Blaine von
--- Roeder, seventeen — plus a gap, which puts the widest row at 59 characters
--- against the ~68 this console wraps at.
+-- Read downwards, so the eight stay together at the top of the first column.
+-- The whole point of the list is seeing all thirty at once: one column is
+-- thirty lines of scrolling, two is fifteen, three is ten and fits a
+-- hero-sized console without moving.
+--
+-- Three is the ceiling, though, not the answer. This console is a panel in a
+-- web page: the hero wraps at ~68 columns on a laptop and at half that on a
+-- phone, and three columns there is 59 characters of layout folded into a
+-- 34-character console — every row wrapping, which is the one thing a column
+-- layout cannot survive. So ask the console how wide it is and print what
+-- fits. Reading downwards is why the count has to be known before the first
+-- row is built rather than discovered while building it.
 --
 -- The padding is its own segment because each name is a link, and a link is
 -- its own decho call — there is no string in the middle of the line to pad.
-local COLS, COL_W = 3, 20
+local MAX_COLS, GAP_MAX, GAP_MIN = 3, 3, 1
+
+-- Derived, not typed, so the column stays true if someone adds a longer name
+-- to the ledger above. Blaine von Roeder, seventeen, at the time of writing.
+local LONGEST = 0
+for _, m in ipairs(MAKERS) do LONGEST = math.max(LONGEST, ulen(m.name)) end
+
+-- The widest row a given shape can print: the two-space indent, then every
+-- column but the last padded out to a name plus the gap, then the longest name
+-- standing on its own in the last column.
+local function widestRow(cols, gap)
+    return 2 + (cols - 1) * (LONGEST + gap) + LONGEST
+end
+
+-- How many columns to print, and the gap that goes with them: the most columns
+-- that fit at the tightest gap, then the widest gap that still fits at that
+-- count. Both are needed, and the gap is why: the phone hero is 38 characters
+-- wide, where three columns is 59 characters of layout and two only fit once
+-- the gap comes down from three spaces to two. Dropping straight to one column
+-- there would be thirty rows of scrolling, which loses the only thing this list
+-- is for.
+--
+-- getColumnCount is the displayable width, which is the question being asked —
+-- not getWindowWrap, which is where the buffer folds text appended to it and is
+-- unset in this profile. It measures the live element, so it answers 0 before
+-- the console has mounted; the ceiling is the right guess then, because that is
+-- the shape the hero opens at.
+local function layout()
+    local width = 0
+    if getColumnCount then
+        local ok, n = pcall(getColumnCount)
+        if ok and type(n) == 'number' then width = n end
+    end
+    if width <= 0 then return MAX_COLS, GAP_MAX end
+
+    local cols = 1
+    for c = MAX_COLS, 2, -1 do
+        if widestRow(c, GAP_MIN) <= width then
+            cols = c
+            break
+        end
+    end
+    local gap = GAP_MIN
+    for g = GAP_MAX, GAP_MIN + 1, -1 do
+        if widestRow(cols, g) <= width then
+            gap = g
+            break
+        end
+    end
+    return cols, gap
+end
 
 function D.everyone()
     say()
@@ -210,16 +266,18 @@ function D.everyone()
     -- off the top of the console.
     say(C.say, '"All of them, then."', C.text, ' The sage turns the ledger round.')
     say()
-    local rows = math.ceil(#MAKERS / COLS)
+    local cols, gap = layout()
+    local pad = LONGEST + gap
+    local rows = math.ceil(#MAKERS / cols)
     for r = 1, rows do
         local line = { C.dim, '  ' }
-        for c = 0, COLS - 1 do
+        for c = 0, cols - 1 do
             local m = MAKERS[r + c * rows]
             if m then
                 line[#line + 1] = makerLink(m)
                 if MAKERS[r + (c + 1) * rows] then
                     line[#line + 1] = C.dim ..
-                        string.rep(' ', math.max(1, COL_W - ulen(m.name)))
+                        string.rep(' ', math.max(1, pad - ulen(m.name)))
                 end
             end
         end

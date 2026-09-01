@@ -83,6 +83,40 @@
 		}
 	})();
 
+	// ── the narrow-screen menu ───────────────────────────────────────────
+	// One nav in the document, drawn two ways: a row in the bar, or a panel
+	// under it. Which one is a media query's business, so the open state has
+	// to live on an attribute the query can ignore - setting `hidden` here
+	// would leave the bar's own nav display:none the moment the window got
+	// wide again.
+	(function () {
+		var bar = document.querySelector('#site .top');
+		var burger = bar && bar.querySelector('.burger');
+		if (!burger) return;
+
+		function open() { return bar.getAttribute('data-nav') === 'open'; }
+		function set(on) {
+			bar.setAttribute('data-nav', on ? 'open' : 'shut');
+			burger.setAttribute('aria-expanded', on ? 'true' : 'false');
+		}
+
+		burger.addEventListener('click', function () { set(!open()); });
+
+		// A link taken, or a tap anywhere but inside the panel, ends it. The
+		// language button inside stops its own click, so opening that menu
+		// does not close the drawer under it.
+		document.addEventListener('click', function (e) {
+			if (!open()) return;
+			var t = e.target;
+			if (t.closest && t.closest('#site .burger')) return;
+			if (!t.closest || !t.closest('#site .menu') || t.closest('#site .menu a')) set(false);
+		});
+
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && open()) { set(false); burger.focus(); }
+		});
+	})();
+
 	// ── header utilities: language menu and the theme toggle ─────────────
 	(function () {
 		var btn = document.querySelector('#site .lang__btn');
@@ -240,10 +274,15 @@
 		if (!host) return;
 
 		var src = DATA.demoSrc;
-		// Below the hero's single-column breakpoint the frame would be a
-		// 300px-tall console on a phone; the scripted session reads better there
-		// and costs nothing.
-		if (!src || window.matchMedia('(max-width:60rem)').matches) return;
+		// A phone gets the real client too. This used to stop at the hero's
+		// single-column breakpoint, because what a phone got was a 300px-tall
+		// console under an on-screen keyboard that covered the reply to every
+		// command you sent. Mudlet Web fixed its half of that - the command box
+		// blurs itself after each submit on a touch layout, so the keyboard
+		// drops and the output is visible - and the stylesheet fixes the other
+		// half by giving the panel most of the screen down there. What is left
+		// is a small console, which is what the expand control is for.
+		if (!src) return;
 
 		var frame = null, settled = false;
 
@@ -317,7 +356,32 @@
 		var GROW = 480, SHRINK = 360;
 		var still = window.matchMedia('(prefers-reduced-motion:reduce)');
 		var scrim = null, busy = false;
+		var hold = null;   // stand-in holding the panel's place in the grid
 		var origin = null; // where the panel sits in the page, in document coords
+
+		// Pinning the panel takes it out of flow, and an out-of-flow grid item
+		// stops being placed at all — so the row it sat in disappears and
+		// everything below the hero jumps up by its height, then drops back on
+		// close. On desktop that never showed: the hero is two columns and the
+		// copy beside the panel goes on sizing the row without it. Below the
+		// single-column breakpoint the panel is the only thing in its row, so
+		// there is nothing left to hold the height.
+		//
+		// A sibling of the panel's own shape, not a wrapper around it: wrapping
+		// would re-parent the iframe, and re-parenting an iframe reloads it —
+		// the session, the profile and the room you were standing in, gone to
+		// keep the page from twitching. It goes in after the panel, which is
+		// where auto-placement wants it once the panel is out of the running.
+		function holdOpen(h) {
+			hold = document.createElement('div');
+			hold.className = 'heroterm__hold';
+			hold.setAttribute('aria-hidden', 'true');
+			hold.style.height = h + 'px';
+			term.parentNode.insertBefore(hold, term.nextSibling);
+		}
+		function letGo() {
+			if (hold) { hold.remove(); hold = null; }
+		}
 
 		// Document coordinates, not viewport: the page can be scrolled between
 		// opening and closing, and the collapsed box travels with it.
@@ -373,7 +437,10 @@
 			scrim.addEventListener('click', close);
 			document.getElementById('site').appendChild(scrim);
 
+			// Same tick as the class that pins it, so the row is never briefly
+			// missing (or briefly doubled) between the two.
 			term.classList.add('is-wide');
+			holdOpen(origin.h);
 			btn.setAttribute('aria-expanded', 'true');
 			document.addEventListener('keydown', onKey);
 
@@ -389,6 +456,7 @@
 
 			var finish = function () {
 				term.classList.remove('is-wide');
+				letGo();
 				if (scrim) { scrim.remove(); scrim = null; }
 				btn.setAttribute('aria-expanded', 'false');
 				btn.focus();

@@ -36,6 +36,10 @@ function mudlet_icon_set(): array {
 		'globe'    => array( 'viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"', '<circle cx="8" cy="8" r="6.3"/><path d="M1.7 8h12.6M8 1.7c1.75 1.8 2.7 4 2.7 6.3S9.75 12.5 8 14.3C6.25 12.5 5.3 10.3 5.3 8S6.25 3.5 8 1.7z"/>' ),
 		'caret'    => array( $fill, '<path d="M4.2 6.1 8 9.9l3.8-3.8-1.1-1L8 7.8 5.3 5.1z"/>' ),
 		'expand'   => array( 'viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"', '<path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4"/>' ),
+		// The narrow-screen menu button and the way back out of it, drawn at
+		// the search icon's weight so the two sit level beside each other.
+		'menu'     => array( 'viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"', '<path d="M2 4h12M2 8h12M2 12h12"/>' ),
+		'close'    => array( 'viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"', '<path d="m3.6 3.6 8.8 8.8M12.4 3.6l-8.8 8.8"/>' ),
 		'monitor'  => array( $line, '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>' ),
 		'bolt'     => array( $line, '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>' ),
 		'sliders'  => array( $line, '<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>' ),

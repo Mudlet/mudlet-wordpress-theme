@@ -93,6 +93,11 @@ button{font:inherit; color:inherit}
 /* Places to read; Download is not among them, because the button already is
    the download. Two controls pointing at /download/ half a centimetre apart
    read as one control drawn twice. */
+/* The nav and the utilities share one wrapper so the narrow-screen drawer can
+   be them, rather than a second copy of them. In the bar the wrapper is not a
+   box at all - display:contents - so .topnav and .util remain flex items of
+   .w and everything below is the layout it always was. */
+#site .menu{display:contents}
 #site .topnav{margin-left:auto; display:flex; gap:.25rem; align-items:center}
 #site .topnav a{font-size:.9rem; font-weight:500; text-decoration:none; color:var(--dim);
   padding:.4rem .65rem; border-radius:7px}
@@ -270,11 +275,55 @@ button{font:inherit; color:inherit}
 /* Sized off the label rather than in rem, so the glyph tracks whatever the
    button's font-size is - the compact header variant included. */
 #site .btn svg{width:1em; height:1em; flex:none}
-/* the header button is a compact variant of .btn */
-#site .util .btn{font-size:.84rem; padding:.42rem .95rem}
+/* The header button is a compact variant of .btn. It never wraps: a two-line
+   label in a 3.7rem bar is what a narrow header used to do to it, and the
+   flex row would rather squeeze this than the nav beside it. */
+#site .util .btn{font-size:.84rem; padding:.42rem .95rem; flex:none; white-space:nowrap}
+
+/* — the narrow-screen menu — */
+/* Hidden until the bar runs out of room for the row, which is also the width
+   at which the wrapper stops being display:contents. */
+#site .burger{display:none; margin-left:auto; align-items:center; justify-content:center;
+  width:2.05rem; height:2.05rem; color:var(--dim); background:transparent;
+  border:1px solid transparent; border-radius:7px; cursor:pointer}
+#site .burger:hover{color:var(--ink); background:var(--band)}
+#site .burger svg{width:1.15rem; height:1.15rem}
+/* show the way out once you are in, the way the theme toggle does */
+#site .burger .ex{display:none}
+#site .top[data-nav="open"] .burger .bars{display:none}
+#site .top[data-nav="open"] .burger .ex{display:block}
+
+@media (max-width:52rem){
+  #site .burger{display:flex}
+  /* A panel hung off .top, which is sticky and therefore already the
+     containing block - so it spans the bar edge to edge and carries .w's own
+     inline padding rather than sitting inside it. No overflow:auto on it: the
+     language menu below opens out of this box, and a scroll container would
+     clip it. It is five links and a row of icons; it fits. */
+  #site .menu{display:none; position:absolute; left:0; right:0; top:100%;
+    padding:.55rem clamp(1.1rem,4vw,2rem) .9rem; background:var(--card);
+    border-bottom:1px solid var(--line);
+    box-shadow:0 18px 34px -22px rgba(var(--sh),.5)}
+  #site .top[data-nav="open"] .menu{display:block}
+  /* the bar is translucent because the page scrolls under it; an open menu
+     is a surface, so the two go solid together and read as one panel */
+  #site .top[data-nav="open"]{background:var(--card)}
+  #site .topnav{margin-left:0; display:block}
+  /* the ones the bar drops at 64rem are exactly what this is for */
+  #site .topnav a.lo{display:block}
+  #site .topnav a{display:block; font-size:1rem; padding:.6rem .7rem}
+  #site .util{gap:.35rem; margin-top:.55rem; padding:.7rem .2rem 0;
+    border-left:0; border-top:1px solid var(--line)}
+  #site .util .lang{display:block; margin-left:.25rem}
+  /* still downward: the drawer hangs from the top of the screen, so there is
+     nothing above it to open into */
+  #site .util .lang__menu{right:auto; left:0}
+  /* the one control that is not an icon takes the rest of the row */
+  #site .util .btn{margin-left:auto; font-size:.9rem; padding:.5rem 1.1rem}
+}
 
 /* — hero — */
-#site .hero{padding-block:var(--secpad)}
+#site .hero{padding-block:var(--secpad); margin: 20px;}
 #site .hero .w{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
   gap:clamp(2rem,5vw,4rem); align-items:center}
 @media (max-width:60rem){ #site .hero .w{grid-template-columns:1fr} }
@@ -297,15 +346,28 @@ button{font:inherit; color:inherit}
    Together that is about five more lines of world. Reset below the
    single-column breakpoint, where the padding is the only thing separating
    the terminal from the copy above it. */
-#site .heroterm{display:flex; align-self:stretch;
+/* `.heroterm__hold` is the stand-in the expand handler leaves in the grid
+   while the panel is pinned over the page — see theme.js. It is listed with
+   the panel everywhere the panel's own place in the row is described, so the
+   two cannot drift: a stand-in that did not carry these margins would hold
+   open a row a little taller than the one it replaced. */
+#site .heroterm, #site .heroterm__hold{display:flex; align-self:stretch;
   margin-block:calc(-1 * clamp(.75rem, 2vw, 1.75rem))}
-@media (max-width:60rem){ #site .heroterm{margin-block:0} }
+@media (max-width:60rem){ #site .heroterm, #site .heroterm__hold{margin-block:0} }
 #site .heroterm{--t-bg:#1e1813; --t-bar:#2b231b; --t-line:#3a2f24; --t-fg:#e8dcc6;
   --t-dim:#9c8f7c; --t-hot:#f56c27; --t-cool:#82c0c7; --t-sys:#8a9a5b;
   flex-direction:column; min-height:23rem;
   background:var(--t-bg); border:1px solid var(--t-line); border-radius:10px; overflow:hidden;
   font-family:var(--display); font-size:.78rem; line-height:1.8; color:var(--t-fg);
   box-shadow:0 30px 60px -30px rgba(0,0,0,.7)}
+/* The phone runs the real client too, and the 23rem above is a peephole there:
+   it is a whole-screen layout folded into a third of one. Give the panel most
+   of the screen instead - `svh`, not `vh`, so the box is the one that survives
+   the URL bar sliding back down rather than the one that only exists while it
+   is hidden. Still a min-height: the panel is free to be taller where there is
+   room. Below rather than above the rule it overrides, because a media query
+   adds no specificity — up there the 23rem simply won. */
+@media (max-width:60rem){ #site .heroterm{min-height:min(34rem, 68svh)} }
 #site .term__bar{display:flex; align-items:center; gap:.5ch; padding:.5rem .8rem;
   background:var(--t-bar); border-bottom:1px solid var(--t-line); font-size:.68rem; color:var(--t-dim)}
 #site .term__dot{width:.5rem; height:.5rem; border-radius:50%; background:var(--t-line)}
@@ -332,6 +394,12 @@ button{font:inherit; color:inherit}
 /* Above the sticky header, which sits at 80. */
 #site .heroterm.is-wide{position:fixed; inset:8vh 10vw; width:auto; height:auto;
   margin:0; z-index:201; box-shadow:0 40px 90px -30px rgba(0,0,0,.85)}
+/* On a phone that inset is most of the screen. Expanded means expanded there:
+   a thin frame so it still reads as a panel over the page, and `svh` again so
+   the bottom of the console is not sitting behind the URL bar. */
+@media (max-width:60rem){
+  #site .heroterm.is-wide{inset:2svh 3vw}
+}
 /* Over everything, header included — the demo is the whole screen while it is
    open, and a nav bar floating above a modal reads as a bug. The blur is what
    makes it read as depth rather than as a dark rectangle; the flat colour

@@ -34,58 +34,78 @@ $mudlet_languages = mudlet_languages();
 				<span class="mk">&gt;</span><?php bloginfo( 'name' ); ?>
 			</a>
 
-			<nav class="topnav">
+			<?php
+			// Below 52rem the nav and the utilities fold into the panel after
+			// this, and this button opens it. The button is the only new
+			// markup: the panel is the same anchors the bar draws, so there
+			// is no second copy of the menu to keep in step.
+			?>
+			<button class="burger" type="button" aria-label="<?php esc_attr_e( 'Menu', 'mudlet' ); ?>" aria-expanded="false" aria-controls="topmenu">
 				<?php
-				// Places to read. Download is deliberately not among them: the
-				// button on the right already is the download, and two controls
-				// pointing at the same page half a centimetre apart read as one
-				// control drawn twice.
-				mudlet_nav_links(
-					'primary',
-					array(
-						array( __( 'News', 'mudlet' ), mudlet_news_url() ),
-						array( __( 'Gallery', 'mudlet' ), mudlet_page_url( 'media', '/media/' ), 'lo' ),
-						array( __( 'Packages', 'mudlet' ), 'https://packages.mudlet.org/', 'lo' ),
-						array( __( 'Docs', 'mudlet' ), 'https://wiki.mudlet.org', 'lo' ),
-						array( __( 'Forum', 'mudlet' ), 'https://forums.mudlet.org', 'lo' ),
-					)
-				);
+				mudlet_icon( 'menu', 'bars' );
+				mudlet_icon( 'close', 'ex' );
 				?>
-			</nav>
+			</button>
 
-			<div class="util">
-				<button class="searchbtn" type="button" aria-label="<?php esc_attr_e( 'Search', 'mudlet' ); ?>" aria-keyshortcuts="/">
-					<?php mudlet_icon( 'search' ); ?>
-				</button>
-
-				<button class="theme" type="button" aria-label="<?php esc_attr_e( 'Switch to dark theme', 'mudlet' ); ?>" aria-pressed="false">
+			<?php
+			// display:contents in the bar, a panel under it once it is a
+			// drawer - so the same anchors serve both, and the open state
+			// lives on an attribute rather than on hidden.
+			?>
+			<div class="menu" id="topmenu">
+				<nav class="topnav">
 					<?php
-					mudlet_icon( 'moon', 'moon' );
-					mudlet_icon( 'sun', 'sun' );
+					// Places to read. Download is deliberately not among them: the
+					// button after them already is the download, and two controls
+					// pointing at the same page half a centimetre apart read as one
+					// control drawn twice.
+					mudlet_nav_links(
+						'primary',
+						array(
+							array( __( 'News', 'mudlet' ), mudlet_news_url() ),
+							array( __( 'Gallery', 'mudlet' ), mudlet_page_url( 'media', '/media/' ), 'lo' ),
+							array( __( 'Packages', 'mudlet' ), 'https://packages.mudlet.org/', 'lo' ),
+							array( __( 'Docs', 'mudlet' ), 'https://wiki.mudlet.org', 'lo' ),
+							array( __( 'Forum', 'mudlet' ), 'https://forums.mudlet.org', 'lo' ),
+						)
+					);
 					?>
-				</button>
+				</nav>
 
-				<?php if ( $mudlet_languages ) : ?>
-					<div class="lang">
-						<button class="lang__btn" aria-expanded="false" aria-haspopup="true" aria-label="<?php esc_attr_e( 'Change language', 'mudlet' ); ?>">
-							<?php mudlet_icon( 'globe', 'glb' ); ?>
-							<?php echo esc_html( mudlet_current_language_code() ); ?>
-							<?php mudlet_icon( 'caret', 'crt' ); ?>
-						</button>
-						<ul class="lang__menu" hidden>
-							<?php foreach ( $mudlet_languages as $lang ) : ?>
-								<li>
-									<a href="<?php echo esc_url( $lang['url'] ); ?>"<?php echo $lang['current'] ? ' aria-current="true"' : ''; ?>>
-										<?php echo esc_html( $lang['name'] ); ?><code><?php echo esc_html( $lang['code'] ); ?></code>
-									</a>
-								</li>
-							<?php endforeach; ?>
-						</ul>
-					</div>
-				<?php endif; ?>
+				<div class="util">
+					<button class="searchbtn" type="button" aria-label="<?php esc_attr_e( 'Search', 'mudlet' ); ?>" aria-keyshortcuts="/">
+						<?php mudlet_icon( 'search' ); ?>
+					</button>
 
-				<a class="btn" href="<?php echo esc_url( mudlet_download_url() ); ?>"><?php esc_html_e( 'Get Mudlet', 'mudlet' ); ?></a>
-			</div>
+					<button class="theme" type="button" aria-label="<?php esc_attr_e( 'Switch to dark theme', 'mudlet' ); ?>" aria-pressed="false">
+						<?php
+						mudlet_icon( 'moon', 'moon' );
+						mudlet_icon( 'sun', 'sun' );
+						?>
+					</button>
+
+					<?php if ( $mudlet_languages ) : ?>
+						<div class="lang">
+							<button class="lang__btn" aria-expanded="false" aria-haspopup="true" aria-label="<?php esc_attr_e( 'Change language', 'mudlet' ); ?>">
+								<?php mudlet_icon( 'globe', 'glb' ); ?>
+								<?php echo esc_html( mudlet_current_language_code() ); ?>
+								<?php mudlet_icon( 'caret', 'crt' ); ?>
+							</button>
+							<ul class="lang__menu" hidden>
+								<?php foreach ( $mudlet_languages as $lang ) : ?>
+									<li>
+										<a href="<?php echo esc_url( $lang['url'] ); ?>"<?php echo $lang['current'] ? ' aria-current="true"' : ''; ?>>
+											<?php echo esc_html( $lang['name'] ); ?><code><?php echo esc_html( $lang['code'] ); ?></code>
+										</a>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						</div>
+					<?php endif; ?>
+
+					<a class="btn" href="<?php echo esc_url( mudlet_download_url() ); ?>"><?php esc_html_e( 'Get Mudlet', 'mudlet' ); ?></a>
+				</div>
+			</div><!-- .menu -->
 		</div>
 	</header>
 
