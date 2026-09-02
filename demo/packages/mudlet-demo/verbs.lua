@@ -351,6 +351,30 @@ function D.input(raw)
         else
             D.aliasFor(word)
         end
+    elseif verb == 'kettle' or verb == 'boil' or verb == 'brew' or verb == 'put' then
+        -- `put the kettle on`, `boil`, `kettle` all land the same place;
+        -- `kettle off` lifts the switch again. The third of the three things
+        -- this world hands over — see mudlet-demo/kettle.lua, and the two rooms
+        -- either side of it in trigger.lua and catalogue.lua.
+        --
+        -- `put` is here rather than in a verb of its own because there is
+        -- exactly one thing in this world to put anywhere; `put the crate down`
+        -- falls through to the same place every other unknown line does.
+        local word = rest:gsub('^kettle%s*', ''):gsub('^on%s*$', '')
+        if verb == 'put' and word == rest then
+            say(C.text, rest == '' and 'Put what, where?'
+                or 'Nothing here goes anywhere else.')
+        elseif word == 'off' or word == 'none' or word == 'stop' or word == 'up' then
+            D.kettleOff()
+        elseif D.here == 'workshop' then
+            D.boil()
+        else
+            -- Refused where there is no kettle, and told where one is - the same
+            -- bargain `fetch` strikes outside the Stacks. A timer already
+            -- ticking is the client's and goes on ticking regardless.
+            say(C.text, 'There is nothing to boil in here. The kettle is on the bench in ',
+                'the Workshop, north of the commons.')
+        end
     elseif verb == 'trigger' or verb == 'trig' or verb == 'watch' then
         -- `trigger on gold`, `trigger for gold`, `trigger gold` all land the
         -- same place; `trigger off` takes it away again. See

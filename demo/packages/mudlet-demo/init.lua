@@ -12,9 +12,11 @@
 -- this week is not a fact about the site at all (mudlet-demo/github.lua). The
 -- Stacks does not either, but for the opposite reason: what it keeps is a fact
 -- about the client the visitor is standing in, and it counts it rather than
--- asking anyone (mudlet-demo/catalogue.lua). Between them they are the two
--- halves of "scriptable in Lua" — a trigger written in one, an alias in the
--- other.
+-- asking anyone (mudlet-demo/catalogue.lua). Between them they are two thirds
+-- of "scriptable in Lua" — a trigger written in one, an alias in the other. The
+-- last third is not a room at all but a kettle on the Workshop bench
+-- (mudlet-demo/kettle.lua): a timer only demonstrates itself once the visitor
+-- has walked away from where they set it.
 --
 -- Nothing has to be typed. Every noun, exit and suggested command prints as a
 -- clickable link, so the whole world is playable with a mouse — which is the
@@ -44,6 +46,7 @@ require('mudlet-demo.people')
 require('mudlet-demo.github')
 require('mudlet-demo.trigger')
 require('mudlet-demo.catalogue')
+require('mudlet-demo.kettle')
 require('mudlet-demo.map')
 require('mudlet-demo.verbs')
 require('mudlet-demo.seed')

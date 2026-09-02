@@ -1,19 +1,25 @@
 -- The Workshop, north of the commons. The clerk who stands in it is the one
 -- thing in this world that does not know what it says until somebody asks —
 -- the machinery, and the reasoning, are in mudlet-demo/github.lua.
+--
+-- The kettle at the end of the bench is the room's second job and has nothing to
+-- do with the clerk: it is a timer, and mudlet-demo/kettle.lua says why the
+-- world needed one.
 
 local D = demo
 local core = require('mudlet-demo.core')
 local URL = require('mudlet-demo.urls')
+local kettle = require('mudlet-demo.kettle')
 local C, say, link, cmd = core.C, core.say, core.link, core.cmd
 
 return {
     title = 'The Workshop',
-    desc = 'Long, high-windowed, and smelling of solder and yesterday\'s coffee. Down '
-        .. 'one wall a bench of work half-done and carefully labelled; down the other, '
-        .. 'a board of everything nobody has got to yet, which is a good deal longer. '
-        .. 'By the window stands a slanted desk with this week\'s date on it, and a '
-        .. 'clerk keeping the book open at that page.',
+    desc = 'Long, high-windowed, and smelling of solder and yesterday\'s coffee — the '
+        .. 'kettle it should have come from is at the end of the bench, cold, with one '
+        .. 'mug beside it. Down one wall work half-done and carefully labelled; down '
+        .. 'the other, a board of everything nobody has got to yet, which is a good '
+        .. 'deal longer. By the window stands a slanted desk with this week\'s date on '
+        .. 'it, and a clerk keeping the book open at that page.',
     exits = { south = 'commons' },
     things = {
         {
@@ -51,6 +57,12 @@ return {
             keys = { 'board', 'issues', 'bugs', 'wall' },
             url = URL.issues,
             look = function() D.issues() end,
+        },
+        {
+            name = 'the kettle',
+            keys = { 'kettle', 'mug', 'cup', 'tap', 'switch', 'coffee', 'tea' },
+            grab = kettle.grab,
+            look = function() D.lookKettle() end,
         },
         {
             name = 'the bench',

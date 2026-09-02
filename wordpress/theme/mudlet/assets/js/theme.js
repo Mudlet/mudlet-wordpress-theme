@@ -24,65 +24,6 @@
 	var DATA = window.MUDLET || {};
 	var S = DATA.strings || {};
 
-	// ── feature switcher ─────────────────────────────────────────────────
-	// Autoplays until the visitor takes it over. Hovering or tabbing in only
-	// holds it; a click hands it over for good.
-	(function () {
-		var sw = document.querySelector('#site .sw');
-		var btns = document.querySelectorAll('#site .swbtn');
-		if (!sw || !btns.length) return;
-
-		var DWELL = 6000; // keep in step with @keyframes swdwell
-		var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-		var timer = null, surrendered = reduce;
-
-		function show(btn) {
-			Array.prototype.forEach.call(btns, function (b) {
-				var on = b === btn;
-				b.setAttribute('aria-selected', on ? 'true' : 'false');
-				var panel = document.getElementById(b.dataset.p);
-				if (panel) panel.hidden = !on;
-			});
-		}
-		function current() {
-			for (var i = 0; i < btns.length; i++)
-				if (btns[i].getAttribute('aria-selected') === 'true') return i;
-			return 0;
-		}
-		function play() {
-			if (surrendered) return;
-			clearInterval(timer);
-			sw.setAttribute('data-auto', 'on'); // arms the dwell meter
-			timer = setInterval(function () { show(btns[(current() + 1) % btns.length]); }, DWELL);
-		}
-		function hold() { clearInterval(timer); sw.setAttribute('data-auto', 'off'); }
-		function surrender() { surrendered = true; hold(); } // a click or arrow key is a decision
-
-		Array.prototype.forEach.call(btns, function (b) {
-			b.addEventListener('click', function () { surrender(); show(b); });
-			b.addEventListener('mouseenter', function () { show(b); });
-			b.addEventListener('keydown', function (e) {
-				var i = Array.prototype.indexOf.call(btns, b), n = btns.length, j = null;
-				if (e.key === 'ArrowDown' || e.key === 'ArrowRight') j = (i + 1) % n;
-				if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') j = (i - 1 + n) % n;
-				if (j !== null) { e.preventDefault(); surrender(); btns[j].focus(); show(btns[j]); }
-			});
-		});
-		sw.addEventListener('mouseenter', hold);
-		sw.addEventListener('mouseleave', play);
-		sw.addEventListener('focusin', hold);
-		sw.addEventListener('focusout', play);
-
-		// never cycle a section nobody is looking at
-		if (window.IntersectionObserver) {
-			new IntersectionObserver(function (entries) {
-				if (entries[0].isIntersecting) play(); else hold();
-			}, { threshold: 0.25 }).observe(sw);
-		} else {
-			play();
-		}
-	})();
-
 	// ── the narrow-screen menu ───────────────────────────────────────────
 	// One nav in the document, drawn two ways: a row in the bar, or a panel
 	// under it. Which one is a media query's business, so the open state has
@@ -167,32 +108,57 @@
 	})();
 
 	// ── search palette — "/" or ctrl/cmd-K, IDE style ────────────────────
-	// The index is a flat list of [title, source, url] from PHP. Submitting the
-	// form falls through to WordPress's own search, so the palette is a
-	// shortcut over real search rather than a replacement for it.
+	//
+	// Two sources, one list. DATA.search is a flat [title, source, url] index
+	// of the newest pages and posts, inline with the page: it draws on the
+	// keystroke, matches titles only, and is all there is when the REST API
+	// cannot be reached. DATA.searchUrl is mudlet/v1/search, which runs the
+	// query the results page runs — the documents, not their titles — and
+	// replaces that first pass a moment later.
+	//
+	// That second half exists because the box used to disagree with itself: a
+	// word in the body of a page suggested nothing as you typed and then found
+	// it the instant you pressed Enter. Submitting still falls through to
+	// WordPress's own search when nothing is highlighted, so the palette stays
+	// a shortcut over real search rather than a replacement for it.
 	(function () {
 		var open = document.querySelector('#site .searchbtn');
 		var dlg = document.querySelector('#site .palette');
-		var input = dlg && dlg.querySelector('input');
+		var input = dlg && dlg.querySelector('input[name="s"]'); // the form also carries a hidden language
 		var list = dlg && dlg.querySelector('.palette__list');
 		var empty = dlg && dlg.querySelector('.palette__empty');
-		if (!open || !dlg || !input || !dlg.showModal) return;
+		var form = dlg && dlg.querySelector('form');
+		if (!open || !dlg || !input || !form || !dlg.showModal) return;
 
 		var ITEMS = Array.isArray(DATA.search) ? DATA.search : [];
-		var shown = [], cursor = 0;
+		var URL_ = typeof DATA.searchUrl === 'string' ? DATA.searchUrl : '';
+		// The palette asks in the language the visitor is reading, because the
+		// results page it hands off to answers in that language and a count
+		// that disagrees with the page it links to is worse than no count.
+		var LANG = typeof DATA.searchLang === 'string' ? DATA.searchLang : '';
+		var LIVE = !!URL_ && typeof window.fetch === 'function';
+		var MIN = 2;    // in step with the floor in inc/search.php
+		var WAIT = 160; // one pause in the typing, not one request per letter
+		var NONE = empty.textContent;
 
-		function render(q) {
-			q = q.trim().toLowerCase();
-			shown = q
-				? ITEMS.filter(function (i) { return String(i[0]).toLowerCase().indexOf(q) > -1; })
-				: ITEMS.slice(0, 8);
+		var shown = [], cursor = 0;
+		var timer = null, seq = 0, ctrl = null, busy = false;
+
+		function draw(items, keep) {
+			// `keep` holds the highlight on the same destination when the
+			// fetched list replaces the typed-ahead one under someone who has
+			// already arrowed down it.
+			var was = keep && shown[cursor] ? shown[cursor][2] : null;
+			shown = items;
 			cursor = 0;
 			list.innerHTML = '';
 			shown.forEach(function (item, i) {
+				if (was && item[2] === was) cursor = i;
 				var li = document.createElement('li');
 				var b = document.createElement('button');
 				b.type = 'button';
-				b.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+				if (item[3]) li.className = 'palette__all'; // the way out to the results page
+				b.setAttribute('aria-selected', 'false');
 				b.innerHTML = '<span class="t"></span><span class="src"></span>';
 				b.querySelector('.t').textContent = item[0];
 				b.querySelector('.src').textContent = item[1];
@@ -201,7 +167,71 @@
 				li.appendChild(b);
 				list.appendChild(li);
 			});
+			var btns = list.querySelectorAll('button');
+			if (btns[cursor]) btns[cursor].setAttribute('aria-selected', 'true');
+			// A pending request owns the empty slot: a query the titles miss
+			// must not answer "No matches." before the documents have replied.
+			empty.textContent = busy ? (S.searching || NONE) : NONE;
 			empty.hidden = shown.length > 0;
+		}
+		function local(q) {
+			q = q.trim().toLowerCase();
+			return q
+				? ITEMS.filter(function (i) { return String(i[0]).toLowerCase().indexOf(q) > -1; })
+				: ITEMS.slice(0, 8);
+		}
+		function stop() {
+			clearTimeout(timer);
+			if (ctrl) { ctrl.abort(); ctrl = null; }
+			seq++; // anything already in flight answers to a number nobody holds
+			busy = false;
+		}
+		function render(q) {
+			stop();
+			busy = LIVE && q.trim().length >= MIN;
+			draw(local(q));
+			if (busy) timer = setTimeout(function () { ask(q.trim()); }, WAIT);
+		}
+		// A palette is eight rows tall and a search is not. When the count says
+		// so, the list ends in a row to the results page — a real row, so it
+		// arrows and clicks like the others, and go() needs to know nothing
+		// about it beyond the URL it carries.
+		function all(q, total) {
+			// The form's own action and field, so the row lands exactly where
+			// submitting would - language included.
+			var href = (form.getAttribute('action') || '') + '?s=' + encodeURIComponent(q);
+			if (LANG) href += '&lang=' + encodeURIComponent(LANG);
+			return [
+				(S.searchAll || 'See all %s results').replace('%s', String(total)),
+				S.searchSrc || 'Search',
+				href,
+				true
+			];
+		}
+		function ask(q) {
+			var token = seq;
+			var opts = {};
+			if (window.AbortController) { ctrl = new AbortController(); opts.signal = ctrl.signal; }
+			var url = URL_ + '?q=' + encodeURIComponent(q.slice(0, 100));
+			if (LANG) url += '&lang=' + encodeURIComponent(LANG);
+			fetch(url, opts).then(function (r) {
+				return r.ok ? r.json() : null;
+			}).then(function (data) {
+				if (token !== seq) return; // a later keystroke won
+				busy = false;
+				ctrl = null;
+				var rows = data && Array.isArray(data.rows) ? data.rows : null;
+				if (!rows) { draw(shown, true); return; }
+				if (data.total > rows.length) rows = rows.concat([all(q, data.total)]);
+				draw(rows, true);
+			}).catch(function () {
+				// Offline, 404, or a site with the REST API turned off: the
+				// typed-ahead titles are still on screen, and Enter still works.
+				if (token !== seq) return;
+				busy = false;
+				ctrl = null;
+				draw(shown, true);
+			});
 		}
 		function go(item) {
 			if (item && item[2]) window.location.href = item[2];
@@ -227,9 +257,12 @@
 		open.addEventListener('click', show);
 		// deferred: at close time the page is still inert, so a synchronous
 		// focus() is dropped and the caret stays in the hidden dialog
-		dlg.addEventListener('close', function () { setTimeout(function () { open.focus(); }, 0); });
+		dlg.addEventListener('close', function () {
+			stop(); // nothing in flight outlives the dialog that asked for it
+			setTimeout(function () { open.focus(); }, 0);
+		});
 
-		dlg.querySelector('form').addEventListener('submit', function (e) {
+		form.addEventListener('submit', function (e) {
 			// Enter on a highlighted suggestion opens it; Enter on a query with
 			// no suggestions falls through to WordPress search.
 			if (shown.length) {
@@ -238,6 +271,11 @@
 			}
 		});
 		input.addEventListener('input', function () { render(input.value); });
+		// The clear button in a type=search field fires 'search', not 'input'.
+		// Only when it has emptied the field, though: 'search' is also what
+		// Enter fires, and re-rendering there would swap the highlighted row
+		// out from under the submit handler about to open it.
+		input.addEventListener('search', function () { if (!input.value) render(''); });
 		input.addEventListener('keydown', function (e) {
 			if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
 			if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
@@ -1189,7 +1227,10 @@
 	(function () {
 		var gals = document.querySelectorAll('#site .is-style-mudlet-carousel');
 		var casts = document.querySelectorAll('#site .is-style-mudlet-screencasts');
-		if (!gals.length && !casts.length) return;
+		// The front page's row of thumbnails wants the same lightbox, so it has to
+		// count towards this guard or the whole block never runs there.
+		var shots = document.querySelectorAll('#site .shots');
+		if (!gals.length && !casts.length && !shots.length) return;
 
 		var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 		var DWELL = 5000;
@@ -1542,6 +1583,36 @@
 			});
 
 			mark(0);
+		});
+
+		// ── the front page's three screenshots ───────────────────────────
+		// Same lightbox as the gallery on /media/, so a visitor learns it once
+		// rather than meeting two ways of looking at a screenshot on one site.
+		// The anchor each thumbnail already is stays the no-script path and the
+		// modifier-click path, exactly as the carousel's slides do: this only
+		// gets in front of a plain left click.
+		//
+		// The caption comes off the image's alt, which the seed sets to the
+		// game's name. That is why the thumbnails carry no caption of their own
+		// and the lightbox still names what you are looking at.
+		Array.prototype.forEach.call(shots, function (row) {
+			var links = Array.prototype.slice.call(row.querySelectorAll('a.shot'));
+			if (!links.length) return;
+
+			row.addEventListener('click', function (e) {
+				if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+				var a = e.target.closest ? e.target.closest('a.shot') : null;
+				if (!a) return;
+				var i = links.indexOf(a);
+				if (i < 0) return;
+
+				e.preventDefault();
+				lightbox().open(links.map(function (l) {
+					var img = l.querySelector('img');
+					var name = img ? img.alt : '';
+					return { src: l.href, alt: name, cap: name };
+				}), i);
+			});
 		});
 
 		// A screencast list plays where it is rather than sending the visitor to

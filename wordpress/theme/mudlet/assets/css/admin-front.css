@@ -1,0 +1,281 @@
+/* The front page's three fields, on the front page's own edit screen.
+ *
+ * wp-admin's own furniture wherever it has some - .button, .description,
+ * .widefat, dashicons - and only the repeater's own layout here. Nothing in
+ * this file is loaded on the site; it never sees theme.css and has no custom
+ * properties, so the few colours below are wp-admin's own greys written out.
+ */
+
+/* One panel: a grip down the left edge, the screenshot, the fields, and the
+   three controls that move or remove it.
+
+   The media column is fixed so every row's fields start on the same line - a
+   repeater whose columns shift as thumbnails load is hard to read down. */
+.mudlet-front__panel {
+	display: grid;
+	grid-template-columns: 26px 190px minmax(0, 1fr) 30px;
+	gap: 0 1.25rem;
+	align-items: start;
+	padding: 1rem 1rem 1rem .35rem;
+	margin-bottom: .75rem;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+@media (max-width: 60rem) {
+	.mudlet-front__panel {
+		grid-template-columns: 26px minmax(0, 1fr) 30px;
+	}
+	.mudlet-front__media {
+		grid-column: 2 / -1;
+	}
+}
+
+/* ── the grip ─────────────────────────────────────────────────────────
+   Stretched down the whole row rather than sized to its glyph: the target
+   somebody reaches for is "this row", and a 20px square is a small thing to
+   hit for the one gesture the screen is built around. */
+.mudlet-front__grip {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	align-self: stretch;
+	width: 26px;
+	/* .dashicons sets height:20px, and an explicit height beats align-self:
+	   stretch - which left the grip a 20px square pinned to the top of the
+	   row instead of a full-height edge to grab. */
+	height: auto;
+	color: #c3c4c7;
+	cursor: grab;
+}
+
+.mudlet-front__panel:hover .mudlet-front__grip {
+	color: #8c8f94;
+}
+
+/* ── the screenshot ───────────────────────────────────────────────────
+   16:10, roughly what the screenshots are, so the box does not change height
+   when an image lands in it. */
+.mudlet-front__thumb {
+	aspect-ratio: 16 / 10;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	background: #f0f0f1;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+}
+
+/* contain, not cover, because that is what the page does - a preview that
+   crops what the front end letterboxes is a preview of a different site. */
+.mudlet-front__thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
+
+.mudlet-front__mediahint {
+	margin: .4rem 0 0;
+}
+
+.mudlet-front__thumb.is-empty::after {
+	content: '';
+	width: 28px;
+	height: 28px;
+	border: 2px dashed #a7aaad;
+	border-radius: 3px;
+}
+
+.mudlet-front__mediabtns {
+	display: flex;
+	align-items: center;
+	gap: .6rem;
+	margin: .5rem 0 0;
+}
+
+/* Clearing the image is a text action beside a button, so it stays text - but
+   not .button-link, which paints it the same blue as a hyperlink. Grey until
+   it is pointed at, then the red it deserves. */
+.mudlet-front__clear {
+	padding: 0;
+	color: #646970;
+	background: none;
+	border: 0;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.mudlet-front__clear:hover {
+	color: #b32d2e;
+}
+
+/* ── the fields ───────────────────────────────────────────────────────
+   Every field takes the width. The icon grid is the reason: it wants the row
+   rather than a column beside the title. */
+.mudlet-front__field {
+	margin: 0 0 .85rem;
+	padding: 0;
+	border: 0;
+}
+
+.mudlet-front__field label > span:first-child,
+.mudlet-front__field legend {
+	display: block;
+	margin-bottom: .25rem;
+	padding: 0;
+	font-weight: 600;
+}
+
+/* ── the icon grid ────────────────────────────────────────────────────
+   The native radio is taken out of the flow rather than display:none'd -
+   hidden inputs are skipped by keyboard navigation, which would throw away
+   the only reason these are radios. The tile beside it is what gets painted,
+   and :checked reaches it as a sibling. */
+.mudlet-front__iconlist {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	padding: 4px;
+	background: #fdfdfd;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+}
+
+.mudlet-front__icon {
+	position: relative;
+	display: block;
+	cursor: pointer;
+}
+
+.mudlet-front__icon input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.mudlet-front__icon > span {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	color: #646970;
+	border: 1px solid transparent;
+	border-radius: 3px;
+}
+
+/* The set mixes 16- and 24-unit viewBoxes and carries no width attribute of
+   its own - inc/icons.php leaves sizing to whoever draws it. */
+.mudlet-front__icon > span svg {
+	width: 17px;
+	height: 17px;
+}
+
+.mudlet-front__icon:hover > span {
+	color: #1d2327;
+	background: #f0f0f1;
+}
+
+.mudlet-front__icon input:checked ~ span {
+	color: #fff;
+	background: #2271b1;
+	border-color: #2271b1;
+}
+
+.mudlet-front__icon input:focus-visible ~ span {
+	box-shadow: 0 0 0 2px #3582c4;
+}
+
+.mudlet-front__hint {
+	display: block;
+	margin-top: .3rem;
+	color: #646970;
+	font-size: 12px;
+	font-style: italic;
+}
+
+/* ── move and remove ──────────────────────────────────────────────────
+   Square icon buttons, not .button-link: that class draws a blue text link,
+   which reads as navigation rather than as a control - and makes the one
+   destructive action on the screen look like a hyperlink.
+
+   Remove is pushed away from the pair above it, because the gap is what stops
+   a mis-aimed "down" from deleting a panel. */
+.mudlet-front__ops {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.mudlet-front__op {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	color: #787c82;
+	background: none;
+	border: 1px solid transparent;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.mudlet-front__op .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+.mudlet-front__op:hover {
+	color: #1d2327;
+	background: #f0f0f1;
+}
+
+.mudlet-front__op:focus-visible {
+	border-color: #3582c4;
+	box-shadow: 0 0 0 1px #3582c4;
+	outline: none;
+}
+
+.mudlet-front__remove {
+	margin-top: .6rem;
+}
+
+.mudlet-front__remove:hover {
+	color: #b32d2e;
+	background: #f7e4e4;
+}
+
+.mudlet-front__add {
+	margin: .25rem 0 0;
+}
+
+/* ── dragging, over jquery-ui-sortable ────────────────────────────────
+   The grip is the only thing that starts a drag, so a press inside a textarea
+   still places a cursor. */
+.mudlet-front__panel.ui-sortable-helper {
+	box-shadow: 0 6px 20px -6px rgba(0, 0, 0, .35);
+}
+
+.mudlet-front__panel.ui-sortable-helper .mudlet-front__grip {
+	color: #2271b1;
+	cursor: grabbing;
+}
+
+/* The gap it will drop into. forcePlaceholderSize gives this its height, so
+   the list does not collapse and re-expand under the pointer. */
+.mudlet-front__placeholder {
+	margin-bottom: .75rem;
+	background: #f6f7f7;
+	border: 2px dashed #c3c4c7;
+	border-radius: 4px;
+}

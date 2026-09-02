@@ -80,11 +80,28 @@ function mudlet_script_data(): array {
 	return array(
 		'demoSrc'   => mudlet_demo_src(),
 		'downloads' => mudlet_download_script_data(),
+		// Two halves of one box: the inline index is what the palette draws on
+		// the keystroke, the route is what it asks a moment later. See
+		// inc/search.php.
 		'search'    => mudlet_search_index(),
+		'searchUrl' => esc_url_raw( rest_url( 'mudlet/v1/search' ) ),
+		// A REST request is not inside the language's URLs, so the language
+		// travels with the question. Empty without Polylang.
+		'searchLang' => mudlet_current_language_slug(),
 		'strings'   => array(
 			'lightTheme' => __( 'Switch to light theme', 'mudlet' ),
 			'darkTheme'  => __( 'Switch to dark theme', 'mudlet' ),
 			'copied'     => __( 'copied', 'mudlet' ),
+			// Held in the palette's empty slot while the route is being asked,
+			// so a query the inline titles miss does not read "No matches."
+			// for as long as the network takes.
+			'searching'  => __( 'Searching…', 'mudlet' ),
+			// The last row, when the count says the eight above it are not all
+			// of them. Only ever plural: it is drawn when there are more
+			// results than rows.
+			/* translators: %s: total number of results */
+			'searchAll'  => __( 'See all %s results', 'mudlet' ),
+			'searchSrc'  => __( 'Search', 'mudlet' ),
 			/* translators: %s: number of games currently matching the filter */
 			'gamesShown' => __( '%s shown', 'mudlet' ),
 			// The screenshot carousel and its lightbox. Every control on both is
@@ -120,43 +137,4 @@ function mudlet_script_data(): array {
 function mudlet_demo_src(): string {
 	$path = get_template_directory() . '/assets/demo/index.html';
 	return file_exists( $path ) ? get_template_directory_uri() . '/assets/demo/index.html' : '';
-}
-
-/**
- * A flat list for the search palette: [title, source label, url].
- *
- * Deliberately small and cached. The palette is a way to reach the twenty
- * things people actually look for, not a site-wide index - a real one belongs
- * behind the REST API once there is something worth searching.
- *
- * @return array<int, array{0:string,1:string,2:string}>
- */
-function mudlet_search_index(): array {
-	$cached = get_transient( 'mudlet_search_index' );
-	if ( is_array( $cached ) ) {
-		return $cached;
-	}
-
-	$items = array();
-
-	foreach ( get_pages( array( 'number' => 20 ) ) as $page ) {
-		$items[] = array( get_the_title( $page ), __( 'Page', 'mudlet' ), get_permalink( $page ) );
-	}
-
-	$posts = get_posts( array( 'numberposts' => 20, 'post_status' => 'publish' ) );
-	foreach ( $posts as $post ) {
-		$items[] = array( get_the_title( $post ), __( 'News', 'mudlet' ), get_permalink( $post ) );
-	}
-
-	set_transient( 'mudlet_search_index', $items, HOUR_IN_SECONDS );
-	return $items;
-}
-
-add_action( 'save_post', 'mudlet_flush_search_index' );
-add_action( 'deleted_post', 'mudlet_flush_search_index' );
-/**
- * Drop the cached palette index when content changes.
- */
-function mudlet_flush_search_index(): void {
-	delete_transient( 'mudlet_search_index' );
 }

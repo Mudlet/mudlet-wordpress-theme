@@ -140,6 +140,13 @@ button{font:inherit; color:inherit}
 /* one highlight, driven by the keyboard — hover just mirrors it */
 #site .palette__list button[aria-selected="true"]{background:var(--band)}
 #site .palette__list button[aria-selected="true"] .t{color:var(--link)}
+/* The last row: not a result, a way out to the whole list of them. Sticky
+   rather than simply last, because the results scroll and an offer you have to
+   scroll to find is one nobody takes. */
+#site .palette__all{position:sticky; bottom:-.35rem; margin-top:.35rem;
+  padding:.35rem 0 .35rem; background:var(--card); border-top:1px solid var(--line)}
+#site .palette__all button .t{color:var(--dim)}
+#site .palette__all button[aria-selected="true"] .t{color:var(--link)}
 #site .palette__empty{padding:1.6rem 1rem; text-align:center; color:var(--dim); font-size:.9rem}
 #site .palette__empty[hidden]{display:none}
 #site .palette__foot{display:flex; gap:1.1rem; padding:.55rem 1rem; font-size:.72rem; color:var(--dim);
@@ -534,71 +541,130 @@ button{font:inherit; color:inherit}
   color:var(--dim); padding-bottom:.65rem; border-bottom:1px solid var(--line); margin-bottom:1.25rem}
 #site .head .eyebrow::before{content:'>'; color:var(--mark); font-weight:600}
 #site .head .eyebrow span{margin-left:auto; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase}
+/* the one eyebrow whose right-hand note is a link (the screenshots row) */
+#site .head .eyebrow span a{color:var(--link); text-decoration:none}
+#site .head .eyebrow span a:hover{text-decoration:underline}
 #site .head h2{font-size:clamp(1.55rem,3.4vw,2.1rem); margin-bottom:.5rem}
 #site .head .sub{color:var(--dim); max-width:52ch}
 /* a head with no .sub under it would otherwise carry h2's bottom margin
    on top of .head's own, breaking the rhythm the other sections keep */
 #site .head h2:last-child{margin-bottom:0}
+/* and the same for a head that is nothing but its eyebrow, which is what the
+   showcase is now - otherwise the eyebrow's rule and .head's own margin stack
+   into half a screen of nothing before the cards */
+#site .head .eyebrow:last-child{margin-bottom:0}
+/* The screenshots row opens with a second .head, and .head carries no top
+   margin - it is normally the first thing in a section. Butted straight up
+   against the cards it read as their caption rather than as a new run. */
+#site .showcase .cards + .head{margin-top:clamp(1.75rem,3.5vw,2.5rem)}
 
-/* — signature: feature switcher —
-   Autoplays, so each panel has to earn its six seconds. Hovering or
-   tabbing in holds it; a click hands it over for good. */
+/* — signature: six cards, then three screenshots —
+   This was a tab switcher that gave every claim the same 16:9 image slot, and
+   only two of the six had a picture that filled it: "works anywhere" is a fact
+   about operating systems and "free and open source" is a fact about who writes
+   the client, and a screenshot of a session shows neither. So each card carries
+   a small figure of its own, drawn in inc/front-art.php, and the real
+   screenshots are the thumbnail row underneath - small enough that a crop stops
+   mattering, which is the whole reason the old panel could not work. */
 #site .showcase{background:var(--band); border-block:1px solid var(--line); padding-block:var(--secpad)}
-#site .sw{display:grid; grid-template-columns:minmax(0,19rem) minmax(0,1fr); gap:clamp(1.25rem,3vw,2.5rem); align-items:start}
-@media (max-width:56rem){ #site .sw{grid-template-columns:1fr} }
-#site .swlist{display:flex; flex-direction:column; gap:.3rem}
-#site .swbtn{position:relative; overflow:hidden; display:flex; align-items:center; gap:.75rem; width:100%;
-  text-align:left; font-family:var(--body); background:transparent; border:1px solid transparent;
-  padding:.7rem .85rem; border-radius:10px; cursor:pointer; transition:.15s; white-space:nowrap}
-#site .swbtn svg{width:1.35rem; height:1.35rem; flex:none; color:var(--dim); transition:color .15s}
-#site .swbtn[aria-selected="true"] svg{color:var(--mark)}
-#site .swbtn b{font-weight:600; font-size:.95rem}
-#site .swbtn:hover{background:var(--hover)}
-#site .swbtn[aria-selected="true"]{background:var(--card); border-color:var(--line); box-shadow:0 2px 10px -4px rgba(var(--sh),.25)}
-#site .swbtn[aria-selected="true"] b{color:var(--link)}
-/* Under the switcher's breakpoint the column becomes two columns of three,
-   not a horizontal strip. The strip was the obvious move and is wrong twice
-   over: the buttons inherit width:100% from the rule above, so in a flex row
-   they shrink to six equal slivers that clip their own labels to "Wor",
-   "Fas", "100" and never overflow enough to scroll; and once that is fixed
-   the strip hides half the tabs behind a scrollbar that is a grey slab on
-   Android and an invisible overlay on iOS. Six short labels fit two-up on a
-   phone, so all six stay on screen and nothing scrolls sideways at all.
-   Placed after the .swbtn block, not up beside the .sw one, because these
-   have to outrank it. */
-@media (max-width:56rem){
-  #site .swlist{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem}
-  /* narrow tracks: the longest label has to be allowed to take a second line
-     rather than run under .swbtn's overflow:hidden */
-  #site .swbtn{white-space:normal; padding:.55rem .7rem; gap:.55rem}
-  #site .swbtn svg{width:1.2rem; height:1.2rem}
-  #site .swbtn b{font-size:.9rem; line-height:1.25}
-}
-/* dwell meter — drawn only while autoplay is actually running. It restarts
-   on its own: the animation lands on whichever button has just become
-   selected, so a fresh element gets a fresh animation. No JS reflow trick. */
-#site .sw[data-auto="on"] .swbtn[aria-selected="true"]::after{
-  content:''; position:absolute; left:0; bottom:0; height:3px; width:0;
-  background:var(--hl); opacity:.75; animation:swdwell 6s linear forwards}
-@keyframes swdwell{ from{width:0} to{width:100%} }
-#site .swpanel{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;
-  animation:swfade .35s ease both}
-@keyframes swfade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
-#site .swpanel[hidden]{display:none}
-#site .swpanel img{width:100%; aspect-ratio:16/9; object-fit:cover; object-position:top left; border-bottom:1px solid var(--line)}
-#site .swpanel .cap{padding:1.15rem 1.35rem 1.35rem}
-#site .swpanel h3{font-size:1.12rem; margin-bottom:.4rem}
-#site .swpanel p{color:var(--dim); font-size:.95rem}
-@media (prefers-reduced-motion:reduce){ #site .swpanel{animation:none} }
 
-/* the spec line: everything the six panels have no room to say. Set as a
+#site .cards{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem}
+@media (max-width:62rem){ #site .cards{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:40rem){ #site .cards{grid-template-columns:1fr} }
+
+#site .card{display:flex; flex-direction:column; gap:.9rem; padding:1.25rem;
+  background:var(--card); border:1px solid var(--line); border-radius:12px}
+#site .card h3{font-size:1.05rem; margin-bottom:.4rem}
+#site .card p{color:var(--dim); font-size:.92rem; line-height:1.6; text-wrap:pretty}
+
+/* One height for every figure, so the six titles sit on the same line whatever
+   is drawn above them. */
+#site .cardart{display:flex; align-items:center; gap:.85rem; height:2.75rem}
+
+#site .cardart--platforms{gap:1.05rem}
+#site .cardart__os{width:1.6rem; height:1.6rem; color:var(--ink)}
+
+#site .cardart__bolt{width:1.9rem; height:1.9rem; color:var(--mark)}
+#site .cardart__lua{width:2rem; height:2rem; color:var(--ink)}
+
+/* Three windows offset behind each other, the front one in the accent. */
+#site .cardart__stack{position:relative; width:4.2rem; height:2.5rem}
+/* --dim rather than --line for the outline, and the two behind dimmed with
+   opacity: band-on-card is nearly the same value in dark, which left the back
+   two windows invisible there. */
+#site .cardart__stack span{position:absolute; width:2.8rem; height:1.75rem;
+  border:1.5px solid var(--dim); border-radius:4px; background:var(--card)}
+#site .cardart__stack span:nth-child(1){opacity:.35}
+#site .cardart__stack span:nth-child(2){left:.45rem; top:.35rem; opacity:.6}
+#site .cardart__stack span:nth-child(3){left:.9rem; top:.7rem;
+  border-color:var(--mark); background:var(--card)}
+
+/* Filled rooms in --dim, not outlined in --line: --line on --card is nearly
+   the same value in dark and the whole figure vanished there. --dim is the
+   muted text colour, so it is guaranteed to carry against both cards. */
+#site .cardart__map{width:4.25rem; height:2.75rem}
+#site .cardart__map path{fill:none; stroke:var(--dim); stroke-width:2; stroke-linecap:round; opacity:.5}
+#site .cardart__map rect{fill:var(--dim); opacity:.55}
+#site .cardart__map rect.is-here{fill:var(--mark); opacity:1}
+
+/* Overlapping faces; the last circle counts whoever did not fit. */
+#site .cardart__faces{display:flex; align-items:center}
+/* Two rings, doing two jobs: the 2px --card border is what separates one face
+   from the one it overlaps, and the inset hairline is what gives an initials
+   circle an edge at all - without it, band-on-card leaves the letters floating
+   in dark. */
+#site .cardart__face{display:flex; align-items:center; justify-content:center;
+  width:2.05rem; height:2.05rem; border-radius:50%; overflow:hidden; background:var(--band);
+  border:2px solid var(--card); box-shadow:inset 0 0 0 1px var(--line);
+  font-family:var(--display); font-size:.62rem; color:var(--dim)}
+#site .cardart__face + .cardart__face{margin-left:-.55rem}
+#site .cardart__face img{width:100%; height:100%; object-fit:cover}
+#site .cardart__face--more{color:var(--mark)}
+
+#site .cardart__pill{display:inline-flex; align-items:center; gap:.4rem;
+  padding:.2rem .6rem .2rem .5rem; background:var(--band); border:1px solid var(--line);
+  border-radius:20px; font-family:var(--display); font-size:.78rem; text-decoration:none}
+#site .cardart__pill svg{width:.9rem; height:.9rem; flex:none}
+#site .cardart__pill:hover{border-color:var(--mark)}
+#site .cardart__star{color:var(--mark)}
+/* Green because green means "online" everywhere, not because the palette has a
+   green - it deliberately does not, so this one is written out. */
+#site .cardart__dot{width:.5rem; height:.5rem; border-radius:50%; background:#4f8a5f; flex:none}
+/* the size of the room, then how many are in it right now */
+#site .cardart__now{display:inline-flex; align-items:center; gap:.35rem; color:var(--dim)}
+#site .cardart__now::before{content:"·"; color:var(--mark); opacity:.55; margin-right:.15rem}
+
+/* — the screenshots, at thumbnail size —
+   Three at random out of whatever /media/ holds. Cropping to 16:9 is fine here
+   in a way it was not in the old full-width panel: at this size the crop reads
+   as a thumbnail rather than as a picture with its top cut off. */
+/* Set as a prompt, in the spec line's voice: the two of them bracket the
+   screenshots and are the same kind of aside, so they read as one device
+   rather than as a heading and a footnote. */
+
+#site .shots{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem}
+@media (max-width:40rem){ #site .shots{grid-template-columns:1fr} }
+#site .shot{display:block; overflow:hidden; background:var(--ink-d);
+  border:1px solid var(--line); border-radius:10px}
+#site .shot:hover{border-color:var(--mark)}
+/* contain, not cover, and 16:10 rather than 16:9: the community shots run from
+   0.86 to 1.86 wide, so no single ratio can crop-to-fill without taking the
+   sides off half of them. Letterboxed against the dark ground they mostly are
+   anyway, which is the same call the section made for its big panel. */
+/* height:auto matters: wp_get_attachment_image() emits width/height attributes,
+   and a specified height leaves aspect-ratio nothing to compute - the box kept
+   the full height of a tall screenshot instead of the 16:10 asked for. */
+#site .shot img{width:100%; height:auto; aspect-ratio:16/10; object-fit:contain; display:block}
+
+/* the spec line: everything the six cards have no room to say. Set as a
    run rather than its own section, so the full list costs three lines
    instead of a screen, and reads as the spec sheet it is. */
 #site .specs{margin-top:clamp(1.75rem,3.5vw,2.5rem); padding-top:clamp(1.4rem,2.5vw,1.8rem);
-  border-top:1px solid var(--line); font-family:var(--display); font-size:.82rem;
-  line-height:1.9; color:var(--dim)}
+  border-top:1px solid var(--line); font-family:var(--display); font-size:.78rem;
+  letter-spacing:.02em; line-height:1.9; color:var(--dim)}
 #site .specs b{font-weight:600; color:var(--ink); margin-inline:.55ch 1ch}
 #site .specs .sep{color:var(--mark); opacity:.55; margin-inline:.6ch}
+#site .specs__more{opacity:.7}
 
 /* — page routing: the prototype carries two views in one document — */
 #site .page{display:none}
@@ -811,6 +877,9 @@ button{font:inherit; color:inherit}
 #site .split{display:grid; grid-template-columns:repeat(auto-fit,minmax(19rem,1fr)); gap:2.75rem}
 #site .split h2{font-size:clamp(1.4rem,3vw,1.85rem); margin-bottom:1rem}
 #site .split p{color:var(--dim); margin-bottom:1rem}
+/* The line under the quotation. Was an inline style until the copy moved into
+   inc/front-content.php and the template stopped hand-writing the markup. */
+#site .split__note{margin-top:1rem}
 #site .quote{background:var(--band); border-left:3px solid var(--accent2); border-radius:0 10px 10px 0;
   padding:1.3rem 1.4rem; font-size:.97rem; line-height:1.65; color:var(--ink)}
 #site .quote cite{display:block; margin-top:.6rem; font-style:normal;

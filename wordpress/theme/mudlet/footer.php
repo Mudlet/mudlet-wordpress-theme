@@ -8,13 +8,20 @@
 defined( 'ABSPATH' ) || exit;
 
 $mudlet_languages = mudlet_languages();
+
+// The root takes ?s=; the language travels as a field, because that root is
+// the same one for every language. See mudlet_search_action().
+$mudlet_search_lang = mudlet_current_language_slug();
 ?>
 	</div><!-- #content -->
 
 	<dialog class="palette" aria-label="<?php esc_attr_e( 'Search Mudlet', 'mudlet' ); ?>">
-		<form class="palette__in" role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>">
+		<form class="palette__in" role="search" method="get" action="<?php echo esc_url( mudlet_search_action() ); ?>">
 			<?php mudlet_icon( 'search' ); ?>
 			<input type="search" name="s" placeholder="<?php esc_attr_e( 'Search docs, forum and news', 'mudlet' ); ?>" aria-label="<?php esc_attr_e( 'Search', 'mudlet' ); ?>" autocomplete="off" spellcheck="false">
+			<?php if ( '' !== $mudlet_search_lang ) : ?>
+				<input type="hidden" name="lang" value="<?php echo esc_attr( $mudlet_search_lang ); ?>">
+			<?php endif; ?>
 			<kbd>esc</kbd>
 		</form>
 		<ul class="palette__list"></ul>

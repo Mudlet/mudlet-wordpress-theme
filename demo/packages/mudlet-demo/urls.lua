@@ -15,10 +15,13 @@ local URL = {
     packages = 'https://packages.mudlet.org/',
     forum    = 'https://forums.mudlet.org/',
     wiki     = 'https://wiki.mudlet.org/',
-    -- The manual's own account of what a trigger is, and of what an alias is:
-    -- one room makes the visitor write each.
+    -- The manual's own account of what a trigger is, of what an alias is, and of
+    -- what a timer is: the visitor is made to write one of each. The first two
+    -- have a room apiece; the third is a kettle on a bench, because a timer is
+    -- the one of the three that needs the visitor to be somewhere else.
     triggers = 'https://wiki.mudlet.org/w/Manual:Introduction#Triggers',
     aliases  = 'https://wiki.mudlet.org/w/Manual:Introduction#Aliases',
+    timers   = 'https://wiki.mudlet.org/w/Manual:Introduction#Timers',
     -- The index of everything Mudlet documents, one anchor per name, which is
     -- what the imp in the Stacks writes on the lid of a box. The catalogue it
     -- reads out of is the machine-readable half of this very page.

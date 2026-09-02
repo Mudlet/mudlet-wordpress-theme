@@ -2,15 +2,22 @@
 /**
  * The front page.
  *
- * The sections below are theme markup, not editable content. That is a
- * deliberate stage-one choice and worth being honest about: the copy here is
- * load-bearing on the layout (the hero headline wants its <em>, the switcher
- * wants exactly six panels with an image each), so putting it in the database
- * on day one would trade Divi's problem for a smaller version of the same one.
- * Moving individual strings out to options is a follow-up, not a rewrite - the
- * markup is already split into parts along the seams where it would happen.
+ * The page is a template: which sections exist, and in what order, is decided
+ * here and nowhere else. `the_content()` is deliberately never called - the
+ * Home page's body renders nothing, and inc/front-content-admin.php takes the
+ * editor off that screen and says why.
  *
- * The one genuinely dynamic section is the news band, which reads real posts.
+ * Three regions inside these sections *are* editable, because they change on a
+ * cadence that has nothing to do with deploying a theme: the switcher's panels,
+ * the spec line under them, and the two prose columns of "What is Mudlet? /
+ * What are MUDs?". They live in an option, they fall back to the copy the
+ * templates shipped with, and they are edited on this page's own edit screen.
+ * See inc/front-content.php.
+ *
+ * Everything else here is markup - the hero (whose headline wants its <em>, and
+ * whose terminal has to keep agreeing with the demo world's opening room), the
+ * headings, the eyebrows, the games grid, the closing call to action. The news
+ * band reads real posts.
  *
  * @package Mudlet
  */

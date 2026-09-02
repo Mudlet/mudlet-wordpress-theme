@@ -139,7 +139,8 @@ alias, `embed.lua` and a three-line bootstrap that requires the package. One
 file per concern — `core.lua` (the palette, the two kinds of link, the one
 `say()`), `urls.lua`, `site.lua` and `seed.lua`, `download.lua`,
 `people.lua` (the sage's ledger), `github.lua` (the clerk),
-`trigger.lua` and `catalogue.lua` (the two rooms that script the client),
+`trigger.lua`, `catalogue.lua` and `kettle.lua` (the three things that script
+the client),
 `map.lua`, `verbs.lua`, `boot.lua`, and `rooms/<name>.lua` one per room,
 assembled by `rooms/init.lua`. The build globs `**/*.lua` and ships everything it finds,
 but a file nothing requires is dead weight — reach a new module from one that
@@ -203,6 +204,18 @@ is a thing it cannot see: a temp alias matches ahead of the world's catch-all, s
 after the visitor writes one this package never hears the short word at all, and
 the imp says so instead of pretending. See `catalogue.lua` and `trigger.lua`.
 
+**The third direction is a kettle, and it is not a room.** A trigger and an alias
+both begin with somebody at the keyboard; the half of Mudlet that runs when
+nobody is — a timer — only demonstrates itself once the visitor has walked away
+from where they set it. So `put the kettle on` in the Workshop makes a real
+`tempTimer`, prints the call as it makes it, and tells the visitor to leave;
+fifteen seconds later the line arrives wherever they have got to and names the
+room they are standing in, which it can only do because it reads `D.here` when
+the timer fires rather than when it was set. The click goes out through
+`dfeedTriggers` for the same reason the clerk's coin does, and the word `kettle`
+is in it deliberately: `trigger on kettle` first composes the Workshop's two
+lessons without either file arranging it. See `kettle.lua`.
+
 `demo/README.md` is thorough on the rest — how the embed strips the toolbar
 and login, the mapper, the link colour rules, the `say()` output path. Read it
 before changing anything in `demo/`.
@@ -244,9 +257,37 @@ anything:
   Nothing there stores data, and a block that stores prose is a paragraph with
   extra steps. The one real block is `mudlet/games`, and it lives in the games
   plugin — see below.
-- The homepage sections are template markup, not database content — the copy is
-  load-bearing on the layout, and the point of this exercise is to stop the
-  design living in `wp_options`. Pages, posts and menus *are* editable.
+- **The front page is a template with three fields in it.** Which sections
+  exist, and in what order, is `front-page.php` — `the_content()` is never
+  called. Three regions change on their own cadence and so are data: the six
+  **cards** under "What keeps people playing", the **spec line** under them, and
+  the two **prose columns** of "What is Mudlet? / What are MUDs?". They are
+  edited **on the front page's own edit screen** (Pages → Home) as three meta
+  boxes, with the body editor removed — because `the_content()` is never called,
+  an editor there would silently discard what it was given. Same shape as
+  `inc/contact.php` and `inc/makers.php`. What they write is the
+  `mudlet_front_page` **option**, not post meta: these are regions of a template
+  rather than facts about that page, and `page_on_front` can be repointed. **The
+  defaults are the copy the templates shipped with**, in `inc/front-content.php`,
+  so an empty option renders the original page and no seed writes prose.
+- **A card's picture is not data, and that is the whole point.** This section was
+  a tab switcher giving every claim the same 16:9 image slot, and only two of the
+  six could fill one: "works anywhere" is a fact about operating systems and
+  "free and open source" is a fact about who writes the client, and a screenshot
+  of a session shows neither. So each card carries a small **figure drawn in
+  `inc/front-art.php`**, named by an `art` key the editor picks from — markup,
+  not an upload, which is what lets it follow the palette into dark and stay
+  sharp at any zoom. Two of the six read live numbers: **GitHub stars and the
+  contributor count and faces** (`api.github.com`, cached a week — note these are
+  the ~170 people who have committed, *not* the 30 the client credits in Help →
+  About, which is what `mudlet_makers()` holds), and **Discord members and who is
+  online** (the same `mudlet_discord_server()` call `/contact/` already caches —
+  but **no faces and no names** here, unlike that page). Each half fails to
+  nothing rather than to a stale number. The real screenshots are the **thumbnail
+  row**, three at random out of whatever `/media/` holds, letterboxed rather than
+  cropped because the community shots run from 0.86 to 1.86 wide. Adding a
+  seventh *kind* of card means drawing a figure in code; a dropdown cannot invent
+  a picture. Pages, posts and menus *are* editable as normal.
 - **The games grid comes from Mudlet, not from anyone typing.** One
   `mudlet_game` post per bundled profile, created by
   `wordpress/plugin/mudlet-games/` from the same upstream header, with the

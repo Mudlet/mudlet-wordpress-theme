@@ -1,108 +1,108 @@
 <?php
 /**
- * The feature switcher.
+ * "What keeps people playing" - six cards, three screenshots, one spec line.
  *
- * Autoplays on a six-second dwell until the visitor takes it over; theme.js
- * owns that. Each panel needs an image, which is why this is six fixed entries
- * rather than a loop over something editable.
+ * This used to be a tab switcher whose every panel carried a 16:9 screenshot.
+ * Only two of the six claims have a picture that fills a frame that size, so
+ * four of them were showing a session shot that had nothing to do with what
+ * they said. Now each card carries a small figure of its own (inc/front-art.php)
+ * and the real screenshots are a row of thumbnails, where being cropped stops
+ * mattering.
+ *
+ * The cards and the spec line are editable - see inc/front-content.php for the
+ * shape and the defaults, and the front page's own edit screen for where. The
+ * thumbnails are not: they are whatever is in /media/, shuffled.
  *
  * @package Mudlet
  */
 
 defined( 'ABSPATH' ) || exit;
 
-$img = get_template_directory_uri() . '/assets/img/';
-
-$mudlet_panels = array(
-	array(
-		'icon'  => 'monitor',
-		'title' => __( 'Works anywhere', 'mudlet' ),
-		'img'   => 'The-Land-MUD.png',
-		'alt'   => __( 'The Land running in Mudlet on a desktop, with custom health bars and encounter panels', 'mudlet' ),
-		'body'  => __( 'Windows, macOS and Linux — even Chromebooks and Raspberry Pi. Scripts written on one machine run on the next, and profiles sync however you like.', 'mudlet' ),
-	),
-	array(
-		'icon'  => 'bolt',
-		'title' => __( 'Fast &amp; lightweight', 'mudlet' ),
-		'img'   => 'group-combat-big-1.png',
-		'alt'   => __( 'A crowded group-combat session: health bars, target portraits and spell lists all updating live', 'mudlet' ),
-		'body'  => __( 'Performance defined Mudlet from the start. A custom text display and Lua-powered scripting handle the biggest raids without dropping a frame.', 'mudlet' ),
-	),
-	array(
-		'icon'  => 'sliders',
-		'title' => __( '100% modifiable', 'mudlet' ),
-		'img'   => 'Cybersphere-UI.png',
-		'alt'   => __( 'Cybersphere running in Mudlet behind a full custom cyberpunk interface', 'mudlet' ),
-		'body'  => __( 'Every part of the interface is designed to be modded — from the space inside the window to the look and feel of the client itself.', 'mudlet' ),
-	),
-	array(
-		'icon'  => 'map',
-		'title' => __( 'A real mapper', 'mudlet' ),
-		'img'   => 'MapBackgroundImageLabel.png',
-		'alt'   => __( 'A Mudlet map of an area, drawn over a desert photograph set as its background', 'mudlet' ),
-		'body'  => __( '2D and 3D mapping with built-in pathfinding. Walk once and Mudlet remembers — then draw custom exits or drop a background image over an area.', 'mudlet' ),
-	),
-	array(
-		'icon'  => 'share',
-		'title' => __( 'Free and open source', 'mudlet' ),
-		'img'   => 'academy4.png',
-		'alt'   => __( 'Mudlet 1.2 from 2010, mapper open beside the game window', 'mudlet' ),
-		'body'  => __( 'Free to download, modify and extend, under the GPL. Build on a powerful foundation and join us in making MUDing awesome.', 'mudlet' ),
-	),
-	array(
-		'icon'  => 'smile',
-		'title' => __( 'Approachable', 'mudlet' ),
-		'img'   => 'map-stat-big.png',
-		'alt'   => __( 'A friendly in-game statistics panel drawn as a parchment scroll over the game text', 'mudlet' ),
-		'body'  => __( 'A friendly Discord of over 5,000 players, and a scripting API carefully designed to be simple and intuitive before it is powerful.', 'mudlet' ),
-	),
-);
-
-$mudlet_specs = array(
-	__( 'Multiple simultaneous games', 'mudlet' ),
-	__( 'Lua scripting API', 'mudlet' ),
-	__( 'In-app script editor', 'mudlet' ),
-	__( 'Import/export profiles', 'mudlet' ),
-	__( 'Broad MUD protocol support', 'mudlet' ),
-	__( 'Secure connections', 'mudlet' ),
-	__( 'In-app IRC client', 'mudlet' ),
-	__( 'Discord Rich Presence', 'mudlet' ),
-	__( 'Accessible to visually impaired players', 'mudlet' ),
-);
+$mudlet_cards = mudlet_front_cards();
+$mudlet_shots = mudlet_front_thumbs( 3 );
 ?>
 <section class="showcase">
 	<div class="w">
+		<?php
+		/*
+		 * The eyebrow is the heading. There was a "What keeps people playing"
+		 * <h2> under it and it said nothing the eyebrow did not, but the
+		 * section still needs a heading of its own or the six card <h3>s hang
+		 * off whatever came before it. So the eyebrow carries the level, and
+		 * keeps the look: #site .head .eyebrow outranks #site .head h2.
+		 */
+		?>
 		<div class="head">
-			<p class="eyebrow"><?php esc_html_e( 'why mudlet', 'mudlet' ); ?></p>
-			<h2><?php esc_html_e( 'What keeps people playing', 'mudlet' ); ?></h2>
+			<h2 class="eyebrow"><?php esc_html_e( 'why mudlet', 'mudlet' ); ?></h2>
 		</div>
 
-		<div class="sw">
-			<div class="swlist" role="tablist" aria-label="<?php esc_attr_e( 'Features', 'mudlet' ); ?>">
-				<?php foreach ( $mudlet_panels as $i => $panel ) : ?>
-					<button class="swbtn" role="tab" aria-selected="<?php echo 0 === $i ? 'true' : 'false'; ?>" data-p="p<?php echo (int) ( $i + 1 ); ?>">
-						<?php mudlet_icon( $panel['icon'] ); ?>
-						<b><?php echo wp_kses( $panel['title'], array() ); ?></b>
-					</button>
-				<?php endforeach; ?>
-			</div>
-
-			<div>
-				<?php foreach ( $mudlet_panels as $i => $panel ) : ?>
-					<div class="swpanel" id="p<?php echo (int) ( $i + 1 ); ?>"<?php echo 0 === $i ? '' : ' hidden'; ?>>
-						<img src="<?php echo esc_url( $img . $panel['img'] ); ?>" alt="<?php echo esc_attr( $panel['alt'] ); ?>" loading="lazy" decoding="async">
-						<div class="cap">
-							<h3><?php echo wp_kses( $panel['title'], array() ); ?></h3>
-							<p><?php echo esc_html( $panel['body'] ); ?></p>
+		<?php if ( $mudlet_cards ) : ?>
+			<div class="cards">
+				<?php foreach ( $mudlet_cards as $mudlet_card ) : ?>
+					<div class="card">
+						<?php mudlet_front_card_art( (string) ( $mudlet_card['art'] ?? '' ) ); ?>
+						<div>
+							<h3><?php echo esc_html( (string) ( $mudlet_card['title'] ?? '' ) ); ?></h3>
+							<p><?php echo esc_html( (string) ( $mudlet_card['body'] ?? '' ) ); ?></p>
 						</div>
 					</div>
 				<?php endforeach; ?>
 			</div>
-		</div>
+		<?php endif; ?>
 
-		<?php // The spec line: everything the six panels have no room to say. ?>
-		<p class="specs"><span class="mk">&gt;</span><b><?php esc_html_e( 'also', 'mudlet' ); ?></b><?php
-			echo implode( '<span class="sep">·</span>', array_map( 'esc_html', $mudlet_specs ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		?></p>
+		<?php if ( $mudlet_shots ) : ?>
+			<?php
+			/*
+			 * The same .head/.eyebrow the section opens with, rather than a
+			 * device of its own: the > mark, the rule under it and the
+			 * right-hand note are all already that component's, and three
+			 * near-identical prompts drawn three different ways is how they
+			 * ended up at three different sizes and gaps.
+			 */
+			?>
+			<div class="head">
+				<p class="eyebrow">
+					<?php esc_html_e( 'from the community', 'mudlet' ); ?>
+					<span>
+						<a href="<?php echo esc_url( mudlet_page_url( 'media', '/media/' ) ); ?>">
+							<?php esc_html_e( 'all screenshots', 'mudlet' ); ?> &rarr;
+						</a>
+					</span>
+				</p>
+			</div>
+
+			<div class="shots">
+				<?php
+				/*
+				 * No caption. Which game a screenshot is from is a caption's
+				 * job on /media/, where somebody is browsing them; here the row
+				 * is showing what Mudlet looks like in other people's hands,
+				 * and three game names under three pictures is a line of text
+				 * nobody reads under a thing that speaks for itself. The name
+				 * still reaches a screen reader through the image's alt.
+				 */
+				foreach ( $mudlet_shots as $mudlet_shot ) :
+					$mudlet_full = wp_get_attachment_image_url( $mudlet_shot, 'full' );
+					if ( ! $mudlet_full ) {
+						continue;
+					}
+					?>
+					<a class="shot" href="<?php echo esc_url( $mudlet_full ); ?>">
+						<?php
+						echo wp_get_attachment_image(
+							$mudlet_shot,
+							'medium_large',
+							false,
+							array(
+								'loading'  => 'lazy',
+								'decoding' => 'async',
+							)
+						);
+						?>
+					</a>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+
 	</div>
 </section>

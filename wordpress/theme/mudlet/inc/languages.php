@@ -56,16 +56,30 @@ function mudlet_languages(): array {
 }
 
 /**
+ * The language being browsed, as Polylang's own slug.
+ *
+ * Empty when Polylang is not there, which is the same as "do not filter by
+ * language" everywhere this is passed on to a query.
+ *
+ * @return string
+ */
+function mudlet_current_language_slug(): string {
+	if ( ! mudlet_has_polylang() ) {
+		return '';
+	}
+	$slug = pll_current_language( 'slug' );
+	return is_string( $slug ) ? $slug : '';
+}
+
+/**
  * The current language code, for the header button's label.
  *
  * @return string
  */
 function mudlet_current_language_code(): string {
-	if ( mudlet_has_polylang() ) {
-		$slug = pll_current_language( 'slug' );
-		if ( is_string( $slug ) && '' !== $slug ) {
-			return strtoupper( $slug );
-		}
+	$slug = mudlet_current_language_slug();
+	if ( '' !== $slug ) {
+		return strtoupper( $slug );
 	}
 	$locale = get_locale();
 	return strtoupper( substr( $locale, 0, 2 ) );

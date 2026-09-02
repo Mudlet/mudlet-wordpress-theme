@@ -319,13 +319,14 @@ Notes on the shape of it, all of them in `github.lua`:
   as well — "from seven hands and two machines" is the interesting half of the
   number.
 
-## The two rooms that write something
+## The three things it hands over
 
 The front page claims Mudlet is scriptable in Lua, and everything above
 demonstrates something else: a map, a real mapper, links, a clerk on a wire. Two
-rooms hand the visitor the thing itself, one for each direction a client points
-in — and they are two rooms rather than one because a trigger and an alias are
-opposites, and a room teaching both would teach neither.
+rooms and a kettle hand the visitor the thing itself, one for each direction a
+client points in — kept apart rather than gathered into one room, because a
+trigger, an alias and a timer are three different answers and a room teaching all
+three would teach none of them.
 
 **North of the commons the clerk pays for a trigger** — the client reacting to
 what the world says. The word arrives plain, the visitor writes the trigger, and
@@ -369,6 +370,24 @@ in there and used in the vault still says plainly that it worked.
 `alias b` makes the same alias without the visitor reading any Lua, and prints
 the Lua it stood in for — the same bargain `trigger on gold` strikes in the
 Workshop, and for the same reason.
+
+**Back in the Workshop, a kettle on the bench is a timer** — the client acting
+with nobody typing at all, which is the half of Mudlet the two rooms above still
+leave out: both of them begin with the visitor at the keyboard. `put the kettle
+on` is a real `tempTimer`, the call is printed as it is made, and then the
+visitor is told to leave. Fifteen seconds later the line arrives wherever they
+have got to, and says so by name: *you are in The Release Vault, and it found you
+anyway*. The room it was set in never comes into it — which is the point, and is
+why this is a kettle and not a fourth room. `kettle.lua`.
+
+The click goes out through `dfeedTriggers` for the reason the clerk's coin does:
+a timer firing is the nearest this offline world comes to a server sending
+something unbidden, so it should arrive the way a game's line arrives — through
+the trigger engine, where the visitor's own pattern gets a look at it. The word
+`kettle` is in that line, so `trigger on kettle` and then `put the kettle on`
+composes the Workshop's two lessons without either file arranging it: one thing
+the visitor made fires on another thing the visitor started, two rooms from where
+they set them both.
 
 ## Deploying it
 
