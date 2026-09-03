@@ -175,7 +175,7 @@ function mudlet_front_art_contributors(): void {
 		return;
 	}
 	?>
-	<a class="cardart__pill" href="https://github.com/Mudlet/Mudlet" rel="external">
+	<a class="cardart__pill" href="https://github.com/Mudlet/Mudlet" target="_blank" rel="external noopener">
 		<?php
 		mudlet_icon( 'github' );
 		mudlet_icon( 'star', 'cardart__star' );
@@ -197,7 +197,7 @@ function mudlet_front_art_contributors(): void {
 function mudlet_front_art_discord(): void {
 	$server = mudlet_discord_server();
 	?>
-	<a class="cardart__pill cardart__pill--discord" href="<?php echo esc_url( (string) $server['invite'] ); ?>" rel="external">
+	<a class="cardart__pill cardart__pill--discord" href="<?php echo esc_url( (string) $server['invite'] ); ?>" target="_blank" rel="external noopener">
 		<?php mudlet_icon( 'discord' ); ?>
 
 		<?php if ( ! empty( $server['live'] ) && $server['members'] > 0 ) : ?>

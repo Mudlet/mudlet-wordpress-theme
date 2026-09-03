@@ -116,7 +116,7 @@ while ( have_posts() ) :
 						printf(
 							/* translators: %s: link to the GitHub contributors graph */
 							esc_html__( 'Everyone who has contributed to Mudlet is listed on %s.', 'mudlet' ),
-							'<a href="' . esc_url( MUDLET_CONTRIBUTORS_URL ) . '" rel="external">' . esc_html__( 'the contributors graph', 'mudlet' ) . '</a>'
+							'<a href="' . esc_url( MUDLET_CONTRIBUTORS_URL ) . '" target="_blank" rel="external noopener">' . esc_html__( 'the contributors graph', 'mudlet' ) . '</a>'
 						);
 						?>
 					</p>
@@ -148,7 +148,7 @@ while ( have_posts() ) :
 
 				<div class="cta" style="margin-top:2rem">
 					<a class="btn" href="<?php echo esc_url( mudlet_page_url( 'contribute', '/contribute/' ) ); ?>"><?php esc_html_e( 'Help build it', 'mudlet' ); ?></a>
-					<a class="btn btn--ghost" href="<?php echo esc_url( MUDLET_CONTRIBUTORS_URL ); ?>" rel="external"><?php esc_html_e( 'Everyone on GitHub', 'mudlet' ); ?></a>
+					<a class="btn btn--ghost" href="<?php echo esc_url( MUDLET_CONTRIBUTORS_URL ); ?>" target="_blank" rel="external noopener"><?php esc_html_e( 'Everyone on GitHub', 'mudlet' ); ?></a>
 				</div>
 			</div>
 		</section>

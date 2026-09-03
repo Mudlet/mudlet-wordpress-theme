@@ -71,7 +71,7 @@ $total = (int) $changes['total'];
 			esc_html( $changes['tag'] )
 		);
 		?><span class="n">
-			<a href="<?php echo esc_url( $changes['compare_url'] ); ?>">
+			<a href="<?php echo esc_url( $changes['compare_url'] ); ?>" target="_blank" rel="external nofollow noopener">
 				<?php
 				printf(
 					/* translators: %s: number of merged pull requests */
@@ -90,7 +90,7 @@ $total = (int) $changes['total'];
 				<dd>
 					<?php echo esc_html( $entry['title'] ); ?>
 					<?php if ( ! empty( $entry['url'] ) ) : ?>
-						<a href="<?php echo esc_url( $entry['url'] ); ?>">#<?php echo esc_html( $entry['pr'] ); ?></a>
+						<a href="<?php echo esc_url( $entry['url'] ); ?>" target="_blank" rel="external nofollow noopener">#<?php echo esc_html( $entry['pr'] ); ?></a>
 					<?php endif; ?>
 				</dd>
 			<?php endforeach; ?>

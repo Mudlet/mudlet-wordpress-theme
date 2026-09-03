@@ -86,7 +86,7 @@ $mudlet_changes = function_exists( 'mudlet_releases_changes' )
 			);
 
 			$mudlet_href = $mudlet_url
-				? ' href="' . esc_url( $mudlet_url ) . '" rel="external nofollow"'
+				? ' href="' . esc_url( $mudlet_url ) . '" target="_blank" rel="external nofollow noopener"'
 				: '';
 			?>
 			<li>

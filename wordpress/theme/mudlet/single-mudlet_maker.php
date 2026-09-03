@@ -60,7 +60,7 @@ while ( have_posts() ) :
 					<p class="specs">
 						<span class="mk">&gt;</span><b><?php esc_html_e( 'find them', 'mudlet' ); ?></b>
 						<?php if ( $mudlet_maker['github'] ) : ?>
-							<a href="<?php echo esc_url( $mudlet_maker['github_url'] ); ?>" rel="external nofollow"><?php echo esc_html( $mudlet_maker['github'] ); ?></a>
+							<a href="<?php echo esc_url( $mudlet_maker['github_url'] ); ?>" target="_blank" rel="external nofollow noopener"><?php echo esc_html( $mudlet_maker['github'] ); ?></a>
 						<?php endif; ?>
 						<?php if ( $mudlet_maker['github'] && $mudlet_maker['discord'] ) : ?>
 							<span class="sep">&middot;</span>
