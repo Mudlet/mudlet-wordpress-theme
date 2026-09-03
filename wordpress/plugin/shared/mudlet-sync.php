@@ -2,15 +2,15 @@
 /**
  * The one menu, and the one place the schedules are set.
  *
- * Three plugins read three things out of Mudlet and GitHub, on three cron
- * jobs. Left alone that is three top-level menus and three places to discover
- * what runs when — so this puts them under a single **Mudlet** menu whose own
+ * Four plugins read from Mudlet and GitHub, and sweep up after themselves, on
+ * four cron jobs. Left alone that is four top-level menus and four places to
+ * discover what runs when — so this puts them under a single **Mudlet** menu whose own
  * page lists every job with its cadence, when it last ran, when it runs next,
  * and a button to run it now.
  *
  * ---------------------------------------------------------------------------
  *
- * Why this file is in three zips.
+ * Why this file is in every plugin's zip.
  *
  * It is one source file — `wordpress/plugin/shared/mudlet-sync.php` — copied
  * into each plugin's archive by tools/build-dist.mjs, and bind-mounted into
@@ -21,9 +21,9 @@
  *
  * It is bundled rather than shared because the alternative is worse. A plugin
  * that reaches into a sibling breaks when the sibling is deactivated, and a
- * fourth plugin holding a menu is a fourth thing to install and activate
- * before any of the other three has a screen. So each carries a copy, the
- * first one loaded wins the `class_exists()` race, and the other two use it —
+ * plugin of its own holding the menu is one more thing to install and activate
+ * before any of the others has a screen. So each carries a copy, the
+ * first one loaded wins the `class_exists()` race, and the rest use it —
  * the same shape Action Scheduler has for the same reason. Nothing here holds
  * data: it is a menu, an option, and a wrapper over wp_schedule_event().
  *
@@ -32,8 +32,8 @@
  * `wp_schedule_event()`. It does not have to be here for the plugin to work;
  * it has to be here for the plugin to be *configurable*.
  *
- * The strings on this page are in the `default` text domain on purpose. Three
- * plugins with three domains ship the same file, and whichever loads first
+ * The strings on this page are in the `default` text domain on purpose. Four
+ * plugins with four domains ship the same file, and whichever loads first
  * would decide which .po the others' strings were looked up in — which is a
  * worse answer than leaning on the domain WordPress itself translates.
  *
@@ -71,7 +71,7 @@ class Mudlet_Sync {
 	const FIRST_RUN = 10 * MINUTE_IN_SECONDS;
 
 	/**
-	 * Hook up. Idempotent — three plugins call it, one of them is first.
+	 * Hook up. Idempotent — every plugin calls it, one of them is first.
 	 */
 	public static function boot(): void {
 		static $done = false;

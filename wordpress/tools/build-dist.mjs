@@ -13,7 +13,7 @@
 // named for the slug - upload a second time and it offers to replace what is
 // there, because the folder matches.
 //
-// mudlet.zip is the whole site: the theme, and the three plugins under
+// mudlet.zip is the whole site: the theme, and the plugins under
 // plugins/, which the theme requires from functions.php unless the site has
 // them installed in wp-content/plugins. See the theme's inc/bundled-plugins.php
 // for the arbitration. The plugin zips are still built - they are how a site
@@ -56,6 +56,7 @@ const PACKAGES = [
 	{ slug: 'mudlet-games', kind: 'plugin', from: 'plugin/mudlet-games', version: readPlugin },
 	{ slug: 'mudlet-makers', kind: 'plugin', from: 'plugin/mudlet-makers', version: readPlugin },
 	{ slug: 'mudlet-releases', kind: 'plugin', from: 'plugin/mudlet-releases', version: readPlugin },
+	{ slug: 'mudlet-shots', kind: 'plugin', from: 'plugin/mudlet-shots', version: readPlugin },
 ];
 
 // Never shipped, from anywhere.
@@ -97,7 +98,7 @@ for (const pkg of PACKAGES) {
 
 	// The Mudlet menu, the sync schedules, and the seams that let a plugin run
 	// from inside the theme. Two source files under plugin/shared/, carried by
-	// all three plugins because a plugin reaching into a sibling breaks when
+	// every plugin because a plugin reaching into a sibling breaks when
 	// the sibling is deactivated - whichever loads first wins the
 	// class_exists() race. Edited in plugin/shared/, never in a plugin, which
 	// is also how docker compose mounts it.
@@ -107,7 +108,7 @@ for (const pkg of PACKAGES) {
 
 	// The theme carries the plugins. This is the whole reason mudlet.zip is
 	// the only archive a site needs: functions.php requires whatever it finds
-	// under plugins/, and stands down for any of the three that is installed
+	// under plugins/, and stands down for any of them that is installed
 	// in wp-content/plugins instead. Each gets its own copy of shared/, the
 	// same as its own zip does and for the same reason.
 	if (pkg.kind === 'theme' && !noPlugins) {
@@ -179,8 +180,8 @@ if (!withDemo) {
 }
 if (noPlugins) {
 	console.log('\n  --no-plugins: the theme carries none, so a site built from mudlet.zip');
-	console.log('  alone has no games, makers or releases until the plugin zips are');
-	console.log('  installed the old way.');
+	console.log('  alone has no games, makers, releases or screenshot queue until the');
+	console.log('  plugin zips are installed the old way.');
 }
 console.log();
 

@@ -49,10 +49,10 @@ somewhere still points at it.)
 
 ### One archive, and it updates itself
 
-The three plugins ship **inside the theme's zip**, under `plugins/`, and
+The four plugins ship **inside the theme's zip**, under `plugins/`, and
 `theme/mudlet/inc/bundled-plugins.php` requires them from `functions.php`. So
 installing the site is one Upload Theme and nothing else, and updating it is one
-zip rather than four that can drift apart.
+zip rather than five that can drift apart.
 
 They are still plugins, and for the same reason as before: a `mudlet_game` post
 is a post, and it is in the database whether or not anything is registering the
@@ -450,7 +450,7 @@ anything:
   a typed list of people is the exact thing this replaces, and the live site's
   fifteen-year-old version of that page is the evidence. See
   `wordpress/plugin/mudlet-makers/README.md`.
-- **All three record types are read-only in wp-admin.** A `mudlet_game`, a
+- **The three synced record types are read-only in wp-admin.** A `mudlet_game`, a
   `mudlet_maker` and a `mudlet_release` are observed, not authored: every field
   is rewritten by the next sync, so each plugin replaces the post editor with a
   record screen (no inputs) and guards writes in `wp_insert_post_data` so
@@ -460,17 +460,17 @@ anything:
   site that most needs it: a freshly uploaded plugin holds nothing until cron
   reaches it. Releases keep a per-record button as well, because a release
   genuinely is read one at a time; their list button is the cheap index pass.
-- **One menu, and one screen saying how often any of it runs.** All three
-  stores hang off a single **Mudlet** menu, whose own page (`Mudlet → Sync`) is
-  every cron job the three plugins have: cadence, last run, next run, and a
+- **One menu, and one screen saying how often any of it runs.** Every
+  store hangs off a single **Mudlet** menu, whose own page (`Mudlet → Sync`) is
+  every cron job the plugins have: cadence, last run, next run, and a
   button to run it now. That screen, the menu and the scheduling live in
   `wordpress/plugin/shared/mudlet-sync.php` — one of **two source files under
-  `plugin/shared/` that all three plugins carry a copy of** (the other is
+  `plugin/shared/` that every plugin carries a copy of** (the other is
   `mudlet-bundle.php`, the seams for running from the theme), bundled by
   `tools/build-dist.mjs` and bind-mounted by compose, first one loaded winning a
   `class_exists()` race. Bundled rather than shared because a plugin reaching
-  into a sibling breaks when the sibling is deactivated, and a fourth plugin
-  owning a menu is a fourth thing to install. It holds no data — a menu, an option, and a wrapper over
+  into a sibling breaks when the sibling is deactivated, and a plugin of its own
+  owning a menu is one more thing to install. It holds no data — a menu, an option, and a wrapper over
   `wp_schedule_event()` — and a plugin joins in by filtering `mudlet_sync_jobs`
   and calling `Mudlet_Sync::reschedule()` in place of `wp_schedule_event()`.
   **Edit it in `plugin/shared/`, never in a plugin.** Cadences default to
@@ -578,6 +578,48 @@ anything:
   screenshots through `mudlet_front_thumbs()`, the same call the front page's
   thumbnail row uses, so adding one to that gallery adds it to three places and
   nothing holds a second copy.
+- **A stranger can add to that gallery, and an editor decides whether they
+  did.** `wordpress/plugin/mudlet-shots/` puts
+  `[mudlet_screenshot_submit]` on the page — a shortcode rather than a block,
+  because an unregistered block renders as *nothing* and a form that has
+  quietly not been there for three months looks exactly like one nobody used —
+  and a review queue behind it at `Mudlet → Screenshots`. Approving one appends
+  a `core/image` to the gallery above, which is what an editor would do by
+  hand, and therefore reaches the front page's thumbnails and the demo's
+  Gallery for free. **A pending submission is deliberately not an attachment**:
+  an attachment has a public URL the moment the file is written, whatever its
+  post status, so a form that made them would be an open image host with a
+  review step bolted on. What is waiting sits in
+  `uploads/mudlet-shots/<32 hex>/`, and the review screen streams it through
+  `admin-post.php` behind a capability check. **Nothing is stored as it
+  arrived** either: everything accepted is decoded and re-encoded as WebP at up
+  to 2560px and the upload is unlinked, which is the space saving, *and* the
+  file-type check that cannot be fooled — a file that survived a decode is an
+  image — *and* what drops the EXIF off a phone photo of somebody's screen. If
+  you find yourself adding a preview of a pending shot to a public page, or
+  storing the bytes that arrived, you have misread the whole plugin.
+  **Animation is a second path, and it has to be**: `wp_get_image_editor()`
+  flattens an animation to its first frame — measured, four in and one out —
+  so an animated GIF is decoded frame by frame through Imagick
+  (`coalesceImages()` first, because an optimised GIF's frames are partial and
+  resizing them apart smears them) and written back out as animated WebP,
+  verified by reading the frames back because a libwebp with no mux library
+  writes one and claims success. A site with no Imagick **refuses** an
+  animation rather than publishing frame one of something sent because it
+  moves. The consequence to know: **an animated attachment's sub-sizes are all
+  stills**, because they come from that same editor — so the gallery block is
+  written with `sizeSlug: full` and `wp_calculate_image_srcset` is filtered to
+  nothing for it, or the carousel would animate or not depending on the width
+  of the window. Those flattened sub-sizes are then exactly the poster frames
+  the front page's thumbnail row and the demo's Gallery want, for free. The abuse
+  story is `inc/download-email.php`'s next door — no nonce, a honeypot, caps
+  per origin counted on attempts, one filter where a captcha goes — plus a cap
+  on the queue itself, because an upload costs disk. The credit field takes a
+  name and deliberately **no URL**: a credit line carrying a link is a
+  do-follow on mudlet.org anybody can have for the price of a picture. The IP
+  is never stored; eight characters of a salted hash of it are, which answers
+  "are these six the same person" and nothing else. See
+  `wordpress/plugin/mudlet-shots/README.md`.
 - **The demo world reads the site through one endpoint.**
   `inc/demo-seed.php` registers `GET /wp-json/mudlet/v1/demo` and answers with
   the current release, the games, the makers, the latest posts and `/media/`,

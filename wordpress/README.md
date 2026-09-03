@@ -16,7 +16,7 @@ Then <http://localhost:8080>, admin at `/wp-admin` (`admin` / `admin`).
 `docker compose down` stops it and keeps the database; `down -v` throws the
 database away, and the next `up` provisions from scratch.
 
-## The three pieces
+## The pieces
 
 | | |
 |---|---|
@@ -25,9 +25,10 @@ database away, and the next `up` provisions from scratch.
 | `plugin/mudlet-releases/` | release data, read from GitHub releases |
 | `plugin/mudlet-games/` | the bundled games, read from Mudlet’s own source |
 | `plugin/mudlet-makers/` | the credits, read from Mudlet’s own About dialog |
-| `plugin/shared/` | one menu, the sync schedules, and the seams that let a plugin run from the theme — carried by all three |
+| `plugin/mudlet-shots/` | screenshots people send the site, held out of reach until somebody has reviewed them |
+| `plugin/shared/` | one menu, the sync schedules, and the seams that let a plugin run from the theme — carried by all of them |
 
-The three plugins **ship inside the theme**, under `plugins/`, and the stack
+The plugins **ship inside the theme**, under `plugins/`, and the stack
 mounts them there rather than into `wp-content/plugins` so that the local site
 runs the same arrangement a real one does. They are still plugins in every
 other sense — the data they own is in the database, and a copy installed the
@@ -77,8 +78,16 @@ Honest answer, because this is the thing that went wrong with Divi:
   **list**, because a games or makers sync is always all of them, and because a
   plugin that has just been activated has no records to hang a button on.
   (Releases keep one on the record as well: those are read one at a time.)
+- **Sent in by strangers, published by an editor**: the screenshots on
+  `/media/`. `plugin/mudlet-shots/` takes uploads from anybody, holds them
+  outside the media library where nothing on the site can reach them, and shows
+  them at **Mudlet → Screenshots** as a wall of pictures with two buttons under
+  each. Accepting one appends it to the gallery on that page — the same thing an
+  editor would do by hand, and the reason the front page's thumbnails and the
+  demo's Gallery pick it up for free. Nothing about it is automatic, and nothing
+  it holds has a URL until somebody has looked at it. See *Media* below.
 - **How often each one refreshes is on `Mudlet → Sync`.** Every cron job the
-  three plugins run, with its cadence, when it last ran, when it runs next and
+  plugins run, with its cadence, when it last ran, when it runs next and
   a button to run it now. Weekly by default — a bundled-games list moves a few
   times a year — and `Never` turns one off. The screen is one shared file,
   `plugin/shared/mudlet-sync.php`, that each plugin carries a copy of and each
@@ -581,6 +590,45 @@ than nothing. That is also the normal case for a screenshot somebody sends in,
 so the carousel has to look right with a few of them — which is easier to notice
 when some of them are there.
 
+### Taking screenshots from visitors
+
+`plugin/mudlet-shots/` puts a form on this page — drop
+`[mudlet_screenshot_submit]` into the body, under the gallery — and a review
+queue behind it at **Mudlet → Screenshots**. Approving one appends a
+`core/image` block to the gallery above, which is exactly what an editor would
+do by hand, and therefore puts the picture in the front page's thumbnail row and
+the demo world's Gallery at the same time: all three read that one gallery
+through `mudlet_front_thumbs()`.
+
+Two things about it are worth knowing before touching it, and the plugin's own
+README argues both at length:
+
+- **A pending submission is not an attachment.** An attachment has a public URL
+  the moment the file is written, whatever its post status, so a form that made
+  them would be an open image host on mudlet.org with a review step bolted to
+  the side. What is waiting sits in `uploads/mudlet-shots/<32 hex>/`, and the
+  review screen streams it through `admin-post.php` behind a capability check.
+- **Nothing is stored as it arrived.** Everything accepted is decoded and
+  re-encoded as WebP at up to 2560px, and the upload is unlinked. That is the
+  space saving, and it is also the file-type check that cannot be fooled — a
+  file that survived a decode is an image — and what drops the EXIF off a phone
+  photo of somebody's screen.
+- **Animations survive, on a path of their own.** `wp_get_image_editor()`
+  flattens one to its first frame, so a GIF is decoded frame by frame through
+  Imagick and written back out as animated WebP — 540 KB in and 154 KB out on a
+  14-frame test, loop count and delays intact. The knock-on worth knowing:
+  every size WordPress derives goes through that same flattening editor, so an
+  animated attachment's sub-sizes are all *stills*. The gallery block therefore
+  points at the original and its `srcset` is suppressed, which is what makes
+  the carousel move rather than only the lightbox; and those sub-sizes are then
+  free poster frames for the front page's thumbnail row.
+
+The abuse story is `inc/download-email.php`'s, one door along: no nonce, a
+honeypot, caps per origin counted on attempts, and one filter where a captcha
+goes. It adds a cap on the queue itself, because an upload costs disk and a
+hundred people sending one picture each looks exactly like one person sending a
+hundred until somebody looks.
+
 ## Divi leftovers
 
 Eight imported bodies still carry `[et_pb_*]` shortcodes — see [The Divi bodies
@@ -677,7 +725,7 @@ node wordpress/tools/build-dist.mjs --out ~/somewhere
 ```
 
 **`mudlet.zip` is the whole site.** The theme, the hero's client under
-`assets/demo/`, and the games, makers and releases plugins under `plugins/`,
+`assets/demo/`, and the games, makers, releases and screenshots plugins under `plugins/`,
 which `functions.php` requires — so Appearance → Themes → Add New → **Upload
 Theme** is the entire install and there is nothing to activate.
 
@@ -687,8 +735,9 @@ Theme** is the entire install and there is nothing to activate.
 | `mudlet-games.zip` | Plugins → Add New → **Upload Plugin** — only if you want it as a plugin |
 | `mudlet-makers.zip` | same |
 | `mudlet-releases.zip` | same |
+| `mudlet-shots.zip` | same |
 
-The three plugin zips are still built, and still published on every release,
+The plugin zips are still built, and still published on every release,
 for two cases: a site that would rather run them as plugins, and a site that
 has changed theme and wants to keep drawing its games. **An installed copy
 always wins** — WordPress loads plugins before it reaches a theme, so the

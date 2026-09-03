@@ -2,7 +2,7 @@
 /**
  * The three seams a plugin needs when it is not installed as a plugin.
  *
- * The theme ships the games, makers and releases plugins inside its own zip,
+ * The theme ships the games, makers, releases and screenshots plugins in its zip,
  * under `plugins/`, and `require`s them from functions.php. That is the normal
  * way this code runs on mudlet.org: one download, one update, nothing to
  * install. The plugin zips still exist for anyone who would rather have them in
@@ -31,7 +31,7 @@
  * `after_switch_theme` for the copies it carries, because that is the moment
  * the URLs start existing.
  *
- * Carried in three zips for the reason mudlet-sync.php next door explains at
+ * Carried in every plugin's zip for the reason mudlet-sync.php next door gives at
  * length. **Edit it in wordpress/plugin/shared/, never in a plugin.**
  *
  * @package Mudlet_Bundle

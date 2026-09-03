@@ -1085,3 +1085,182 @@
 #site .prose .is-style-mudlet-carousel[data-carousel] figure.wp-block-image figcaption::before {
 	content: none;
 }
+
+/* ── the screenshot submission form ──────────────────────────────────────────
+   [mudlet_screenshot_submit], drawn by template-parts/blocks/screenshot-submit.php
+   for the Mudlet Screenshots plugin. Here rather than in theme.css because a
+   static page has nowhere to send a file, and here rather than in blocks.css
+   because a shortcode never renders in the editor canvas — the same split the
+   download page's mail form is on.
+
+   It sits in a page body, which means inside .prose: hence the max-width reset
+   on its paragraphs, which would otherwise be capped for reading and leave the
+   status line stranded under a button. */
+#site .prose .shotform {
+	margin: 1.6rem 0 0;
+	padding: 1.15rem 1.25rem 1.25rem;
+	background: var(--band);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+#site .prose .shotform p {
+	max-width: none;
+}
+#site .prose .shotform__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .55rem;
+	margin-bottom: .7rem;
+}
+#site .prose .shotform__row label {
+	flex: none;
+	width: 7.5rem;
+	font-family: var(--display);
+	font-size: .82rem;
+	color: var(--dim);
+}
+#site .prose .shotform input[type="text"] {
+	flex: 1 1 16rem;
+	min-width: 0;
+	font-family: var(--display);
+	font-size: .84rem;
+	color: var(--ink);
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: .45rem .6rem;
+}
+/* The drop zone. A <label> round a real file input, so a click anywhere in the
+   box opens the picker with no script involved — see the template part. The
+   input itself is clipped rather than display:none, which would take it out of
+   the tab order, so the focus ring has to be drawn on the box instead. */
+#site .prose .shotdrop {
+	display: grid;
+	place-items: center;
+	gap: .35rem;
+	padding: 1.5rem 1rem;
+	margin-bottom: .9rem;
+	text-align: center;
+	background: var(--bg);
+	border: 1px dashed var(--line);
+	border-radius: 12px;
+	cursor: pointer;
+	transition: border-color .12s, background .12s, color .12s;
+}
+#site .prose .shotdrop:hover {
+	border-color: var(--orange);
+}
+#site .prose .shotdrop__input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+#site .prose .shotdrop:has(.shotdrop__input:focus-visible) {
+	outline: 2px solid var(--orange);
+	outline-offset: 2px;
+}
+#site .prose .shotdrop__icon {
+	width: 1.6rem;
+	height: 1.6rem;
+	color: var(--dim);
+}
+#site .prose .shotdrop__say {
+	font-family: var(--display);
+	font-size: .84rem;
+	color: var(--ink);
+}
+#site .prose .shotdrop__rules {
+	font-size: .78rem;
+	color: var(--dim);
+}
+/* Empty until the script fills it in: the input's own copy of the filename is
+   inside the pixel the rule above clipped away. */
+#site .prose .shotdrop__file {
+	font-size: .82rem;
+	color: var(--ink);
+	word-break: break-all;
+}
+#site .prose .shotdrop__file:empty {
+	display: none;
+}
+/* Set while a file is being dragged over the box, and once one is chosen. The
+   second is the only feedback that a drop landed — the picture is not shown,
+   because a preview of it is a picture from a stranger drawn on the page, and
+   the point of this whole feature is that that does not happen until an editor
+   has said so. */
+#site .prose .shotdrop[data-over],
+#site .prose .shotdrop[data-has] {
+	border-style: solid;
+	border-color: var(--orange);
+	background: var(--band);
+}
+#site .prose .shotdrop[data-has] .shotdrop__icon {
+	color: var(--orange);
+}
+#site .prose .shotform__row--send {
+	align-items: center;
+	gap: .8rem;
+	margin-top: 1rem;
+	margin-bottom: 0;
+}
+#site .prose .shotform .btn {
+	font-size: .84rem;
+	padding: .42rem .95rem;
+}
+/* Beside the button, in space that is reserved whether or not there is
+   anything to say. Every sentence here arrives after a press — the thank-you,
+   the refusals, "Sending…" — so a line that collapsed when empty would shove
+   the fine print, and the page under it, down and up again on every attempt.
+   Two lines is what the longest of them takes at this measure. */
+#site .prose .shotform__msg {
+	flex: 1 1 14rem;
+	margin: 0;
+	font-size: .84rem;
+	line-height: 1.35;
+	min-height: 2.7em;
+	color: var(--dim);
+}
+#site .prose .shotform__msg[data-state="bad"] {
+	color: var(--mark);
+}
+#site .prose .shotform__fine {
+	margin: .9rem 0 0;
+	font-size: .78rem;
+	color: var(--dim);
+}
+/* While the upload is in flight, and after one has gone through: the form is
+   still there to send another, but nothing about it invites a second press of
+   the same button on the same file. */
+#site .prose .shotform[data-sending] {
+	opacity: .7;
+}
+#site .prose .shotform[data-sent] .shotform__msg {
+	color: var(--ink);
+}
+/* The honeypot: off the page rather than display:none, which is the first
+   thing a bot checks for. Nothing focusable follows it into the tab order —
+   it carries tabindex="-1". */
+#site .prose .shotform__hp {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+}
+@media (max-width: 40rem) {
+	#site .prose .shotform__row label {
+		width: 100%;
+	}
+	/* On its own line under the button, where the column is narrow enough for
+	   the same sentences to run to four. Reserved, for the same reason. */
+	#site .prose .shotform__msg {
+		flex-basis: 100%;
+		min-height: 5.4em;
+	}
+}

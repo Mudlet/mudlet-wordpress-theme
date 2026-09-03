@@ -1,15 +1,16 @@
 <?php
 /**
- * The three Mudlet plugins, carried inside the theme.
+ * The Mudlet plugins, carried inside the theme.
  *
  * ---------------------------------------------------------------------------
  *
  * Why the theme carries them.
  *
- * The games, the makers and the releases are plugins for a reason that has not
- * changed: what a game *is*, who wrote the client, what a release contains —
- * none of that is a decision about how a page looks, and none of it should
- * leave with a theme. See each plugin's own header.
+ * The games, the makers, the releases and the screenshots people send in are
+ * plugins for a reason that has not changed: what a game *is*, who wrote the
+ * client, what a release contains, what a stranger uploaded on Tuesday — none
+ * of that is a decision about how a page looks, and none of it should leave
+ * with a theme. See each plugin's own header.
  *
  * But "not the theme's data" and "not in the theme's zip" are two different
  * claims, and only the first one was ever true. Downloading four archives and
@@ -41,10 +42,12 @@
  *
  * What a bundled plugin does not get.
  *
- * `register_activation_hook()` never fires, because nothing activates. All
- * three use it for one thing — register the post type, flush the rewrite rules
- * — and the theme's equivalent moment is `after_switch_theme`, which is when
- * those URLs start existing. `switch_theme` is the other end: the cron events
+ * `register_activation_hook()` never fires, because nothing activates. They
+ * use it for one thing — register the post type, flush the rewrite rules —
+ * and the theme's equivalent moment is `after_switch_theme`, which is when
+ * those URLs start existing. (The screenshots plugin flushes nothing, having
+ * no public URLs; what its activation hook lays down is the queue directory,
+ * and `queue_dir()` makes that on the way past anyway.) `switch_theme` is the other end: the cron events
  * the plugins scheduled would otherwise come due forever with no callback
  * behind them, which WP-Cron pays for on every pass.
  *
@@ -85,6 +88,12 @@ function mudlet_bundled_plugins(): array {
 			'store' => 'Mudlet_Releases_Store',
 			'hooks' => array( 'mudlet_releases_refresh', 'mudlet_releases_sync_index', 'mudlet_releases_sync_detail' ),
 		),
+		'mudlet-shots'    => array(
+			'const' => 'MUDLET_SHOTS_VERSION',
+			'name'  => 'Mudlet Screenshots',
+			'store' => 'Mudlet_Shots_Store',
+			'hooks' => array( 'mudlet_shots_sweep' ),
+		),
 	);
 }
 
@@ -93,7 +102,7 @@ function mudlet_bundled_plugins(): array {
  *
  * Empty on a theme built without them — `build-dist.mjs --no-plugins`, or a
  * checkout where `plugins/` is the empty bind-mount target — and empty on a
- * site that has all three installed the old way. Keyed by slug, so a caller
+ * site that has all of them installed the old way. Keyed by slug, so a caller
  * can ask about one.
  */
 function mudlet_bundled_loaded(): array {

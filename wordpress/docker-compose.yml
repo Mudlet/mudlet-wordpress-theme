@@ -55,7 +55,7 @@ services:
     volumes:
       - wp:/var/www/html
       - ./theme/mudlet:/var/www/html/wp-content/themes/mudlet
-      # The three plugins, mounted **inside the theme** because that is where
+      # The plugins, mounted **inside the theme** because that is where
       # they ship: mudlet.zip carries them under plugins/ and functions.php
       # requires them, so nothing has to be installed or activated. Mounting
       # them here rather than into wp-content/plugins means the local stack
@@ -83,6 +83,12 @@ services:
       # what /the-makers/ is drawn from.
       - ./plugin/mudlet-makers:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers
       - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers/shared
+      # The screenshots plugin, likewise. It is the one that reads nothing from
+      # upstream: it takes what visitors send the site, holds it outside the
+      # media library until somebody has looked at it, and appends the ones
+      # that pass to the gallery on /media/.
+      - ./plugin/mudlet-shots:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-shots
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-shots/shared
       # The hero's embedded client, served from the site's own origin - which is
       # a hard requirement, not a preference: Mudlet Web keeps profiles in
       # IndexedDB, which Safari and Firefox deny to cross-origin frames.
@@ -129,7 +135,7 @@ services:
     volumes:
       - wp:/var/www/html
       - ./theme/mudlet:/var/www/html/wp-content/themes/mudlet
-      # The three plugins, mounted **inside the theme** because that is where
+      # The plugins, mounted **inside the theme** because that is where
       # they ship: mudlet.zip carries them under plugins/ and functions.php
       # requires them, so nothing has to be installed or activated. Mounting
       # them here rather than into wp-content/plugins means the local stack
@@ -157,6 +163,12 @@ services:
       # what /the-makers/ is drawn from.
       - ./plugin/mudlet-makers:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers
       - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers/shared
+      # The screenshots plugin, likewise. It is the one that reads nothing from
+      # upstream: it takes what visitors send the site, holds it outside the
+      # media library until somebody has looked at it, and appends the ones
+      # that pass to the gallery on /media/.
+      - ./plugin/mudlet-shots:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-shots
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-shots/shared
       - ./seed:/seed:ro
     entrypoint: ["/bin/sh", "/seed/setup.sh"]
     # One shot. It is idempotent, so `docker compose up seed` re-runs it safely
