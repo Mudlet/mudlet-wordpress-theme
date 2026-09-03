@@ -78,23 +78,28 @@ local function box(shot)
     return w, h
 end
 
-local function draw(shot, path)
+-- Where the picture goes, given the window it is going into: centred by
+-- arithmetic rather than by a percentage, because Geyser anchors a box by its
+-- top left corner and "in the middle" is a number somebody has to work out.
+local function place(shot)
     local w, h = box(shot)
+    local ww = getMainWindowSize()
+    hung:resize(w, h)
+    hung:move(math.max(0, math.floor((ww - w) / 2)), TOP + INSET)
+    return w, h
+end
 
+local function draw(shot, path)
     if not hung then
-        hung = Geyser.Label:new({ name = NAME, x = 0, y = 0, width = w, height = h })
+        -- Sized by place() a line below, and by nothing else: the box is a
+        -- function of the window, and the window is measured every time.
+        hung = Geyser.Label:new({ name = NAME, x = 0, y = 0, width = 1, height = 1 })
         -- A label eats every click that lands on it, and everything clickable
         -- in this world is a dechoLink underneath it. Rather than fight that,
         -- the picture is the control: clicking it takes it down again.
         hung:setClickCallback(function() D.unhang() end)
     end
-    hung:resize(w, h)
-    -- Centred by arithmetic rather than by a percentage: Geyser anchors a box
-    -- by its top left corner, so "in the middle" is a number this has to work
-    -- out, and it works it out again on every hanging because the window it is
-    -- centred in is a hero on one page and a whole tab on another.
-    local ww = getMainWindowSize()
-    hung:move(math.max(0, math.floor((ww - w) / 2)), TOP + INSET)
+    local w, h = place(shot)
     hung:setStyleSheet(string.format([[
         background-image: url("%s");
         background-repeat: no-repeat;
@@ -111,6 +116,16 @@ local function draw(shot, path)
         cmd('Take it down', 'take down the picture', 'or just click the picture', C.text),
         C.text, ' when you have looked at it.')
 end
+
+-- The frame is cut to the window, so it has to be cut again when the window
+-- changes size. The hero this world usually runs in is a box the visitor can
+-- expand to the whole screen and drop back again, and a picture left where the
+-- console used to be hangs half off the edge of it. Nothing is fetched again
+-- and no stylesheet is rewritten — the picture on the wall is the same
+-- picture, and only its frame moved.
+registerAnonymousEventHandler('sysWindowResizeEvent', function()
+    if hung and showing then place(showing) end
+end)
 
 -- One handler pair for the whole room, registered as the package loads. Both
 -- filter on the name this file writes under: an anonymous handler hears every
