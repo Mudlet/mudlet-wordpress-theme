@@ -1469,20 +1469,43 @@
 			var dots = document.createElement('div');
 			dots.className = 'mgal__dots';
 
-			var buttons = slides.map(function (sl, i) {
-				var d = document.createElement('button');
-				d.type = 'button';
-				d.className = 'mgal__dot';
-				d.setAttribute('aria-label', (S.galGo || 'Screenshot %s').replace('%s', i + 1));
-				d.addEventListener('click', function () { surrender(); go(i); });
-				dots.appendChild(d);
-				return d;
-			});
+			// Dots are direct access, and they only work for as long as a
+			// visitor can count them. At a dozen they are already a second
+			// gallery under the first (see assets/css/blocks.css); at a hundred
+			// they are eight rows of them on a phone and a hundred tab stops
+			// between the picture and the rest of the page — and dot fifty-seven
+			// was never really clickable anyway. So past the threshold they
+			// become the counter the lightbox already draws, and this page has
+			// one way of saying where you are rather than two.
+			//
+			// /media/ takes submissions from strangers (see the mudlet-shots
+			// plugin, whose cap is on the review queue and not on the gallery),
+			// so a gallery that outgrows its dots is the end state, not a
+			// hypothetical.
+			var DOTS_MAX = 12;
+			var many = slides.length > DOTS_MAX;
+			var count = null;
+			var buttons = [];
+
+			if (many) {
+				count = document.createElement('p');
+				count.className = 'mgal__count';
+			} else {
+				buttons = slides.map(function (sl, i) {
+					var d = document.createElement('button');
+					d.type = 'button';
+					d.className = 'mgal__dot';
+					d.setAttribute('aria-label', (S.galGo || 'Screenshot %s').replace('%s', i + 1));
+					d.addEventListener('click', function () { surrender(); go(i); });
+					dots.appendChild(d);
+					return d;
+				});
+			}
 
 			if (slides.length > 1) {
 				gal.appendChild(prev);
 				gal.appendChild(next);
-				gal.appendChild(dots);
+				gal.appendChild(many ? count : dots);
 			}
 			// "Cropped" is the gallery's default and it is a grid's answer, not a
 			// carousel's: core fills each tile with object-fit:cover, which on a
@@ -1495,6 +1518,7 @@
 			gal.setAttribute('data-carousel', 'on');
 
 			var at = 0, timer = null, surrendered = reduce, ticking = false;
+			var settle = null;
 
 			// Core marks all but the first image lazy, which is right for a grid
 			// and wrong for a strip: horizontally off-screen slides are not near
@@ -1513,13 +1537,24 @@
 				buttons.forEach(function (b, j) {
 					b.setAttribute('aria-current', j === i ? 'true' : 'false');
 				});
-				warm(i);
+				if (count) {
+					count.textContent = (S.galCount || '%1$s / %2$s')
+						.replace('%1$s', i + 1).replace('%2$s', slides.length);
+				}
 			}
 
 			function go(i) {
 				i = (i + slides.length) % slides.length; // both ends wrap: it is a loop
-				track.scrollTo({ left: i * track.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+				// Neighbours animate; anything further cuts. The reason is the
+				// wrap: stepping off the last slide is one smooth scroll across
+				// the entire strip, which on a long gallery is a whip-pan and —
+				// because the scroll handler is what reads the position back —
+				// used to warm every slide it flew past. A hundred screenshots
+				// fetched by one press of Next.
+				var far = Math.abs(i - at) > 1;
+				track.scrollTo({ left: i * track.clientWidth, behavior: (reduce || far) ? 'auto' : 'smooth' });
 				mark(i);
+				warm(i);
 			}
 
 			function play() {
@@ -1537,13 +1572,21 @@
 			// what we last asked for: a swipe, a shift-wheel and a focused image
 			// scrolled into view all move it without going through go().
 			track.addEventListener('scroll', function () {
-				if (ticking) return;
-				ticking = true;
-				requestAnimationFrame(function () {
-					ticking = false;
-					var w = track.clientWidth;
-					if (w) mark(Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / w))));
-				});
+				// Two jobs at two rates. Reading the position is free and wants
+				// to be live, so the dots and the counter keep up with a finger
+				// on the strip. Warming neighbours is the network, and wants the
+				// scroll to have finished: warming once per frame means a fast
+				// drag across a long gallery downloads everything it passed.
+				if (!ticking) {
+					ticking = true;
+					requestAnimationFrame(function () {
+						ticking = false;
+						var w = track.clientWidth;
+						if (w) mark(Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / w))));
+					});
+				}
+				clearTimeout(settle);
+				settle = setTimeout(function () { warm(at); }, 150);
 			}, { passive: true });
 
 			// A hand on the strip is somebody driving it themselves.
@@ -1583,6 +1626,7 @@
 			});
 
 			mark(0);
+			warm(0);
 		});
 
 		// ── the front page's three screenshots ───────────────────────────

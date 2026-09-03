@@ -332,8 +332,10 @@
 	border-radius: 50%;
 	cursor: pointer;
 }
-/* The button is a 1.1rem hit target; the dot inside it is 6px, because
-   fifteen 1.1rem circles under a screenshot read as a second gallery. */
+/* The button is a 1.1rem hit target; the dot inside it is 6px, because a
+   dozen 1.1rem circles under a screenshot already read as a second gallery —
+   which is why assets/js/theme.js draws at most a dozen of them, and the
+   counter below instead of any more. */
 .is-style-mudlet-carousel[data-carousel] .mgal__dot::before {
 	content: '';
 	display: block;
@@ -350,8 +352,24 @@
 	transform: scale(1.5);
 }
 
+/* What a gallery too long for dots gets instead: the same "7 / 100" the
+   lightbox draws, in the place the dots would have been, so a visitor who has
+   opened one screenshot already knows how to read it. Deliberately not
+   aria-live — it changes every five seconds on its own, and a screen reader
+   announcing that is a carousel talking over the page. */
+.is-style-mudlet-carousel[data-carousel] .mgal__count {
+	margin: .7rem 0 0;
+	font-family: var(--display);
+	font-size: .78rem;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: .04em;
+	text-align: center;
+	color: var(--dim);
+}
+
 /* The gallery's own caption — the one core puts under the whole block, not
-   under a picture. It is the section's line, so it sits under the dots. */
+   under a picture. It is the section's line, so it sits under the dots, or
+   under the counter standing in for them. */
 .wp-block-gallery.is-style-mudlet-carousel[data-carousel] > figcaption {
 	margin-top: .6rem;
 	font-size: .84rem;
