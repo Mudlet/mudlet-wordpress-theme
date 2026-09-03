@@ -50,6 +50,9 @@ class Mudlet_Releases_Admin {
 		add_filter( 'post_row_actions', array( __CLASS__, 'row_actions' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-' . Mudlet_Releases_Store::POST_TYPE, '__return_empty_array' );
 
+		add_action( 'manage_posts_extra_tablenav', array( __CLASS__, 'tablenav' ) );
+		add_filter( 'mudlet_sync_jobs', array( __CLASS__, 'sync_jobs' ) );
+
 		add_action( 'admin_post_' . self::SYNC_ACTION, array( __CLASS__, 'handle_sync' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
 	}
@@ -494,27 +497,142 @@ class Mudlet_Releases_Admin {
 	// ── sync now ──────────────────────────────────────────────────────
 
 	/**
+	 * Put the three release jobs on the Mudlet → Sync screen.
+	 *
+	 * Three, because they are three different bargains: one request for the
+	 * list, a rationed drain for the expensive half, and a cache warm. Rolling
+	 * them into one row would hide the only one that has a rate limit behind
+	 * it.
+	 *
+	 * @param array<string, array<string, mixed>> $jobs Registered syncs.
+	 * @return array<string, array<string, mixed>>
+	 */
+	public static function sync_jobs( array $jobs ): array {
+		$count   = (int) ( wp_count_posts( Mudlet_Releases_Store::POST_TYPE )->publish ?? 0 );
+		$pending = count( Mudlet_Releases_Store::pending( 100 ) );
+		$latest  = Mudlet_Releases_Store::latest();
+
+		$jobs[ Mudlet_Releases_Sync::INDEX ] = array(
+			'label'    => __( 'Releases', 'mudlet-releases' ),
+			'note'     => __( 'One request to GitHub for the whole list: names, dates and download rows. An announcement post fetches its own tag, so this is only how a release nobody has written about yet arrives.', 'mudlet-releases' ),
+			'default'  => Mudlet_Releases_Sync::EVERY,
+			'synced'   => $latest ? (int) get_post_meta( $latest->ID, '_mudlet_synced', true ) : 0,
+			'summary'  => sprintf(
+				/* translators: %d: number of releases on record */
+				_n( '%d on record', '%d on record', $count, 'mudlet-releases' ),
+				$count
+			),
+			'sync_url' => self::sync_url(),
+		);
+
+		$jobs[ Mudlet_Releases_Sync::DETAIL ] = array(
+			'label'   => __( 'Release changelogs', 'mudlet-releases' ),
+			'note'    => __( 'Changelogs, contributors and SHA-256 sums, two releases per run — anonymous GitHub allows sixty requests an hour. Costs nothing when nothing is outstanding, so hourly is a drain rather than a poll.', 'mudlet-releases' ),
+			'default' => Mudlet_Releases_Sync::EVERY_DETAIL,
+			'synced'  => 0,
+			'summary' => $pending
+				? sprintf(
+					/* translators: %d: number of releases awaiting the detail pass */
+					_n( '%d outstanding', '%d outstanding', $pending, 'mudlet-releases' ),
+					$pending
+				)
+				: __( 'nothing outstanding', 'mudlet-releases' ),
+		);
+
+		$jobs['mudlet_releases_refresh'] = array(
+			'label'   => __( 'Latest release, cached', 'mudlet-releases' ),
+			'note'    => __( 'One request that keeps the newest release warm, so a visitor never waits on GitHub for the download page.', 'mudlet-releases' ),
+			'default' => 'daily',
+			'synced'  => 0,
+		);
+
+		return $jobs;
+	}
+
+	/**
+	 * The button, over the list.
+	 *
+	 * Unlike the games and makers plugins, the record screen keeps a button of
+	 * its own: a release is read one at a time, and "re-read this one" is a
+	 * real thing to want. This one is the other half — the cheap index pass,
+	 * which is how a *new* release arrives, and the only way to press anything
+	 * on a site that has no records yet.
+	 *
+	 * Index only, deliberately. The detail pass costs a compare of up to six
+	 * pages per release, and anonymous GitHub allows sixty requests an hour;
+	 * the hourly job spends that budget two records at a time.
+	 *
+	 * @param string $which Which tablenav is being drawn.
+	 */
+	public static function tablenav( string $which ): void {
+		$screen = get_current_screen();
+
+		if ( 'top' !== $which || ! $screen || ! self::ours( (string) $screen->post_type ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		$count   = (int) ( wp_count_posts( Mudlet_Releases_Store::POST_TYPE )->publish ?? 0 );
+		$pending = count( Mudlet_Releases_Store::pending( 100 ) );
+		?>
+		<div class="alignleft actions">
+			<a class="button" href="<?php echo esc_url( self::sync_url() ); ?>">
+				<?php esc_html_e( 'Check GitHub for releases', 'mudlet-releases' ); ?>
+			</a>
+			<span class="mudlet-sync__note">
+				<?php
+				if ( ! $count ) {
+					esc_html_e( 'Nothing on record yet — the index pass runs twice a day.', 'mudlet-releases' );
+				} elseif ( $pending ) {
+					printf(
+						/* translators: 1: number of releases on record, 2: number still awaiting the detail pass */
+						esc_html__( '%1$d on record · %2$d still awaiting changelogs and checksums, two an hour.', 'mudlet-releases' ),
+						(int) $count,
+						(int) $pending
+					);
+				} else {
+					printf(
+						/* translators: %d: number of releases on record */
+						esc_html( _n( '%d release on record.', '%d releases on record.', $count, 'mudlet-releases' ) ),
+						(int) $count
+					);
+				}
+				?>
+			</span>
+		</div>
+		<style>
+			.mudlet-sync__note{display:inline-block;margin-left:9px;line-height:30px;color:#646970}
+		</style>
+		<?php
+	}
+
+	/**
 	 * The nonce-protected URL behind the button.
 	 *
-	 * @param int $post_id Release to re-read.
+	 * @param int $post_id Release to re-read, or 0 for the index pass.
 	 * @return string
 	 */
-	public static function sync_url( int $post_id ): string {
+	public static function sync_url( int $post_id = 0 ): string {
+		$args = array(
+			'action'   => self::SYNC_ACTION,
+			'redirect' => rawurlencode( (string) ( $_SERVER['REQUEST_URI'] ?? '' ) ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		);
+
+		if ( $post_id ) {
+			$args['post'] = $post_id;
+		}
+
 		return wp_nonce_url(
-			add_query_arg(
-				array(
-					'action'   => self::SYNC_ACTION,
-					'post'     => $post_id,
-					'redirect' => rawurlencode( (string) ( $_SERVER['REQUEST_URI'] ?? '' ) ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-				),
-				admin_url( 'admin-post.php' )
-			),
+			add_query_arg( $args, admin_url( 'admin-post.php' ) ),
 			self::SYNC_ACTION
 		);
 	}
 
 	/**
-	 * Re-read one release and come back.
+	 * Re-read one release — or, with no post, run the index pass — and come back.
 	 */
 	public static function handle_sync(): void {
 		if ( ! current_user_can( 'edit_posts' ) ) {
@@ -523,10 +641,16 @@ class Mudlet_Releases_Admin {
 		check_admin_referer( self::SYNC_ACTION );
 
 		$post_id = isset( $_GET['post'] ) ? (int) $_GET['post'] : 0; // phpcs:ignore WordPress.Security.NonceVerification
-		$tag     = $post_id ? (string) get_post_meta( $post_id, '_mudlet_tag', true ) : '';
+
+		if ( ! $post_id ) {
+			self::handle_index();
+			return;
+		}
+
+		$tag = (string) get_post_meta( $post_id, '_mudlet_tag', true );
 
 		$ok = false;
-		if ( $post_id && $tag ) {
+		if ( $tag ) {
 			// Drop the cached compare first, or "re-read" would hand back the
 			// same answer it already had.
 			Mudlet_Releases_Github_Client::flush( $tag );
@@ -545,9 +669,34 @@ class Mudlet_Releases_Admin {
 	}
 
 	/**
+	 * Run the index pass and come back.
+	 *
+	 * One request, whatever it finds: names, dates, versions and download rows
+	 * for every release GitHub lists. The changelogs and checksums behind them
+	 * are the hourly job's, not this button's.
+	 */
+	private static function handle_index(): void {
+		self::$writing = true;
+		$written       = Mudlet_Releases_Sync::sync_index();
+		self::$writing = false;
+
+		$back = isset( $_GET['redirect'] ) // phpcs:ignore WordPress.Security.NonceVerification
+			? rawurldecode( sanitize_text_field( wp_unslash( $_GET['redirect'] ) ) ) // phpcs:ignore WordPress.Security.NonceVerification
+			: admin_url( 'edit.php?post_type=' . Mudlet_Releases_Store::POST_TYPE );
+
+		wp_safe_redirect( add_query_arg( array( 'mudlet_releases_indexed' => $written ), $back ) );
+		exit;
+	}
+
+	/**
 	 * Say how it went.
 	 */
 	public static function notices(): void {
+		if ( isset( $_GET['mudlet_releases_indexed'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			self::index_notice( (int) $_GET['mudlet_releases_indexed'] ); // phpcs:ignore WordPress.Security.NonceVerification
+			return;
+		}
+
 		if ( ! isset( $_GET['mudlet_release_synced'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 			return;
 		}
@@ -561,6 +710,63 @@ class Mudlet_Releases_Admin {
 				$ok
 					? __( 'Release re-read from GitHub.', 'mudlet-releases' )
 					: __( 'Could not re-read that release — GitHub may be rate limiting anonymous requests.', 'mudlet-releases' )
+			)
+		);
+	}
+
+	/**
+	 * Say how the index pass went.
+	 *
+	 * A failed request is told apart from an empty one because sync_index()
+	 * answers -1 rather than nought. Nought itself is rare — the pass rewrites
+	 * every release GitHub lists rather than only the new ones — and means
+	 * GitHub answered with nothing this plugin counts as a release.
+	 *
+	 * @param int $written How many records were written, or -1 for a failure.
+	 */
+	private static function index_notice( int $written ): void {
+		if ( $written < 0 ) {
+			printf(
+				'<div class="notice notice-error is-dismissible"><p>%s</p></div>',
+				esc_html__(
+					'Could not read the releases list — GitHub may be rate limiting anonymous requests.',
+					'mudlet-releases'
+				)
+			);
+			return;
+		}
+
+		if ( 0 === $written ) {
+			printf(
+				'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+				esc_html__( 'GitHub listed no releases to index — everything it has is a draft or a pre-release.', 'mudlet-releases' )
+			);
+			return;
+		}
+
+		$pending = count( Mudlet_Releases_Store::pending( 100 ) );
+
+		printf(
+			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+			esc_html(
+				sprintf(
+					/* translators: %d: number of releases indexed */
+					_n( '%d release indexed.', '%d releases indexed.', $written, 'mudlet-releases' ),
+					$written
+				)
+				. ( $pending
+					? ' ' . sprintf(
+						/* translators: %d: number of releases still awaiting the detail pass */
+						_n(
+							'%d is still awaiting its changelog and checksums, which the hourly pass fills in two at a time.',
+							'%d are still awaiting their changelogs and checksums, which the hourly pass fills in two at a time.',
+							$pending,
+							'mudlet-releases'
+						),
+						$pending
+					)
+					: ''
+				)
 			)
 		);
 	}

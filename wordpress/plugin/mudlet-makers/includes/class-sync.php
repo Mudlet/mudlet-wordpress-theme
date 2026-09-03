@@ -28,6 +28,17 @@ defined( 'ABSPATH' ) || exit;
 class Mudlet_Makers_Sync {
 
 	const HOOK   = 'mudlet_makers_sync';
+
+	/**
+	 * The cadence this ships with, and the one Mudlet → Sync starts from.
+	 *
+	 * Weekly is generous for a list that gains a name every year or two, and
+	 * the run costs one request when nothing has moved. The failure this is
+	 * guarding against is a credits page fifteen years stale, which is
+	 * precisely the state this replaces.
+	 */
+	const EVERY  = 'weekly';
+
 	const SHA    = 'mudlet_makers_source_sha';
 	const COUNT  = 'mudlet_makers_count';
 	const SYNCED = 'mudlet_makers_synced';
@@ -48,16 +59,14 @@ class Mudlet_Makers_Sync {
 	}
 
 	/**
-	 * Keep the refresh scheduled.
+	 * Keep the refresh on whatever cadence the site has chosen.
 	 *
-	 * Daily is generous for a list that gains a name every year or two, but it
-	 * is one request when nothing has moved, and the alternative is a credits
-	 * page fifteen years stale — which is precisely the state this replaces.
+	 * Mudlet_Sync does the work, because "keep it scheduled" and "put it on a
+	 * different schedule" are the same job: the old `if ( ! wp_next_scheduled )`
+	 * could only ever do the first, so an edited cadence would never take.
 	 */
 	public static function schedule(): void {
-		if ( ! wp_next_scheduled( self::HOOK ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::HOOK );
-		}
+		Mudlet_Sync::reschedule( self::HOOK, self::EVERY );
 	}
 
 	/**

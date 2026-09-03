@@ -61,7 +61,7 @@ defined( 'ABSPATH' ) || exit;
 					<p class="ln ln--room step"><?php esc_html_e( 'The Front Page', 'mudlet' ); ?></p>
 					<p class="ln ln--desc step"><?php esc_html_e( 'A wide room under a banner in letters the colour of a struck match: play immersive, multiplayer, pure-text games. On a plinth in the centre, a terminal running a small MUD.', 'mudlet' ); ?></p>
 					<p class="ln ln--gap step" aria-hidden="true"></p>
-					<p class="ln ln--exits step"><?php esc_html_e( 'Exits: down, north, west', 'mudlet' ); ?></p>
+					<p class="ln ln--exits step"><?php esc_html_e( 'Exits: down, east, north, west', 'mudlet' ); ?></p>
 					<p class="ln ln--gap step" aria-hidden="true"></p>
 					<p class="ln ln--in step"><?php esc_html_e( 'look banner', 'mudlet' ); ?></p>
 					<p class="ln ln--desc step"><?php esc_html_e( 'It says what the real front page says: the games are text, the text is multiplayer, and forty years in, that is still enough.', 'mudlet' ); ?><span class="caret" aria-hidden="true"></span></p>

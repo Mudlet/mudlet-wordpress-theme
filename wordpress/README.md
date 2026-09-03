@@ -25,6 +25,15 @@ database away, and the next `up` provisions from scratch.
 | `plugin/mudlet-releases/` | release data, read from GitHub releases |
 | `plugin/mudlet-games/` | the bundled games, read from Mudlet’s own source |
 | `plugin/mudlet-makers/` | the credits, read from Mudlet’s own About dialog |
+| `plugin/shared/` | one menu, the sync schedules, and the seams that let a plugin run from the theme — carried by all three |
+
+The three plugins **ship inside the theme**, under `plugins/`, and the stack
+mounts them there rather than into `wp-content/plugins` so that the local site
+runs the same arrangement a real one does. They are still plugins in every
+other sense — the data they own is in the database, and a copy installed the
+old way still wins over the theme’s. See `theme/mudlet/inc/bundled-plugins.php`
+for why, and *Shipping it to another site* below for what that means for an
+install.
 
 ## The stylesheet
 
@@ -62,9 +71,18 @@ Honest answer, because this is the thing that went wrong with Divi:
   and the makers roster. Which MUDs Mudlet bundles and who Mudlet credits are
   facts about the client, so the plugins below read them rather than offering a
   screen to type them into. All three stores show their records on a
-  purpose-built read-only screen — under **Mudlet releases**, **Mudlet games**
-  and **Mudlet makers** — with a resync button, and a write guard behind it, so
-  read-only holds on REST and Quick Edit too. The release *announcement posts*
+  purpose-built read-only screen — all three under one **Mudlet** menu, as
+  **Games**, **Makers** and **Releases** — with a write guard behind it, so
+  read-only holds on REST and Quick Edit too. The resync button is over each
+  **list**, because a games or makers sync is always all of them, and because a
+  plugin that has just been activated has no records to hang a button on.
+  (Releases keep one on the record as well: those are read one at a time.)
+- **How often each one refreshes is on `Mudlet → Sync`.** Every cron job the
+  three plugins run, with its cadence, when it last ran, when it runs next and
+  a button to run it now. Weekly by default — a bundled-games list moves a few
+  times a year — and `Never` turns one off. The screen is one shared file,
+  `plugin/shared/mudlet-sync.php`, that each plugin carries a copy of and each
+  registers its own jobs into; see its header before editing it. The release *announcement posts*
   are ordinary posts and stay editable, as is the prose on `/the-makers/` above
   the roster.
 
@@ -229,7 +247,9 @@ hardcoded version is exactly the staleness nobody notices for months.
 
 Verified against the real data: `4.22.0` gives *1 new feature, 2 improvements,
 9 fixes*; the download table serves 5.0.0 with all four SHA-256 hashes matching
-`SHA256SUMS.txt` byte for byte.
+`SHA256SUMS.txt` byte for byte. Those hashes are read off each asset’s own
+`digest` in the releases JSON rather than out of that file — same number, no
+request — and the file is the fallback for releases too old to carry one.
 
 ### Carrying the download to another machine
 
@@ -645,27 +665,36 @@ switchers.
 
 The Docker stack bind-mounts the theme and the plugins straight off the working
 tree, which is right for developing and no use at all for a test site somewhere
-else. `tools/build-dist.mjs` packs the same four things into zips wp-admin will
-take:
+else. `tools/build-dist.mjs` packs them into zips wp-admin will take:
 
 ```sh
-node wordpress/tools/build-dist.mjs              # -> wordpress/dist/*.zip
-node wordpress/tools/build-dist.mjs --with-demo  # ...theme carries the hero too
+node wordpress/tools/build-dist.mjs                 # -> wordpress/dist/*.zip
+node wordpress/tools/build-dist.mjs --with-demo     # ...theme carries the hero too
+node wordpress/tools/build-dist.mjs --version 1.2.3 # ...stamped, tree untouched
+node wordpress/tools/build-dist.mjs --no-plugins    # ...theme carries only itself
 node wordpress/tools/build-dist.mjs --only mudlet-games
 node wordpress/tools/build-dist.mjs --out ~/somewhere
 ```
 
+**`mudlet.zip` is the whole site.** The theme, the hero's client under
+`assets/demo/`, and the games, makers and releases plugins under `plugins/`,
+which `functions.php` requires — so Appearance → Themes → Add New → **Upload
+Theme** is the entire install and there is nothing to activate.
+
 | archive | where it goes |
 | --- | --- |
 | `mudlet.zip` | Appearance → Themes → Add New → **Upload Theme** |
-| `mudlet-games.zip` | Plugins → Add New → **Upload Plugin** |
+| `mudlet-games.zip` | Plugins → Add New → **Upload Plugin** — only if you want it as a plugin |
 | `mudlet-makers.zip` | same |
 | `mudlet-releases.zip` | same |
 
-Upload the plugins first, or the theme's `function_exists()` guards leave the
-front page without its games section and `/the-makers/` without its roster on
-the first page load. Neither has a hardcoded stand-in - a typed list is what
-those plugins exist to replace - so an admin notice says so instead.
+The three plugin zips are still built, and still published on every release,
+for two cases: a site that would rather run them as plugins, and a site that
+has changed theme and wants to keep drawing its games. **An installed copy
+always wins** — WordPress loads plugins before it reaches a theme, so the
+plugin defines its version constant first and `inc/bundled-plugins.php` stands
+down. If that installed copy is older than the one in the theme, an admin
+notice says so rather than letting it be a surprise.
 
 Worth knowing before it bites:
 
@@ -673,20 +702,25 @@ Worth knowing before it bites:
   Each archive holds exactly one top-level directory named for the slug, so
   uploading a second time offers to replace what is already there rather than
   landing a `mudlet-2` beside it. Renaming the zip changes nothing.
-- **The theme is ~5.7 MB, and stock PHP caps an upload at 2 MB.** Raise
-  `upload_max_filesize` *and* `post_max_size`, or drop the folders into
-  `wp-content/` over SFTP — the directory names are the same either way. The
-  build prints the sizes and says which ones are over.
+- **The theme is ~5 MB without the client and ~15 MB with it, and stock PHP
+  caps an upload at 2 MB.** Raise `upload_max_filesize` *and* `post_max_size`,
+  or drop the folders into `wp-content/` over SFTP — the directory names are the
+  same either way. The build prints the sizes and says which ones are over. An
+  update fetched from GitHub is pulled server-side and that cap does not apply
+  to it.
 - **The hero is opt-in.** `assets/demo/` is a bind-mount target and empty on
   disk, so a plain build ships no client and the hero stays on its scripted
   session — which is the theme's designed fallback, not a failure. `--with-demo`
-  copies `demo/dist` in and takes the theme to ~15.6 MB; build it first with
-  `cd demo && npm run build`.
+  copies `demo/dist` in; build it first with `cd demo && npm run build`. The
+  release workflow always passes it.
+- **`--version` writes into the archives only.** The working tree is not
+  touched, which is what lets the release workflow take the number off the git
+  tag and cut a release without a commit. Without it, whatever is in the
+  headers on disk is what ships.
 - **Nothing about the site's *content* is in these.** Pages, menus, the games,
   the makers and the releases are all database records — the plugins fill their
-  own from GitHub on activation and cron, and the pages are `seed/setup.sh`'s
-  job. A fresh test site needs the seed run against it, or those pages created
-  by hand.
+  own from GitHub on cron, and the pages are `seed/setup.sh`'s job. A fresh test
+  site needs the seed run against it, or those pages created by hand.
 - **Rebuilding unchanged sources gives byte-identical archives.** Timestamps
   inside are fixed rather than read off the files, so `md5sum` against the last
   upload answers "has anything actually changed?"
@@ -696,6 +730,40 @@ nothing under `wordpress/` has a `package.json` and the other tools here run on
 bare node, so a dependency would put an `npm install` between somebody and a
 build. It is about ninety lines, store-or-deflate, no zip64. `wordpress/dist/`
 is gitignored.
+
+## Updating a site that is already running
+
+A site never needs to be handed a zip twice. `style.css` carries
+
+```
+Update URI: https://github.com/Mudlet/mudlet-wordpress-theme
+```
+
+which since WordPress 6.1 stops core asking wordpress.org about a theme it does
+not host, and fires `update_themes_github.com` instead. `inc/updates.php`
+answers it: one unauthenticated `releases/latest` call, cached twelve hours,
+and the release's own `mudlet.zip` asset as the package. Because that asset is
+the whole site, the update carries the plugins and the hero's client with it.
+
+The theme also opts itself into WordPress's automatic theme updates — a site
+running a release behind would be a release behind on all four things at once.
+`define( 'MUDLET_AUTO_UPDATE', false );` in `wp-config.php` turns that off and
+leaves the manual "Update now" button.
+
+Cutting a release is one push:
+
+```sh
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+`.github/workflows/release.yml` builds the demo client, type-checks it, runs
+`build-dist.mjs --with-demo --version 0.2.0`, checks the archive is the shape
+WordPress installs, and publishes the release with all four zips on it. **The
+tag is the version** — nothing in the repository is bumped, so a tag and a
+header can never disagree. A tag with a hyphen in it (`v0.2.0-rc1`) is
+published as a prerelease, and `releases/latest` skips those, so no site is
+offered it. `workflow_dispatch` does the same build and uploads the zips as
+run artifacts without publishing anything.
 
 ## Known gaps
 

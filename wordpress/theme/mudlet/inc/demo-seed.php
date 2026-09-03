@@ -2,7 +2,7 @@
 /**
  * What the hero's embedded demo asks the site about itself.
  *
- * The demo is a four-room MUD standing in for mudlet.org, and every room used
+ * The demo is an eight-room MUD standing in for mudlet.org, and every room used
  * to have the site's facts typed into its prose: a version chalked on the vault
  * wall, four crate weights, three notices on a board, a shelf of "forty-two
  * boxed worlds". Typed facts rot — that vault was still offering 4.22.0 the
@@ -96,11 +96,105 @@ function mudlet_demo_seed(): array {
 		'games'     => mudlet_demo_seed_games(),
 		'makers'    => mudlet_demo_seed_makers(),
 		'news'      => mudlet_demo_seed_news(),
+		'media'     => mudlet_demo_seed_media(),
 		'functions' => mudlet_demo_seed_functions(),
 		'packages'  => mudlet_demo_seed_packages(),
 	);
 }
 
+
+/**
+ * The Gallery: the screenshots and screencasts on /media/.
+ *
+ * The one page on the site whose whole content is content — no template, no
+ * post type, just blocks — and so the one page the world could not parody
+ * without asking. The room east of the front page hangs a real screenshot in a
+ * real Geyser label, which means it needs a URL to fetch rather than a number
+ * to print: this is the only part of the seed the demo *downloads* rather than
+ * reads.
+ *
+ * Sized to `large` rather than full. The world is fetching these into a
+ * profile inside a hero, and a 4MB original to draw at 400px wide is somebody
+ * else's data allowance.
+ *
+ * The shots come through `mudlet_front_thumbs()`, which is already how the
+ * front page's thumbnail row reads that page — adding a screenshot to /media/
+ * adds it to both, and neither holds a copy. It shuffles, so which frames hang
+ * on the wall is a different eight per request, the same way the games grid
+ * picks a random fifteen.
+ *
+ * @return array<string, mixed>
+ */
+function mudlet_demo_seed_media(): array {
+	$ids   = function_exists( 'mudlet_front_thumbs' ) ? mudlet_front_thumbs( 99 ) : array();
+	$shots = array();
+
+	foreach ( array_slice( $ids, 0, 8 ) as $id ) {
+		$src = wp_get_attachment_image_src( (int) $id, 'large' );
+		if ( ! is_array( $src ) || empty( $src[0] ) ) {
+			continue;
+		}
+
+		$shots[] = array(
+			'url'   => $src[0],
+			'w'     => (int) $src[1],
+			'h'     => (int) $src[2],
+			// The alt text before the title: /media/'s pictures are described
+			// for a screen reader already, and that description is a caption.
+			'title' => mudlet_demo_seed_text(
+				(string) ( get_post_meta( (int) $id, '_wp_attachment_image_alt', true ) ?: get_the_title( (int) $id ) )
+			),
+		);
+	}
+
+	$page = get_page_by_path( 'media' );
+
+	return array(
+		'count' => count( $ids ),
+		'shots' => $shots,
+		'films' => $page instanceof WP_Post ? mudlet_demo_seed_films( $page ) : array(),
+		'url'   => $page instanceof WP_Post ? get_permalink( $page ) : home_url( '/media/' ),
+	);
+}
+
+/**
+ * The screencasts, out of the list block that holds them.
+ *
+ * Stored as prose — an anchor and then a sentence — for the reason the release
+ * post's two shapes are core blocks: a block that stores a title and a URL and
+ * a sentence is a paragraph with extra steps. So this reads them back the way
+ * they were written rather than out of some parallel record.
+ *
+ * @param WP_Post $page The /media/ page.
+ * @return array<int, array<string, string>>
+ */
+function mudlet_demo_seed_films( WP_Post $page ): array {
+	$films = array();
+
+	if ( ! function_exists( 'parse_blocks' ) ) {
+		return $films;
+	}
+
+	foreach ( parse_blocks( $page->post_content ) as $block ) {
+		if ( 'core/list' !== ( $block['blockName'] ?? '' ) ) {
+			continue;
+		}
+
+		foreach ( (array) ( $block['innerBlocks'] ?? array() ) as $item ) {
+			$html = (string) ( $item['innerHTML'] ?? '' );
+			if ( ! preg_match( '~<a[^>]+href="([^"]+)"[^>]*>(.*?)</a>~is', $html, $found ) ) {
+				continue;
+			}
+
+			$films[] = array(
+				'title' => mudlet_demo_seed_text( $found[2] ),
+				'url'   => esc_url_raw( html_entity_decode( $found[1], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ),
+			);
+		}
+	}
+
+	return $films;
+}
 /**
  * The cabinet in the commons: how many packages there are, and how many people
  * wrote them.

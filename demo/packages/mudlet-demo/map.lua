@@ -12,7 +12,7 @@ local rooms = require('mudlet-demo.rooms')
 --
 -- Not a drawing of a map: Mudlet's own mapper, small, in the corner of the
 -- console. "A real mapper" is one of the six claims the page makes two
--- sections down, so the demo may as well be running one — six rooms is a
+-- sections down, so the demo may as well be running one — nine rooms is a
 -- tiny map, but it is the same widget, the same map database and the same
 -- centerview() that a twelve-thousand-room game drives.
 
@@ -30,9 +30,10 @@ local AREA = 'mudlet.org'
 -- the vault read as a cellar: `down` from the front page puts it directly
 -- under, and because the exit is called `down` rather than `south` the mapper
 -- draws the stair markers and no line — a line would say you can walk into it.
--- All six rooms therefore sit on one level. A cellar on a level of its own
--- would be a map with one room on it, which is accurate and useless at this
--- size.
+-- All nine rooms therefore sit on one level, which is what makes the two floors
+-- under the front page read as a cellar and then a cellar under that. A storey
+-- of its own would be a map with one room on it, which is accurate and useless
+-- at this size.
 local STEP = {
     north = {  0,  1 }, south = {  0, -1 },
     east  = {  1,  0 }, west  = { -1,  0 },
@@ -126,7 +127,7 @@ function D.buildMap()
     setMapBackgroundColor(30, 24, 19)   -- the hero terminal's own ground
 
     -- The map info panel — area, room id, coordinate ranges — is on by default
-    -- and, at this size, is the entire widget. Six rooms need no coordinate
+    -- and, at this size, is the entire widget. Nine rooms need no coordinate
     -- readout; the room name is already the line above the map.
     for label in pairs(getMapInfo()) do disableMapInfo(label) end
 
@@ -263,10 +264,13 @@ function D.mapPaint()
     -- land on.
     centerview(ROOM[D.here])
     -- Zoom counts rooms across the view, so it goes *up* as the widget shrinks:
-    -- 5 keeps all six rooms in frame from *any* of them at MAP_MAX, and this
-    -- holds that framing at every size in between. Tighter looks better from
-    -- the front page and drops a room off the edge from the news room, which is
-    -- the wrong trade for a map of six things.
+    -- 5 holds the same framing at every size between MAP_MAX and the smallest
+    -- this widget gets. It frames the whole map from anywhere near the middle
+    -- of it and lets the far corner fall off from the opposite far corner —
+    -- from the news room at the top you lose the cellar at the bottom, and the
+    -- other way about. That is the right trade at this size: this is a HUD in
+    -- the corner of a hero, not a survey, and tighter looks better from the
+    -- front page where most visitors open it.
     setMapZoom(5 * MAP_MAX / size)
     updateMap()
 end
@@ -378,14 +382,11 @@ end
 function D.barExits()
     if not D.exits then return end
 
-    local room = D.rooms[D.here]
-    local dirs = {}
-    if room then
-        for dir in pairs(room.exits) do dirs[#dirs + 1] = dir end
-        -- pairs() over the exit table has no order, and a row whose words
-        -- reshuffle on every look is worse than no row at all.
-        table.sort(dirs)
-    end
+    -- Sorted, and minus any exit the console's own "Exits:" line does not print
+    -- either: the two are the same list because they are the same call. See
+    -- D.waysOut in rooms/init.lua. (pairs() over an exit table has no order,
+    -- and a row whose words reshuffle on every look is worse than no row.)
+    local dirs = D.rooms[D.here] and D.waysOut(D.here) or {}
 
     -- The name's column is as wide as the longest title in the world, not as
     -- wide as this room's: walking from the Release Vault to Makers Hall is six

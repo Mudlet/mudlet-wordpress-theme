@@ -25,6 +25,16 @@ defined( 'ABSPATH' ) || exit;
 class Mudlet_Games_Sync {
 
 	const HOOK   = 'mudlet_games_sync';
+
+	/**
+	 * The cadence this ships with, and the one Mudlet → Sync starts from.
+	 *
+	 * Weekly is generous for a list that changes a few times a year, and the
+	 * run costs one request when nothing has moved. Somewhere between that and
+	 * a site a year stale because nobody remembered there was a button.
+	 */
+	const EVERY  = 'weekly';
+
 	const SHA    = 'mudlet_games_source_sha';
 	const COUNT  = 'mudlet_games_count';
 	const SYNCED = 'mudlet_games_synced';
@@ -46,16 +56,14 @@ class Mudlet_Games_Sync {
 	}
 
 	/**
-	 * Keep the refresh scheduled.
+	 * Keep the refresh on whatever cadence the site has chosen.
 	 *
-	 * Daily is generous for a list that changes a few times a year, but it is
-	 * one request when nothing has moved, and the alternative is a site that is
-	 * a year stale because nobody remembered there was a button.
+	 * Mudlet_Sync does the work, because "keep it scheduled" and "put it on a
+	 * different schedule" are the same job: the old `if ( ! wp_next_scheduled )`
+	 * could only ever do the first, so an edited cadence would never take.
 	 */
 	public static function schedule(): void {
-		if ( ! wp_next_scheduled( self::HOOK ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::HOOK );
-		}
+		Mudlet_Sync::reschedule( self::HOOK, self::EVERY );
 	}
 
 	/**

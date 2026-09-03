@@ -96,10 +96,14 @@ function D.look(noun)
     -- goes in one "Here:" line, and anyone alive gets their own sentence
     -- underneath in their own colour. A sage listed between a ledger and a set
     -- of chairs reads as another piece of furniture.
+    --
+    -- A `hidden` thing is in the room and answers to `look` without being on
+    -- that line. The cellar has one per file in the package, and a crate name
+    -- apiece would bury the three things down there worth looking at.
     local line = { C.text, 'Here: ' }
     local first = true
     for _, thing in ipairs(room.things) do
-        if not thing.npc then
+        if not thing.npc and not thing.hidden then
             if not first then line[#line + 1] = C.text .. ', ' end
             line[#line + 1] = cmd(thing.name, 'look ' .. thing.keys[1],
                 'look at ' .. thing.name)
@@ -113,9 +117,10 @@ function D.look(noun)
         if thing.npc then thing.presence() end
     end
 
-    local names = {}
-    for dir in pairs(room.exits) do names[#names + 1] = dir end
-    table.sort(names)
+    -- Not room.exits: an exit into a room the world keeps to itself is not
+    -- listed here or on the bar, and D.waysOut in rooms/init.lua is the one
+    -- place that rule is written.
+    local names = D.waysOut(D.here)
     line = { C.exit, 'Exits: ' }
     for i, dir in ipairs(names) do
         if i > 1 then line[#line + 1] = C.exit .. ', ' end
@@ -237,7 +242,8 @@ end
 
 function D.help()
     say()
-    say(C.sys, 'mudlet.org, walked instead of scrolled. Seven rooms, one website.')
+    say(C.sys, 'mudlet.org, walked instead of scrolled. Eight rooms, one website, ',
+        'and a cellar under it.')
     say()
     say(C.text, '  ', cmd('look', 'look', 'look around'),
         C.text, '           ', C.desc, 'look around you')
@@ -254,6 +260,9 @@ function D.help()
     say(C.text, '  ', cmd('fetch <name>', 'fetch tempAlias',
         'the imp keeps a box for every function this client has'),
         C.text, '   ', C.desc, 'the imp in the Stacks deals only in exact names')
+    say(C.text, '  ', cmd('hang <n>', 'hang',
+        'the Gallery puts a real screenshot on the screen'),
+        C.text, '       ', C.desc, 'in the Gallery, east — the one room that draws rather than prints')
     say()
     -- The one place a colour tag is written by hand rather than by say(): the
     -- sample has to be closed with </u> as well as opened, because everything
@@ -319,6 +328,12 @@ function D.input(raw)
         -- the visitor happens to be standing.
         if rest == '' and verb == 'download' then
             press(true)
+        elseif rest:match('^down%f[%W]') then
+            -- 'take down the picture' is the one thing in this world that is
+            -- taken *off* something rather than out of it. Caught here rather
+            -- than in D.take() because the noun after it is a direction
+            -- everywhere else.
+            D.unhang()
         else
             D.take(rest)
         end
@@ -386,6 +401,22 @@ function D.input(raw)
             D.triggerOff()
         else
             D.watchFor(word)
+        end
+    elseif verb == 'hang' or verb == 'unhang' then
+        -- `hang 3`, `hang aardwolf`, `hang` for whichever comes to hand;
+        -- `hang off` and `unhang` take it down again. The Gallery is the one
+        -- room that fetches rather than prints — see mudlet-demo/frame.lua.
+        local word = rest:gsub('^up%s+', ''):gsub('^on%s+', '')
+        if verb == 'unhang' or word == 'off' or word == 'down' or word == 'none' then
+            D.unhang()
+        elseif D.here == 'gallery' then
+            D.hang(word)
+        else
+            -- Refused where there is no hook, and told where one is: the same
+            -- bargain `fetch` strikes outside the Stacks and the kettle strikes
+            -- outside the Workshop.
+            say(C.text, 'There is nothing here to hang it on. The hook, and the wall ',
+                'the pictures come off, are in the Gallery — east of the front page.')
         end
     elseif verb == 'help' or verb == 'commands' or verb == '?' then
         D.help()

@@ -57,6 +57,11 @@ defined( 'ABSPATH' ) || exit;
 define( 'MUDLET_MAKERS_VERSION', '0.1.1' );
 define( 'MUDLET_MAKERS_FILE', __FILE__ );
 
+// The Mudlet menu and the sync schedules, and the seams that let this run
+// from the theme's zip as well as from wp-content/plugins. One source file
+// each, wordpress/plugin/shared/ - see their headers before editing.
+require_once __DIR__ . '/shared/mudlet-bundle.php';
+require_once __DIR__ . '/shared/mudlet-sync.php';
 require_once __DIR__ . '/includes/class-store.php';
 require_once __DIR__ . '/includes/class-source.php';
 require_once __DIR__ . '/includes/class-sync.php';
@@ -64,12 +69,16 @@ require_once __DIR__ . '/includes/class-cli.php';
 require_once __DIR__ . '/includes/class-admin.php';
 require_once __DIR__ . '/includes/api.php';
 
-add_action( 'plugins_loaded', 'mudlet_makers_boot' );
+// Not add_action( 'plugins_loaded', … ) directly: that hook has already fired
+// when this is loaded from the theme rather than from wp-content/plugins.
+Mudlet_Bundle::boot( 'mudlet_makers_boot' );
 /**
  * Wire the pieces up.
  */
 function mudlet_makers_boot(): void {
-	load_plugin_textdomain( 'mudlet-makers', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	Mudlet_Bundle::textdomain( 'mudlet-makers', __FILE__ );
+
+	Mudlet_Sync::boot();
 
 	Mudlet_Makers_Store::init();
 	Mudlet_Makers_Sync::init();
@@ -84,7 +93,8 @@ register_activation_hook( __FILE__, 'mudlet_makers_activate' );
  *
  * No sync is kicked off here: activation happens during a request somebody is
  * waiting on, and this one costs eighteen avatar downloads. Cron picks it up
- * within the hour, or `wp mudlet-makers sync` does it now.
+ * ten minutes later; the button over the list, or `wp mudlet-makers sync`,
+ * does it now.
  */
 function mudlet_makers_activate(): void {
 	Mudlet_Makers_Store::register();

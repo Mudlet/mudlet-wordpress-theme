@@ -59,7 +59,7 @@ class Mudlet_Games_Store {
 				'labels'             => array(
 					'name'          => __( 'Games', 'mudlet-games' ),
 					'singular_name' => __( 'Game', 'mudlet-games' ),
-					'menu_name'     => __( 'Mudlet games', 'mudlet-games' ),
+					'menu_name'     => __( 'Games', 'mudlet-games' ),
 					'search_items'  => __( 'Search games', 'mudlet-games' ),
 					'not_found'     => __( 'No games synced yet.', 'mudlet-games' ),
 					// The screen is a reader, not an editor, and the heading is the
@@ -75,10 +75,8 @@ class Mudlet_Games_Store {
 					'with_front' => false,
 				),
 				'show_ui'            => true,
-				'show_in_menu'       => true,
+				'show_in_menu'       => Mudlet_Sync::MENU,
 				'show_in_rest'       => true,
-				'menu_icon'          => 'dashicons-games',
-				'menu_position'      => 27,
 				'supports'           => array( 'title', 'editor', 'excerpt', 'thumbnail', 'custom-fields' ),
 				'capabilities'       => array(
 					// A game exists because Mudlet ships it. Adding one here

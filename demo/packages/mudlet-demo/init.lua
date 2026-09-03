@@ -1,13 +1,13 @@
 -- mudlet.org, walked instead of scrolled.
 --
--- Seven rooms stand in for the site: the front page, the release downloads, the
+-- Eight rooms stand in for the site: the front page, the release downloads, the
 -- news archive, the places the site links out to, the people who built it, the
--- workshop they build it in and the index behind the manual's door. Everything a
--- visitor can open here opens the real page it is parodying — the descriptions
--- carry the links, so `look windows` is the download page's Windows row and the
--- link in it is that row's button.
+-- workshop they build it in, the index behind the manual's door and the gallery
+-- of other people's screens. Everything a visitor can open here opens the real
+-- page it is parodying — the descriptions carry the links, so `look windows` is
+-- the download page's Windows row and the link in it is that row's button.
 --
--- Two rooms are the exception to all of that, and they are the last two. The
+-- Three rooms are the exception to all of that, and they are the last three. The
 -- Workshop does not know what it says until somebody asks, because what landed
 -- this week is not a fact about the site at all (mudlet-demo/github.lua). The
 -- Stacks does not either, but for the opposite reason: what it keeps is a fact
@@ -17,6 +17,18 @@
 -- last third is not a room at all but a kettle on the Workshop bench
 -- (mudlet-demo/kettle.lua): a timer only demonstrates itself once the visitor
 -- has walked away from where they set it.
+--
+-- The Gallery is the third exception, and it is about the other half of Mudlet
+-- entirely. A trigger, an alias and a timer are all the client doing something
+-- to text; a screenshot is not text, and the one page on the site made of
+-- nothing but pictures is the natural place to hand over the interface layer.
+-- It is also the only room that fetches rather than prints
+-- (mudlet-demo/frame.lua).
+--
+-- A ninth room stands in for nothing at all. `down` twice from the front page
+-- is a cellar under the Release Vault holding this package in crates, one per
+-- file, and opening one reads that file out of the profile's own directory and
+-- counts it (mudlet-demo/rooms/cellar.lua).
 --
 -- Nothing has to be typed. Every noun, exit and suggested command prints as a
 -- clickable link, so the whole world is playable with a mouse — which is the
@@ -47,6 +59,7 @@ require('mudlet-demo.github')
 require('mudlet-demo.trigger')
 require('mudlet-demo.catalogue')
 require('mudlet-demo.kettle')
+require('mudlet-demo.frame')
 require('mudlet-demo.map')
 require('mudlet-demo.verbs')
 require('mudlet-demo.seed')

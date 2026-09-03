@@ -4,9 +4,9 @@ local SITE = require('mudlet-demo.site')
 local dl = require('mudlet-demo.download')
 local core = require('mudlet-demo.core')
 local URL = require('mudlet-demo.urls')
+local inventory = require('mudlet-demo.inventory')
 local C, say, link, cmd = core.C, core.say, core.link, core.cmd
 local spell, spellCap, thousands = core.spell, core.spellCap, core.thousands
-local SCRIPT_LINES = core.SCRIPT_LINES
 local someGames, currentBuild, press = dl.someGames, dl.currentBuild, dl.press
 
 return {
@@ -21,7 +21,7 @@ return {
             .. 'someone has left a terminal running a small MUD; you lean over it, '
             .. 'and lean over it, and lean over it.'
     end,
-    exits = { north = 'news', down = 'vault', west = 'commons' },
+    exits = { north = 'news', east = 'gallery', down = 'vault', west = 'commons' },
     things = {
         {
             name = 'the banner',
@@ -69,10 +69,13 @@ return {
             look = function()
                 say(C.text, 'The screen shows a room description. The room is this one. In it, ',
                     'someone is leaning over a terminal.')
-                say(C.text, 'You have found the demo. It is a real Mudlet — Lua, PCRE2, the ',
-                    'lot — compiled to WebAssembly and running in this browser tab. ',
-                    'Nothing is connected to anything. Every line you type is answered by ',
-                    'a Lua package ', thousands(SCRIPT_LINES), ' lines long.')
+                say(C.text, 'You have found the demo. This is Mudlet Web — Mudlet\'s ',
+                    'browser edition — running in this tab with nothing connected to ',
+                    'anything. The client itself is TypeScript, but the scripting under ',
+                    'it is not: a real Lua 5.1 and a real PCRE2, both arriving as ',
+                    'WebAssembly, which is why a Mudlet package runs here unchanged. ',
+                    'Every line you type is answered by one ',
+                    thousands(inventory.lines), ' lines long.')
                 say(C.dim, 'Prove it: ',
                     cmd('lua echo("hello from Lua")', 'lua echo("hello from Lua")',
                         'run it in the demo\'s own Lua VM', C.dim))

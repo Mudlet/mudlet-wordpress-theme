@@ -18,7 +18,25 @@ D.rooms = {
     workshop = require('mudlet-demo.rooms.workshop'),
     makers   = require('mudlet-demo.rooms.makers'),
     stacks   = require('mudlet-demo.rooms.stacks'),
+    gallery  = require('mudlet-demo.rooms.gallery'),
+    cellar   = require('mudlet-demo.rooms.cellar'),
 }
+
+-- The ways out of a room, sorted. Both things that show a visitor their exits
+-- go through here — the console's "Exits:" line in verbs.lua and the bar over
+-- it in map.lua — so the two are the same list because they are the same call,
+-- rather than two loops that agree until one of them is edited. pairs() over an
+-- exit table has no order, and a row whose words reshuffle between one look and
+-- the next is worse than no row at all.
+--
+-- On D rather than on the table above, because that table is iterated as
+-- rooms — a function in it would be a room named after itself.
+function D.waysOut(key)
+    local out = {}
+    for dir in pairs(D.rooms[key].exits) do out[#out + 1] = dir end
+    table.sort(out)
+    return out
+end
 
 -- Returned as well as assigned, so map.lua can require the rooms rather than
 -- rely on having been loaded after them.

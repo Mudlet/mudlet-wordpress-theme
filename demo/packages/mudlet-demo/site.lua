@@ -61,6 +61,24 @@ local SITE = {
         authors = 0,
         url     = URL.packages,
     },
+    -- The Gallery, east of the front page: /media/.
+    --
+    -- The only part of this seed that is not a fact to print but a place to
+    -- fetch from. `shots` carry a URL because the room downloads the picture
+    -- and hangs it in a real Geyser label, and the width and height come with
+    -- it so the frame can be cut to the picture rather than the picture
+    -- stretched to the frame.
+    --
+    -- Empty here, and empty is the honest answer: a screenshot is not a number
+    -- that can be guessed at, and there is nowhere to fetch one from when there
+    -- is no site behind the frame. The room has prose for that — frames stacked
+    -- facing the wall — rather than a hole in a sentence.
+    media = {
+        count = 0,
+        shots = {},
+        films = {},
+        url   = URL.media,
+    },
     -- The shelves in the Stacks: what this client can be told to do.
     --
     -- The whole of it comes from the seed, which reads Mudlet's own

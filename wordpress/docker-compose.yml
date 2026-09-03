@@ -55,18 +55,34 @@ services:
     volumes:
       - wp:/var/www/html
       - ./theme/mudlet:/var/www/html/wp-content/themes/mudlet
+      # The three plugins, mounted **inside the theme** because that is where
+      # they ship: mudlet.zip carries them under plugins/ and functions.php
+      # requires them, so nothing has to be installed or activated. Mounting
+      # them here rather than into wp-content/plugins means the local stack
+      # exercises the path a real site runs.
+      #
+      # They are still ordinary plugins, and a copy in wp-content/plugins
+      # still wins over the theme's - point these lines there and activate
+      # them by hand to try it that way.
+      #
       # The releases plugin, bind-mounted the same way as the theme so it can be
       # edited on the host. It lives in this repo for now; the intent is to move
       # it into Mudlet/mudlet-release-plugin once it has settled.
-      - ./plugin/mudlet-releases:/var/www/html/wp-content/plugins/mudlet-releases
+      - ./plugin/mudlet-releases:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-releases
+      # The Mudlet menu, the sync schedules, and the seams that let a plugin
+      # run from a theme: source files each plugin carries a copy of,
+      # mounted here the way the zips bundle them.
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-releases/shared
       # The games plugin, likewise. It reads Mudlet's own src/TGameDetails.h and
       # turns each bundled profile into a post, which is where the front page's
       # logo grid and /games/ both come from.
-      - ./plugin/mudlet-games:/var/www/html/wp-content/plugins/mudlet-games
+      - ./plugin/mudlet-games:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-games
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-games/shared
       # The makers plugin, likewise. It reads the credits out of the client's
       # own src/dlgAboutDialog.cpp and turns each person into a post, which is
       # what /the-makers/ is drawn from.
-      - ./plugin/mudlet-makers:/var/www/html/wp-content/plugins/mudlet-makers
+      - ./plugin/mudlet-makers:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers/shared
       # The hero's embedded client, served from the site's own origin - which is
       # a hard requirement, not a preference: Mudlet Web keeps profiles in
       # IndexedDB, which Safari and Firefox deny to cross-origin frames.
@@ -113,18 +129,34 @@ services:
     volumes:
       - wp:/var/www/html
       - ./theme/mudlet:/var/www/html/wp-content/themes/mudlet
+      # The three plugins, mounted **inside the theme** because that is where
+      # they ship: mudlet.zip carries them under plugins/ and functions.php
+      # requires them, so nothing has to be installed or activated. Mounting
+      # them here rather than into wp-content/plugins means the local stack
+      # exercises the path a real site runs.
+      #
+      # They are still ordinary plugins, and a copy in wp-content/plugins
+      # still wins over the theme's - point these lines there and activate
+      # them by hand to try it that way.
+      #
       # The releases plugin, bind-mounted the same way as the theme so it can be
       # edited on the host. It lives in this repo for now; the intent is to move
       # it into Mudlet/mudlet-release-plugin once it has settled.
-      - ./plugin/mudlet-releases:/var/www/html/wp-content/plugins/mudlet-releases
+      - ./plugin/mudlet-releases:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-releases
+      # The Mudlet menu, the sync schedules, and the seams that let a plugin
+      # run from a theme: source files each plugin carries a copy of,
+      # mounted here the way the zips bundle them.
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-releases/shared
       # The games plugin, likewise. It reads Mudlet's own src/TGameDetails.h and
       # turns each bundled profile into a post, which is where the front page's
       # logo grid and /games/ both come from.
-      - ./plugin/mudlet-games:/var/www/html/wp-content/plugins/mudlet-games
+      - ./plugin/mudlet-games:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-games
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-games/shared
       # The makers plugin, likewise. It reads the credits out of the client's
       # own src/dlgAboutDialog.cpp and turns each person into a post, which is
       # what /the-makers/ is drawn from.
-      - ./plugin/mudlet-makers:/var/www/html/wp-content/plugins/mudlet-makers
+      - ./plugin/mudlet-makers:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers
+      - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-makers/shared
       - ./seed:/seed:ro
     entrypoint: ["/bin/sh", "/seed/setup.sh"]
     # One shot. It is idempotent, so `docker compose up seed` re-runs it safely

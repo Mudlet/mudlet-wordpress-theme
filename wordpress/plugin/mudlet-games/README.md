@@ -10,6 +10,25 @@ wp mudlet-games sync --force    # rewrite every post regardless
 wp mudlet-games status          # what is on record
 ```
 
+## Where this runs
+
+Normally **inside the theme**. `mudlet.zip` carries this plugin under
+`plugins/mudlet-games/` and the theme’s `functions.php` requires it, so a site
+installs one archive and activates nothing.
+
+`mudlet-games.zip` is still built, and still published on every release, for a
+site that would rather have it in `wp-content/plugins` — and a copy there
+**wins**: WordPress loads plugins long before it reaches a theme, so
+`MUDLET_GAMES_VERSION` is already defined by the time the theme looks and the
+theme stands down. An installed copy older than the theme’s gets an admin
+notice rather than being a silent surprise.
+
+Either way the data is the same — `mudlet_game` posts in the database, which
+outlive both. What changes is only wiring, and all of it is in
+`shared/mudlet-bundle.php`: when to boot (`plugins_loaded` has already fired
+when a theme is read), where the assets are, where the translations are. See
+the theme’s `inc/bundled-plugins.php`.
+
 ## Where the list comes from
 
 Mudlet ships connection profiles for forty-odd MUDs. That list is not an
@@ -58,7 +77,8 @@ itself against.
 
 **`sync`** reads the header live. First run costs one header, one `.qrc` and
 forty-odd images; every run after that is one header, because an unchanged
-digest short-circuits. Cron does this daily.
+digest short-circuits. Cron does this weekly, or however often Mudlet → Sync
+says.
 
 A digest match alone is not enough to skip, though, and that is the subtle part:
 the store can be short of what upstream has — a post somebody deleted, a logo
@@ -128,8 +148,16 @@ saying where it came from and when it last synced. No inputs. The list table
 gets the logo, `host:port` and website instead of a date nobody set, and Quick
 Edit is gone.
 
-Two actions remain, because they are the only two that make sense on a record:
-**Sync from Mudlet**, and a link to the source header on GitHub.
+The only action a *record* offers is a link to the source header on GitHub.
+**Sync from Mudlet** sits over the **list** instead, because a sync reads one
+header and rewrites every game from it — "sync this one" is not a thing that
+exists. It also has to be pressable on a site with no records at all: a freshly
+activated plugin syncs nothing until cron reaches it ten minutes later, and a
+button living on a record screen is one nobody can reach until the thing it
+produces already exists.
+
+How often that cron runs is on **Mudlet → Sync**, the page the shared menu
+draws; this plugin registers its job there and ships `weekly`.
 
 Behind the screen is a real guard, not just an absence of fields:
 `wp_insert_post_data` restores the stored title, body, excerpt and slug for any

@@ -10,6 +10,25 @@ wp mudlet-makers sync --force    # rewrite every post, and retry refused avatars
 wp mudlet-makers status          # what is on record
 ```
 
+## Where this runs
+
+Normally **inside the theme**. `mudlet.zip` carries this plugin under
+`plugins/mudlet-makers/` and the theme’s `functions.php` requires it, so a site
+installs one archive and activates nothing.
+
+`mudlet-makers.zip` is still built, and still published on every release, for a
+site that would rather have it in `wp-content/plugins` — and a copy there
+**wins**: WordPress loads plugins long before it reaches a theme, so
+`MUDLET_MAKERS_VERSION` is already defined by the time the theme looks and the
+theme stands down. An installed copy older than the theme’s gets an admin
+notice rather than being a silent surprise.
+
+Either way the data is the same — `mudlet_maker` posts in the database, which
+outlive both. What changes is only wiring, and all of it is in
+`shared/mudlet-bundle.php`: when to boot (`plugins_loaded` has already fired
+when a theme is read), where the assets are, where the translations are. See
+the theme’s `inc/bundled-plugins.php`.
+
 ## Where the list comes from
 
 Mudlet credits thirty people in Help → About → About Mudlet, and that list is
@@ -85,7 +104,7 @@ deleted, so this is now the only copy.
 
 **`sync`** reads the dialog live. First run costs one file and eighteen small
 images; every run after that is one file, because an unchanged digest
-short-circuits. Cron does this daily.
+short-circuits. Cron does this weekly, or however often Mudlet → Sync says.
 
 A digest match alone is not enough to skip: the store can be short of what
 upstream has — a post somebody deleted, an avatar whose download failed — and the
@@ -109,7 +128,7 @@ that resolves to no attachment counts as missing, and is cleared and re-fetched.
 
 People also change their GitHub picture, and `github.com/<handle>.png` is the
 same URL forever, so nothing upstream says it happened. `sync --force` (and the
-record screen's button, and an `import`, and anybody whose handle has changed)
+list screen's button, and an `import`, and anybody whose handle has changed)
 re-reads the bytes and compares them with a digest of what is attached
 (`_mudlet_maker_avatar_sha`): same picture, nothing happens; different, the new
 one is attached and the old deleted, so forcing never churns the media library.
@@ -154,6 +173,13 @@ handles, the sentence as it renders, and a sidebar saying where it came from and
 when it last synced. No inputs. The list table gets the face, standing and handle
 instead of a date nobody set, ordered as the dialog orders them, and Quick Edit
 is gone.
+
+**Sync from Mudlet** is over the list, not on a record. One dialog describes
+everybody, so a sync is always all of them — and the button has to be pressable
+on a site with no records at all, which is exactly what a freshly activated
+plugin is until cron reaches it ten minutes later. How often that cron runs is
+on **Mudlet → Sync**, the page the shared menu draws; this plugin registers its
+job there and ships `weekly`.
 
 Behind the screen is a real guard, not just an absence of fields:
 `wp_insert_post_data` restores the stored title, body, excerpt, slug and order for

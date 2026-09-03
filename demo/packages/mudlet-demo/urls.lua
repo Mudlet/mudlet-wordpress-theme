@@ -13,6 +13,11 @@ local URL = {
     news     = 'https://www.mudlet.org/news/',
     makers   = 'https://www.mudlet.org/the-makers/',
     packages = 'https://packages.mudlet.org/',
+    -- The one page on the site that is nothing but its own content: the
+    -- screenshots people sent in and the screencasts somebody recorded. The
+    -- Gallery east of the front page is that page, and the only room that
+    -- fetches something rather than printing it.
+    media    = 'https://www.mudlet.org/media/',
     forum    = 'https://forums.mudlet.org/',
     wiki     = 'https://wiki.mudlet.org/',
     -- The manual's own account of what a trigger is, of what an alias is, and of
@@ -26,6 +31,9 @@ local URL = {
     -- what the imp in the Stacks writes on the lid of a box. The catalogue it
     -- reads out of is the machine-readable half of this very page.
     functions = 'https://wiki.mudlet.org/w/Manual:Lua_Functions',
+    -- The layout manager the Gallery hands over, and the one this package has
+    -- been using for itself since the bar over the console was drawn.
+    geyser   = 'https://wiki.mudlet.org/w/Manual:Geyser',
     discord  = 'https://discord.gg/kuYvMQ9',
     github   = 'https://github.com/Mudlet/Mudlet',
     -- The pages the clerk in the Workshop is reading off a wire. Every line

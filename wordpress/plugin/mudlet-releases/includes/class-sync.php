@@ -24,12 +24,33 @@ defined( 'ABSPATH' ) || exit;
  */
 class Mudlet_Releases_Sync {
 
+	/** The cheap pass: one request, every release GitHub lists. */
+	const INDEX = 'mudlet_releases_sync_index';
+
+	/** The expensive one, rationed: changelogs, contributors, checksums. */
+	const DETAIL = 'mudlet_releases_sync_detail';
+
+	/**
+	 * What the two ship with, and what Mudlet → Sync starts from.
+	 *
+	 * Weekly for the index, because a release every few weeks does not need
+	 * looking for twice a day — and the tag on an announcement post fetches
+	 * its own release anyway, so nobody writing one waits for cron.
+	 *
+	 * Hourly for the detail pass, which sounds like a lot and is not: it does
+	 * nothing at all unless a record is flagged as pending, and a query
+	 * returning nothing costs no requests. It is a drain for the backfill, not
+	 * a poll. Turn it off and the changelogs stop filling in.
+	 */
+	const EVERY        = 'weekly';
+	const EVERY_DETAIL = 'hourly';
+
 	/**
 	 * Hook up.
 	 */
 	public static function init(): void {
-		add_action( 'mudlet_releases_sync_index', array( __CLASS__, 'sync_index' ) );
-		add_action( 'mudlet_releases_sync_detail', array( __CLASS__, 'sync_detail_batch' ) );
+		add_action( self::INDEX, array( __CLASS__, 'sync_index' ) );
+		add_action( self::DETAIL, array( __CLASS__, 'sync_detail_batch' ) );
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -38,15 +59,11 @@ class Mudlet_Releases_Sync {
 	}
 
 	/**
-	 * Keep both jobs scheduled.
+	 * Keep both jobs on whatever cadence the site has chosen.
 	 */
 	public static function schedule(): void {
-		if ( ! wp_next_scheduled( 'mudlet_releases_sync_index' ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'twicedaily', 'mudlet_releases_sync_index' );
-		}
-		if ( ! wp_next_scheduled( 'mudlet_releases_sync_detail' ) ) {
-			wp_schedule_event( time() + 15 * MINUTE_IN_SECONDS, 'hourly', 'mudlet_releases_sync_detail' );
-		}
+		Mudlet_Sync::reschedule( self::INDEX, self::EVERY );
+		Mudlet_Sync::reschedule( self::DETAIL, self::EVERY_DETAIL );
 	}
 
 	/**
@@ -57,7 +74,10 @@ class Mudlet_Releases_Sync {
 	 * single call. Only checksums and changelogs are left outstanding.
 	 *
 	 * @param int $per_page How many releases to ask for.
-	 * @return int How many records were written.
+	 * @return int How many records were written, or -1 if GitHub could not be
+	 *             read. Nought is the ordinary answer — the list has not moved
+	 *             since this morning — and somebody who just pressed a button
+	 *             deserves to be told which of the two happened.
 	 */
 	public static function sync_index( int $per_page = 30 ): int {
 		$list = Mudlet_Releases_Github_Client::get_json(
@@ -65,7 +85,7 @@ class Mudlet_Releases_Sync {
 		);
 
 		if ( ! is_array( $list ) ) {
-			return 0;
+			return -1;
 		}
 
 		$written = 0;
@@ -248,6 +268,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		 */
 		public function sync( array $args, array $assoc_args ): void {
 			$written = Mudlet_Releases_Sync::sync_index();
+			if ( $written < 0 ) {
+				WP_CLI::error( 'Could not read the releases list from GitHub.' );
+			}
 			WP_CLI::log( sprintf( '%d releases indexed.', $written ) );
 
 			$detail = (int) ( $assoc_args['detail'] ?? 0 );

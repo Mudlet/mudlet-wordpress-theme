@@ -1,0 +1,124 @@
+# Cut a release of the theme.
+#
+#   git tag v0.2.0 && git push origin v0.2.0
+#
+# and a few minutes later every site running this theme is offered 0.2.0 on its
+# Dashboard -> Updates screen, or takes it on its own — see the theme's
+# inc/updates.php for the half that does the asking.
+#
+# **The tag is the version.** Nothing in the repository is bumped to cut a
+# release: build-dist.mjs writes the number into the archives' copies of
+# style.css and the three plugin headers, and leaves the working tree alone.
+# That means no release commit, no chance of a tag and a header disagreeing,
+# and a `v` prefix that exists only in git — a WordPress header is `0.2.0`.
+#
+# mudlet.zip is the whole site: the theme, the demo client under assets/demo/,
+# and the three plugins under plugins/. The plugin zips are published beside it
+# for a site that would rather install them the old way, and for a site that has
+# changed theme and wants to keep its games — nothing needs them otherwise.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build, without the v (a dry run: builds and uploads the zips as artifacts, publishes no release)'
+        required: true
+        default: '0.0.0-test'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+
+      - name: Work out the version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version='${{ inputs.version }}'
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Building $version"
+
+      # The hero. Same origin is a hard requirement — Mudlet Web keeps profiles
+      # in IndexedDB, which Safari and Firefox deny to cross-origin frames — so
+      # the client ships inside the theme rather than being pointed at from it.
+      # `npm run build` also rebuilds the demo world's .mpackage.
+      - name: Build the demo client
+        working-directory: demo
+        run: |
+          npm ci
+          npm run build
+
+      # The only static check this repository has. It covers demo/src, which is
+      # what was just built.
+      - name: Type-check the demo client
+        run: npx tsc --noEmit -p demo/tsconfig.json
+
+      - name: Build the archives
+        run: node wordpress/tools/build-dist.mjs --with-demo --version '${{ steps.version.outputs.version }}'
+
+      # Cheap proof the archive is the shape WordPress installs: one top-level
+      # folder named for the slug, the stamped header inside it, and the plugins
+      # the theme is supposed to be carrying.
+      - name: Check what came out
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cd wordpress/dist
+          unzip -l mudlet.zip | head -5
+          unzip -p mudlet.zip mudlet/style.css | grep -q "^Version: $VERSION"
+          unzip -p mudlet.zip mudlet/assets/demo/index.html > /dev/null
+          for slug in mudlet-games mudlet-makers mudlet-releases; do
+            unzip -p mudlet.zip "mudlet/plugins/$slug/$slug.php" | grep -q "Version: *$VERSION"
+            unzip -p mudlet.zip "mudlet/plugins/$slug/shared/mudlet-sync.php" > /dev/null
+            unzip -p mudlet.zip "mudlet/plugins/$slug/shared/mudlet-bundle.php" > /dev/null
+          done
+
+      # A dry run stops here. The zips are on the workflow run for anyone who
+      # wants to upload one by hand; nothing is published and no site is
+      # offered an update.
+      - name: Keep the archives
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mudlet-${{ steps.version.outputs.version }}
+          path: wordpress/dist/*.zip
+
+      # The theme's updater reads `releases/latest`, which is GitHub's own
+      # "newest published, not a draft, not a prerelease". So a tag with a
+      # hyphen in it — v0.2.0-rc1 — is published as a prerelease and no site is
+      # offered it, which is the whole point of tagging one.
+      - name: Publish the release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=
+          case "${{ steps.version.outputs.version }}" in *-*) prerelease=--prerelease ;; esac
+
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            $prerelease \
+            wordpress/dist/mudlet.zip \
+            wordpress/dist/mudlet-games.zip \
+            wordpress/dist/mudlet-makers.zip \
+            wordpress/dist/mudlet-releases.zip

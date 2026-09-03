@@ -65,11 +65,13 @@ class Mudlet_Games_Block {
 	 * Register the editor script and the block.
 	 */
 	public static function register(): void {
-		$file = plugin_dir_path( MUDLET_GAMES_FILE ) . 'assets/block-games.js';
+		$file = dirname( MUDLET_GAMES_FILE ) . '/assets/block-games.js';
 
 		wp_register_script(
 			self::HANDLE,
-			plugins_url( 'assets/block-games.js', MUDLET_GAMES_FILE ),
+			// Not plugins_url(): the theme carries a copy of this plugin, and
+			// that helper answers for wp-content/plugins only. See shared/mudlet-bundle.php.
+			Mudlet_Bundle::url( MUDLET_GAMES_FILE, 'assets/block-games.js' ),
 			array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n', 'wp-server-side-render' ),
 			// mtime rather than the plugin version: the version moves once a
 			// release, this file moves whenever somebody edits it.

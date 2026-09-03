@@ -51,6 +51,11 @@ defined( 'ABSPATH' ) || exit;
 define( 'MUDLET_GAMES_VERSION', '0.1.1' );
 define( 'MUDLET_GAMES_FILE', __FILE__ );
 
+// The Mudlet menu and the sync schedules, and the seams that let this run
+// from the theme's zip as well as from wp-content/plugins. One source file
+// each, wordpress/plugin/shared/ - see their headers before editing.
+require_once __DIR__ . '/shared/mudlet-bundle.php';
+require_once __DIR__ . '/shared/mudlet-sync.php';
 require_once __DIR__ . '/includes/class-store.php';
 require_once __DIR__ . '/includes/class-source.php';
 require_once __DIR__ . '/includes/class-sync.php';
@@ -59,12 +64,16 @@ require_once __DIR__ . '/includes/class-admin.php';
 require_once __DIR__ . '/includes/class-block.php';
 require_once __DIR__ . '/includes/api.php';
 
-add_action( 'plugins_loaded', 'mudlet_games_boot' );
+// Not add_action( 'plugins_loaded', … ) directly: that hook has already fired
+// when this is loaded from the theme rather than from wp-content/plugins.
+Mudlet_Bundle::boot( 'mudlet_games_boot' );
 /**
  * Wire the pieces up.
  */
 function mudlet_games_boot(): void {
-	load_plugin_textdomain( 'mudlet-games', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	Mudlet_Bundle::textdomain( 'mudlet-games', __FILE__ );
+
+	Mudlet_Sync::boot();
 
 	Mudlet_Games_Store::init();
 	Mudlet_Games_Sync::init();
@@ -79,8 +88,9 @@ register_activation_hook( __FILE__, 'mudlet_games_activate' );
  * 404ing until somebody saves the permalinks screen.
  *
  * No sync is kicked off here: activation happens during a request somebody is
- * waiting on, and this one costs forty icon downloads. Cron picks it up within
- * the hour, or `wp mudlet-games sync` does it now.
+ * waiting on, and this one costs forty icon downloads. Cron picks it up ten
+ * minutes later; the button over the list, or `wp mudlet-games sync`, does it
+ * now.
  */
 function mudlet_games_activate(): void {
 	Mudlet_Games_Store::register();

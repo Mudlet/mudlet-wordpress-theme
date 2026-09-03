@@ -49,6 +49,11 @@ defined( 'ABSPATH' ) || exit;
 define( 'MUDLET_RELEASES_VERSION', '0.1.0' );
 define( 'MUDLET_RELEASES_FILE', __FILE__ );
 
+// The Mudlet menu and the sync schedules, and the seams that let this run
+// from the theme's zip as well as from wp-content/plugins. One source file
+// each, wordpress/plugin/shared/ - see their headers before editing.
+require_once __DIR__ . '/shared/mudlet-bundle.php';
+require_once __DIR__ . '/shared/mudlet-sync.php';
 require_once __DIR__ . '/includes/class-github-client.php';
 require_once __DIR__ . '/includes/class-release.php';
 require_once __DIR__ . '/includes/class-changelog.php';
@@ -62,12 +67,16 @@ require_once __DIR__ . '/includes/class-admin.php';
 require_once __DIR__ . '/includes/class-post-export.php';
 require_once __DIR__ . '/includes/api.php';
 
-add_action( 'plugins_loaded', 'mudlet_releases_boot' );
+// Not add_action( 'plugins_loaded', … ) directly: that hook has already fired
+// when this is loaded from the theme rather than from wp-content/plugins.
+Mudlet_Bundle::boot( 'mudlet_releases_boot' );
 /**
  * Wire the pieces up.
  */
 function mudlet_releases_boot(): void {
-	load_plugin_textdomain( 'mudlet-releases', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	Mudlet_Bundle::textdomain( 'mudlet-releases', __FILE__ );
+
+	Mudlet_Sync::boot();
 
 	Mudlet_Releases_Store::init();
 	Mudlet_Releases_Sync::init();
@@ -85,5 +94,9 @@ register_deactivation_hook( __FILE__, 'mudlet_releases_deactivate' );
  * does not cost a round of API calls.
  */
 function mudlet_releases_deactivate(): void {
+	// All three, not just the cache warm: an event whose callback is gone still
+	// comes due, and WP-Cron rewrites the array on every pass to find that out.
 	wp_clear_scheduled_hook( 'mudlet_releases_refresh' );
+	wp_clear_scheduled_hook( Mudlet_Releases_Sync::INDEX );
+	wp_clear_scheduled_hook( Mudlet_Releases_Sync::DETAIL );
 }

@@ -65,7 +65,7 @@ class Mudlet_Makers_Store {
 				'labels'             => array(
 					'name'          => __( 'Makers', 'mudlet-makers' ),
 					'singular_name' => __( 'Maker', 'mudlet-makers' ),
-					'menu_name'     => __( 'Mudlet makers', 'mudlet-makers' ),
+					'menu_name'     => __( 'Makers', 'mudlet-makers' ),
 					'search_items'  => __( 'Search makers', 'mudlet-makers' ),
 					'not_found'     => __( 'No makers synced yet.', 'mudlet-makers' ),
 					// The screen is a reader, not an editor, and the heading is
@@ -82,10 +82,8 @@ class Mudlet_Makers_Store {
 					'with_front' => false,
 				),
 				'show_ui'            => true,
-				'show_in_menu'       => true,
+				'show_in_menu'       => Mudlet_Sync::MENU,
 				'show_in_rest'       => true,
-				'menu_icon'          => 'dashicons-groups',
-				'menu_position'      => 28,
 				'supports'           => array( 'title', 'editor', 'thumbnail', 'custom-fields', 'page-attributes' ),
 				'capabilities'       => array(
 					// A maker exists because Mudlet credits them. Adding one

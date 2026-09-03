@@ -16,7 +16,9 @@ return {
             .. 'loose and its contents faintly warm. On the wall, in chalk: '
             .. SITE.release.version .. ' — ' .. SITE.release.date_loud .. '.'
     end,
-    exits = { up = 'home' },
+    -- Down again: the cellar under this one is the package itself, in crates.
+    -- See rooms/cellar.lua.
+    exits = { up = 'home', down = 'cellar' },
     things = {
         {
             name = 'windows',

@@ -15,6 +15,9 @@ wordpress/.env
 wordpress/seed/wxr/*.xml
 # bind-mount target for demo/dist; docker creates it
 wordpress/theme/mudlet/assets/demo/
+# same, for the three plugins the theme carries: compose mounts
+# wordpress/plugin/* in here so the stack runs what the zip ships
+wordpress/theme/mudlet/plugins/
 
 # built by wordpress/tools/build-dist.mjs, for uploading to a test site
 wordpress/dist/

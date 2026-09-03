@@ -10,8 +10,12 @@
  * lesson learned is that the site is broken.
  *
  * So the editor is replaced with a reader. The screen shows what was synced,
- * where it came from, and when — and offers the only two actions that make
- * sense on a record: re-read it, or go and look at the source.
+ * where it came from, and when, and links to the source.
+ *
+ * The sync itself is over the *list*, not on a record. One header describes
+ * every game, so a sync is always all of them — and the button has to be
+ * reachable on a site with no records at all, which is exactly the state a
+ * freshly activated plugin is in.
  *
  * The write guard behind it is not decoration. Read-only has to mean read-only
  * on every path, including REST and Quick Edit, or it is only a suggestion.
@@ -51,6 +55,9 @@ class Mudlet_Games_Admin {
 		add_action( 'manage_' . Mudlet_Games_Store::POST_TYPE . '_posts_custom_column', array( __CLASS__, 'column' ), 10, 2 );
 		add_filter( 'post_row_actions', array( __CLASS__, 'row_actions' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-' . Mudlet_Games_Store::POST_TYPE, '__return_empty_array' );
+
+		add_action( 'manage_posts_extra_tablenav', array( __CLASS__, 'tablenav' ) );
+		add_filter( 'mudlet_sync_jobs', array( __CLASS__, 'sync_job' ) );
 
 		add_action( 'admin_post_' . self::SYNC_ACTION, array( __CLASS__, 'handle_sync' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
@@ -267,7 +274,10 @@ class Mudlet_Games_Admin {
 	}
 
 	/**
-	 * Where it came from, and the two things you can do about it.
+	 * Where it came from, and when it was last read.
+	 *
+	 * No sync button here: there is no such thing as syncing one game, so it
+	 * belongs over the list — see tablenav().
 	 *
 	 * @param WP_Post $post Game.
 	 */
@@ -309,12 +319,6 @@ class Mudlet_Games_Admin {
 					</tr>
 				</tbody>
 			</table>
-
-			<p class="mudlet-rec__actions">
-				<a class="button button-primary" href="<?php echo esc_url( self::sync_url() ); ?>">
-					<?php esc_html_e( 'Sync from Mudlet', 'mudlet-games' ); ?>
-				</a>
-			</p>
 		</div>
 		<?php
 	}
@@ -423,6 +427,84 @@ class Mudlet_Games_Admin {
 	}
 
 	// ── sync now ──────────────────────────────────────────────────────
+
+	/**
+	 * Put this sync on the Mudlet → Sync screen.
+	 *
+	 * The screen is a list of whoever registers here, so a plugin that is not
+	 * active is a row that is not drawn rather than a broken one.
+	 *
+	 * @param array<string, array<string, mixed>> $jobs Registered syncs.
+	 * @return array<string, array<string, mixed>>
+	 */
+	public static function sync_job( array $jobs ): array {
+		$count = Mudlet_Games_Sync::count();
+
+		$jobs[ Mudlet_Games_Sync::HOOK ] = array(
+			'label'    => __( 'Games', 'mudlet-games' ),
+			'note'     => __( 'One request to Mudlet\'s src/TGameDetails.h, and the logos of any game not already in the media library.', 'mudlet-games' ),
+			'default'  => Mudlet_Games_Sync::EVERY,
+			'synced'   => (int) get_option( Mudlet_Games_Sync::SYNCED ),
+			'summary'  => sprintf(
+				/* translators: %d: number of games on record */
+				_n( '%d on record', '%d on record', $count, 'mudlet-games' ),
+				$count
+			),
+			'sync_url' => self::sync_url(),
+		);
+
+		return $jobs;
+	}
+
+	/**
+	 * The button, over the list.
+	 *
+	 * Two reasons it is here and not on a record. A sync reads one header and
+	 * rewrites every game from it, so "sync this one" is not a thing that
+	 * exists; and a fresh install has no records to hang a button on — it
+	 * syncs nothing until cron gets to it an hour later, and until then the
+	 * only screen there is is this empty one.
+	 *
+	 * @param string $which Which tablenav is being drawn.
+	 */
+	public static function tablenav( string $which ): void {
+		$screen = get_current_screen();
+
+		if ( 'top' !== $which || ! $screen || ! self::ours( (string) $screen->post_type ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		$synced = (int) get_option( Mudlet_Games_Sync::SYNCED );
+		$count  = Mudlet_Games_Sync::count();
+		?>
+		<div class="alignleft actions">
+			<a class="button" href="<?php echo esc_url( self::sync_url() ); ?>">
+				<?php esc_html_e( 'Sync from Mudlet', 'mudlet-games' ); ?>
+			</a>
+			<span class="mudlet-sync__note">
+				<?php
+				if ( $synced ) {
+					printf(
+						/* translators: 1: human-readable time difference, 2: number of games */
+						esc_html( _n( 'Last synced %1$s ago · %2$d game on record', 'Last synced %1$s ago · %2$d games on record', $count, 'mudlet-games' ) ),
+						esc_html( human_time_diff( $synced ) ),
+						(int) $count
+					);
+				} else {
+					esc_html_e( 'Never synced yet — the first run is due within minutes.', 'mudlet-games' );
+				}
+				?>
+			</span>
+		</div>
+		<style>
+			.mudlet-sync__note{display:inline-block;margin-left:9px;line-height:30px;color:#646970}
+		</style>
+		<?php
+	}
 
 	/**
 	 * The nonce-protected URL behind the button.

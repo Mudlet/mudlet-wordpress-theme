@@ -35,24 +35,14 @@ local core = require('mudlet-demo.core')
 local URL = require('mudlet-demo.urls')
 local C, say, cmd, link = core.C, core.say, core.cmd, core.link
 
--- One constant, for the same reason trigger.lua keeps one word: the number
--- appears in the prose, in the Lua the visitor is offered, and in the call the
--- shortcut makes, and a demonstration whose three halves disagree teaches the
--- wrong lesson.
+-- One constant, for the same reason trigger.lua keeps one word: the number is
+-- in the prose the room says and in the call the switch makes, and a
+-- demonstration whose two halves disagree teaches the wrong lesson.
 --
 -- Fifteen seconds because the point is the walking. Long enough to leave the
 -- Workshop, go through the commons and be somewhere else entirely when it goes
 -- off; short enough that a visitor who stands and waits has not been abandoned.
 local SECONDS = 15
-
--- The call the kettle puts up, and — near enough — the one D.boil() makes for
--- anybody who would rather not read Lua. Written once, so what is shown and what
--- is run cannot drift apart in the number that matters.
-local function luaFor(s)
-    return string.format(
-        'lua tempTimer(%d, function() cecho("\\n<gold>The kettle clicks off.\\n") end)', s)
-end
-local LUA = luaFor(SECONDS)
 
 -- The visitor's timer. Kept so a second putting-on replaces the first rather
 -- than stacking, and so taking it off has something to kill.
@@ -101,9 +91,6 @@ function D.boil()
         local secs = left()
         say(C.text, 'It is already on', secs and (', about ' .. core.spell(secs)
             .. ' seconds off the boil') or '', '.')
-        if secs then
-            say(C.dim, '  remainingTime(' .. tostring(id) .. ') -> ' .. tostring(secs))
-        end
         say(C.dim, 'You could ', cmd('take it off', 'kettle off', 'killTimer', C.dim),
             C.dim, ' instead.')
         return
@@ -114,11 +101,14 @@ function D.boil()
     say()
     say(C.text, 'You fill it at the tap in the corner and press the switch down. It ',
         'begins to tick.')
-    -- The Lua the shortcut just stood in for, so even the lazy path shows its
-    -- working — the same bargain `trigger on gold` and `alias b` strike.
-    say(C.dim, '  ', luaFor(SECONDS))
-    say(C.dim, '  -> timer ', tostring(id), '   ·   ',
-        cmd('kettle off', 'kettle off', 'kill it again', C.dim))
+    -- No echo of the call it just made, and none anywhere else in this file.
+    -- The Stacks and the Workshop print their Lua because in those two rooms
+    -- the Lua *is* what the visitor came for — an imp handing over a box with
+    -- an alias on the lid, a bench meant for working at. A kettle is a kettle:
+    -- the lesson is the line that arrives two rooms away, and source under the
+    -- switch is the console talking over it. `look kettle` names tempTimer and
+    -- links the manual, which is as much as a kettle owes anybody.
+    say(C.dim, '  ', cmd('kettle off', 'kettle off', 'lift the switch again', C.dim))
     say()
     say(C.dim, 'Now leave. Go ', cmd('south', 'south', 'go south', C.dim),
         C.dim, ', go anywhere — it will find you in ', core.spell(SECONDS),
@@ -139,7 +129,6 @@ function D.kettleOff(quiet)
     if quiet then return end
     say(C.text, 'You lift the switch. The ticking stops, and nothing will happen ',
         'now — which is the other half of a timer having an id.')
-    say(C.dim, '  killTimer(id)')
 end
 
 -- Pressing it is the physical version of both verbs, so it toggles: a kettle
@@ -154,13 +143,9 @@ function D.lookKettle()
         'this room is yesterday\'s. This is how it stops being.')
     say(C.dim, 'Everything else here waits on somebody typing. This does not: put it ',
         'on, walk away, and it will interrupt you wherever you have got to.')
-    say()
-    say(C.dim, '  ', cmd(LUA, LUA, 'set a real timer in this client', C.exit))
-    say()
-    say(C.dim, 'That is the whole of it — ', link('tempTimer', URL.timers), C.dim,
-        ', a number of seconds, and something to do when they are up. Click it, ',
-        'or ', cmd('put the kettle on', 'put the kettle on',
-            'the same timer, with the world watching it', C.dim),
+    say(C.dim, 'It is a ', link('tempTimer', URL.timers), C.dim, ' and nothing more — ',
+        'a number of seconds, and something to do when they are up. ',
+        cmd('Put it on', 'put the kettle on', 'fifteen seconds, starting now', C.dim),
         C.dim, ' and let the world tell you where you were standing.')
 end
 

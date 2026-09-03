@@ -12,6 +12,11 @@ defined( 'ABSPATH' ) || exit;
 
 define( 'MUDLET_VERSION', wp_get_theme()->get( 'Version' ) );
 
+// The games, makers and releases plugins the zip carries, unless the site has
+// them installed the old way - see the file. First, so everything after it can
+// take their function_exists() seams at their word.
+require_once __DIR__ . '/inc/bundled-plugins.php';
+
 require_once __DIR__ . '/inc/setup.php';
 require_once __DIR__ . '/inc/enqueue.php';
 require_once __DIR__ . '/inc/blocks.php';
@@ -32,6 +37,7 @@ require_once __DIR__ . '/inc/demo-seed.php';
 require_once __DIR__ . '/inc/release-meta.php';
 require_once __DIR__ . '/inc/divi-cleanup.php';
 require_once __DIR__ . '/inc/languages.php';
+require_once __DIR__ . '/inc/updates.php';
 
 if ( is_admin() ) {
 	require_once __DIR__ . '/inc/front-content-admin.php';

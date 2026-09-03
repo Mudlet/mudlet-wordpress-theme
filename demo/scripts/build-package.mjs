@@ -53,20 +53,53 @@ if (!modules.includes(ENTRY)) {
 	throw new Error(`packages/mudlet-demo/${ENTRY} is missing — the bootstrap has nothing to require`);
 }
 
-// The world quotes its own size back at the visitor, from the terminal on the
-// plinth. Counting the Lua being zipped is the only way that stays true: a
-// number typed into the prose is wrong at the next edit — including the edit
-// that changes the prose. One module carries a `local SCRIPT_LINES = <n>` line
-// for this to overwrite; the substitution is line-for-line, so the count it
-// injects still describes the files it was counted from.
-const lineCount = s => s.split('\n').length - (s.endsWith('\n') ? 1 : 0);
-const scriptLines = paths.reduce((n, f) => n + lineCount(src[f]), 0);
-const marker = /^local SCRIPT_LINES = \d+(?=\r?$)/m;
+// The world quotes its own size back at the visitor — the terminal on the
+// plinth claims a line count, and the cellar under the Release Vault has the
+// files themselves on shelves, one crate each. Counting the Lua being zipped is
+// the only way either of them stays true: a number typed into the prose is
+// wrong at the next edit, including the edit that changes the prose.
+//
+// One module carries an empty `local FILES = {}` for this to fill in — one line
+// of table literal replacing one line of nothing, so the counts still describe
+// the files they were counted from, that module included. The total is summed
+// out of the same table in Lua rather than injected beside it: two generated
+// numbers can disagree and one cannot.
+//
+// Comment lines and code lines are counted apart because the cellar's joke is
+// the ratio between them, and the crate worth opening for it is a *small* file
+// — the shelf shows the heaviest dozen, and the most over-explained thing in
+// this package is thirty-six lines long. Counting here is what lets the shelf
+// point at it. The room counts the same file again when the lid comes off, off
+// the disk rather than out of this table, and the two agree because they are
+// two counts of one file: `^%s*%-%-` there is this `/^\s*--/`.
+//
+// The last field is whether the file ships as a file. Everything does except
+// embed.lua, which the XML carries as a script node — so the one crate whose
+// lid will not come off says why rather than leaving the room to guess.
+const measure = s => {
+	const lines = s.split('\n');
+	if (lines[lines.length - 1] === '') lines.pop();
+	let comment = 0;
+	let code = 0;
+	for (const line of lines) {
+		if (/^\s*--/.test(line)) comment += 1;
+		else if (line.trim() !== '') code += 1;
+	}
+	return { lines: lines.length, comment, code };
+};
+const scriptLines = paths.reduce((n, f) => n + measure(src[f]).lines, 0);
+const inventory = paths
+	.map(f => {
+		const m = measure(src[f]);
+		return `{[[${f}]],${m.lines},${m.comment},${m.code},${f !== EMBED}}`;
+	})
+	.join(', ');
+const marker = /^local FILES = \{\}(?=\r?$)/m;
 const carriers = modules.filter(f => marker.test(src[f]));
 if (carriers.length !== 1) {
-	throw new Error(`expected exactly one \`local SCRIPT_LINES = <n>\` line in the package, found ${carriers.length}`);
+	throw new Error(`expected exactly one \`local FILES = {}\` line in the package, found ${carriers.length}`);
 }
-src[carriers[0]] = src[carriers[0]].replace(marker, () => `local SCRIPT_LINES = ${scriptLines}`);
+src[carriers[0]] = src[carriers[0]].replace(marker, () => `local FILES = { ${inventory} }`);
 
 // A returning visitor keeps the world they already have unless the package's
 // version string changes, and that string had to be bumped by hand in two

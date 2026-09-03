@@ -236,12 +236,11 @@ if [ "${SEED_LANGUAGES:-1}" = "1" ]; then
 fi
 
 # ── the releases plugin (this repo) ───────────────────────────────────
-# Bind-mounted from wordpress/plugin/mudlet-releases. It owns the release data:
-# give a post a tag and it supplies the changelog, the counts and the download
-# table's sizes, URLs and checksums. The theme reads it through function_exists,
-# so deactivating this degrades the site rather than breaking it.
+# Carried inside the theme at plugins/mudlet-releases (bind-mounted there from
+# wordpress/plugin/mudlet-releases), so there is nothing to activate. It owns the
+# release data: give a post a tag and it supplies the changelog, the counts and
+# the download table's sizes, URLs and checksums.
 log "Mudlet Releases plugin"
-$WP plugin activate mudlet-releases
 
 # Backfill the release store from a dump, if one has been generated. Without it
 # the store fills itself from the API over the following day - correct, but slow,
@@ -258,13 +257,12 @@ else
 fi
 
 # ── the games plugin (this repo) ──────────────────────────────────────
-# Bind-mounted from wordpress/plugin/mudlet-games. It owns the games data:
-# which MUDs Mudlet bundles, read from the client's own src/TGameDetails.h,
-# one post per game. The theme reads it through function_exists, so
-# deactivating this leaves the front page on its built-in fifteen.
+# Carried inside the theme, as above. It owns the games data: which MUDs
+# Mudlet bundles, read from the client's own src/TGameDetails.h, one post per
+# game. The theme reads it through function_exists, so a site whose theme has
+# been changed loses the grid rather than breaking on it.
 if [ "${SEED_GAMES:-1}" = "1" ]; then
 	log "Mudlet Games plugin"
-	$WP plugin activate mudlet-games
 
 	# One header and forty-odd logos, read from Mudlet's own source. Cron
 	# re-syncs daily from here.
@@ -272,14 +270,12 @@ if [ "${SEED_GAMES:-1}" = "1" ]; then
 fi
 
 # ── the makers plugin (this repo) ─────────────────────────────────────
-# Bind-mounted from wordpress/plugin/mudlet-makers. It owns the credits: the
-# people Mudlet names in Help -> About, read from the client's own
-# src/dlgAboutDialog.cpp, one post per person. /the-makers/ keeps its editable
-# prose and the theme draws the roster underneath it - so deactivating this
-# leaves the page reading fine, just with no names on it.
+# Carried inside the theme, as above. It owns the credits: the people Mudlet
+# names in Help -> About, read from the client's own src/dlgAboutDialog.cpp,
+# one post per person. /the-makers/ keeps its editable prose and the theme
+# draws the roster underneath it.
 if [ "${SEED_MAKERS:-1}" = "1" ]; then
 	log "Mudlet Makers plugin"
-	$WP plugin activate mudlet-makers
 
 	# One file and eighteen small avatars, read from Mudlet's own credits. Two
 	# of the eighteen GitHub handles 404 - accounts long since renamed or

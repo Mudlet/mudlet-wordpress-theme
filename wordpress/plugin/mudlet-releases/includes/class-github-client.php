@@ -202,10 +202,12 @@ function mudlet_releases_refresh_latest(): void {
 
 add_action( 'init', 'mudlet_releases_schedule_refresh' );
 /**
- * Schedule that refresh if it is not already.
+ * Keep that refresh on whatever cadence the site has chosen.
+ *
+ * Daily by default rather than the twice a day it used to be: it is a cache
+ * that answers with the newest release, and a page showing this morning's
+ * answer to a question whose answer changes every few weeks is not stale.
  */
 function mudlet_releases_schedule_refresh(): void {
-	if ( ! wp_next_scheduled( 'mudlet_releases_refresh' ) ) {
-		wp_schedule_event( time() + HOUR_IN_SECONDS, 'twicedaily', 'mudlet_releases_refresh' );
-	}
+	Mudlet_Sync::reschedule( 'mudlet_releases_refresh', 'daily' );
 }

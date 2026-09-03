@@ -49,14 +49,17 @@ requires the package.
 | `core.lua` | the palette, the two kinds of link, `say()`, numbers into words |
 | `urls.lua` | every link that leaves the world |
 | `site.lua` | `SITE` — the shape of the seed's answer, and the fallback |
+| `inventory.lua` | the one generated file: every module the build zipped, and its size |
 | `seed.lua` | the one request that replaces what it can reach |
 | `download.lua` | the crates and the orange button — one release, described twice |
 | `rooms/init.lua` | assembles `D.rooms` from one file per room |
-| `rooms/*.lua` | seven rooms, one file each |
+| `rooms/*.lua` | nine rooms, one file each |
 | `people.lua` | `MAKERS`, and everything the sage says out of it |
 | `github.lua` | the clerk: the only thing here that talks to anything but the site |
 | `trigger.lua` | the clerk's other job, and the trigger the visitor writes for it |
 | `catalogue.lua` | the imp: two lists of names, and the alias that beats its wager |
+| `frame.lua` | the Gallery's hook: a screenshot fetched, and a Geyser label to hang it in |
+| `crates.lua` | the cellar's shelf, and reading a module off the profile's own disk |
 | `map.lua` | the mapper, the status bar, and the room ids they share |
 | `verbs.lua` | the parser and the verbs behind it; everything arrives at `D.input` |
 | `boot.lua` | the fake connect, and the first room on the other side of it |
@@ -82,6 +85,15 @@ fires, so the catch-all carries a negative lookahead for `lua ` rather than
 matching everything; a bare `lua` still falls through to the world's normal
 reply. Both patterns live in `scripts/build-package.mjs`.
 
+**What is and is not compiled here**, because the world's prose used to get it
+wrong. Mudlet Web is not desktop Mudlet built for the browser: the client is
+TypeScript and React, and it implements Mudlet's API rather than being Mudlet.
+What genuinely is Mudlet's own arrives as WebAssembly, and there are exactly
+three blobs in `dist/` — `liblua5.1` (wasmoon), `libpcre2`, and `sqlite3` for
+the `db:*` API. So "a real Lua runtime" is precise, "the same regex engine
+flavour as desktop Mudlet" is precise, and "Mudlet compiled to WebAssembly" is
+not. `look terminal` on the front page is where the world says which.
+
 A profile whose installed copy claims a different version reinstalls the
 package on open, which is how an edited world reaches a returning visitor.
 That version used to be a number bumped by hand in two files, and forgetting
@@ -99,11 +111,12 @@ uses IBM Plex Mono, the client Mudlet's Bitstream Vera Sans Mono.
 
 ## The world itself
 
-It is mudlet.org, walked instead of scrolled. Seven rooms — the front page, the
-release vault (`down`), the news room (`north`), the commons (`west`), the
-Makers Hall beyond it, the workshop north of it and the Stacks south, behind the
-wiki door — each standing in for a part of the site, each thing in them linking
-out to the real page it parodies.
+It is mudlet.org, walked instead of scrolled. Eight rooms — the front page, the
+release vault (`down`), the news room (`north`), the Gallery (`east`), the
+commons (`west`), the Makers Hall beyond it, the workshop north of it and the
+Stacks south, behind the wiki door — each standing in for a part of the site,
+each thing in them linking out to the real page it parodies. A ninth is under
+the vault and stands in for nothing at all.
 `look windows` is the download page's Windows row, sha256 and all; `read board`
 is the three latest posts; the commons is the forum, wiki, Discord, GitHub and
 package-repository links, behind doors.
@@ -121,6 +134,86 @@ their order are Mudlet's own `aboutMakers` list from the client's About box, cut
 to a line or two each and carrying the public GitHub handle where there is one —
 the email addresses in that list are deliberately not copied here, and every
 entry links out to mudlet.org/the-makers for the full text.
+
+**The Gallery is the only room that fetches.** East of the front page is
+`/media/`, the one page on the site whose whole content is content, and the one
+room where the demonstration is not made of text: `hang 3` takes a screenshot
+off the wall and puts it on the screen. The chain is `downloadFile()` into the
+profile's own directory — which in Mudlet Web is IndexedDB wearing a filesystem
+— and then a `Geyser.Label` centred under the bar whose stylesheet carries the
+saved file as its `background-image`. Every link in it was measured before
+`frame.lua` was written, and the results are worth knowing before drawing
+anything else over this console:
+
+- **A miniconsole is not transparent here.** `setBackgroundColor(name, 0,0,0,0)`
+  does nothing and the world's text disappears behind it. Labels are — which is
+  why the bar above is three of them — and they are the only widget to reach for.
+- **`setBackgroundImage()` is not what draws the picture.** It returns without
+  complaining. The stylesheet's `background-image` is what actually paints.
+- **Redrawing a label's contents is nearly free; moving one is ruinous.** A
+  label re-echoed every frame delivered 60fps out of 60 at 0.54ms of Lua per
+  frame; sixty `:move()` calls a frame delivered 1.4fps out of a requested 50.
+  An animation here is one widget whose contents change, never several that
+  move — the opposite of how it would be written against desktop Qt.
+
+The Gallery prints no source, and neither does the kettle. Only the two rooms
+whose subject *is* the Lua do that — the imp handing over a box with an alias on
+the lid, and a bench meant for working at. Here the picture is the argument, and
+four lines under it would be the console taking the room back. The manual is one
+click away in the prose instead.
+Clicking the picture takes it down, which turns the one real hazard — a label
+eats every click that lands on it, and everything else in this world is a
+`dechoLink` underneath — into the control.
+
+**The ninth room stands in for nothing.** It is reached the way everything else
+is — the Release Vault prints `down` in its own exits, and the map draws it two
+squares under the front page, a cellar under a cellar — but nothing on the site
+corresponds to it. `down` twice from the front page is a cellar under the Release Vault holding this
+package in crates — one per `.lua` file, stencilled with its line count, the
+heaviest dozen out where they can be read and the other seventeen counted behind
+them. Opening one does not print it. `look core` reads the file off the
+profile's own disk with `io.open` and *counts* it, comment against code: a crate
+promised full of Lua that opens on four paragraphs of somebody explaining
+themselves is a poor joke, and the ratio is a much better one. The best answer a
+crate can give is that there is more explanation in it than program, and the
+three files that manage that are the three smallest worth opening — a shelf of
+the heaviest twelve can never show one, so the shelf **names** the most
+over-explained crate under the list, out of the build's own count. Nobody picks
+it; edit the world and it moves. It is the easter
+egg, and it is allowed to teach
+nothing: the other eight rooms have covered the client from every side already.
+What it does do is let the world be checked. The terminal on the plinth claims
+the visitor is talking to a Lua package so many lines long, and this is where
+you count them.
+
+Nothing down there is typed either. `scripts/build-package.mjs` walks the files
+it is about to zip, counts each one, and writes the lot into the single
+`local FILES = {}` line in `inventory.lua` — one line of table literal for one
+line of empty table, so the counts still describe the files they were counted
+from, that file included. The total the plinth quotes is summed out of the same
+table in Lua rather than injected beside it, because two generated numbers can
+disagree and one cannot. `embed.lua` is the one crate whose lid will not come
+off: it is counted and hashed with the rest but ships as a script node in the
+XML rather than as a file, and the room says so.
+
+The furniture is three jokes and a mark. The row of crates starts at one, with a
+rectangle painted on the floor where the zeroth would go; a pad of forms on a
+nail declares in advance every thing that might go wrong, and has never been torn
+off; a bin empties itself on a schedule nobody sets and will *consider* a request
+to do it now. All three are jokes about languages rather than about people, which
+is what lets them survive the next person to commit to the file. The mark is two
+stencils on the inside of a lid and is deliberately **not** a signature — a
+byline on a crate would claim a file that other people will edit, and be wrong
+the first time one of them does. `rooms/cellar.lua` says what it is and why.
+
+Nothing in that room prints a line of any file any more, which took a hazard out
+with it — written down because it comes back the moment anything here prints
+source again. **A line of source cannot go through `say()`.** Everything here
+prints with `decho`, which reads `<r,g,b>` as a colour tag, and this package's
+own comments are full of things that look exactly like one: the palette in
+`core.lua` is literal colour tags. `echo()` is the only output path that does not
+parse what it is handed, and it needs `setFgColor` around it to come out any
+colour at all.
 
 Two kinds of clickable text, one rule: **underlined means clickable, orange
 means it leaves the site.** Every noun, exit and suggested command prints as a
@@ -171,7 +264,7 @@ the visitor moved.
 
 Behind the pill is Mudlet's own mapper: the real widget, the real map database,
 `centerview` following you from room to room, floating in the corner over the
-text. Seven rooms is a tiny map, but it is the same mapper a twelve-thousand-room
+text. Nine rooms is a tiny map, but it is the same mapper a twelve-thousand-room
 game drives, and "a real mapper" is one of the six claims the page makes two
 sections down. The vault is `down`/`up` only — it sits one square below the
 front page so it reads as a cellar, and the mapper draws the stair markers with
@@ -190,6 +283,12 @@ is safe because the area is torn down before it is rebuilt and `deleteArea`
 takes its rooms with it. Adding a connected room is therefore a file in
 `rooms/`, a line in `rooms/init.lua`, and the exit in the room it hangs off —
 no coordinate, no id, no map exit.
+
+**A room's exits are listed in one place too.** `D.waysOut` in `rooms/init.lua`
+sorts them, and both things that show a visitor the way out call it — the
+console's `Exits:` line and the row on the bar — so the two cannot drift into
+disagreeing, and neither can reshuffle between one look and the next the way
+`pairs()` over an exit table would.
 
 Four things can go wrong in that walk, and all four are mistakes in the exits
 rather than anything a visitor can do: an exit to a room that does not exist, an
@@ -374,8 +473,10 @@ Workshop, and for the same reason.
 **Back in the Workshop, a kettle on the bench is a timer** — the client acting
 with nobody typing at all, which is the half of Mudlet the two rooms above still
 leave out: both of them begin with the visitor at the keyboard. `put the kettle
-on` is a real `tempTimer`, the call is printed as it is made, and then the
-visitor is told to leave. Fifteen seconds later the line arrives wherever they
+on` is a real `tempTimer`, and then the visitor is told to leave. Nothing in it
+prints source — not under the switch, and not on `look kettle`, which names
+`tempTimer` and links the manual instead: a kettle is a kettle, and the lesson
+is the line that arrives two rooms away. Fifteen seconds later the line arrives wherever they
 have got to, and says so by name: *you are in The Release Vault, and it found you
 anyway*. The room it was set in never comes into it — which is the point, and is
 why this is a kettle and not a fourth room. `kettle.lua`.

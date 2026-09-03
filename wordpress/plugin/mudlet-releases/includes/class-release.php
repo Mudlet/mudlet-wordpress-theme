@@ -173,11 +173,18 @@ class Mudlet_Releases_Release {
 	 * -linux-x64.AppImage.tar. An unrecognised asset is skipped rather than
 	 * shown as a mystery row.
 	 *
+	 * Checksums come out of the release JSON itself - see digests() - so the
+	 * index pass gets them for nothing. Only a release old enough to predate
+	 * GitHub stamping its assets falls back to SHA256SUMS.txt, and that is the
+	 * one thing here that costs a request.
+	 *
 	 * @param array<int, array<string, mixed>> $assets    Release assets.
-	 * @param bool                             $checksums Fetch SHA256SUMS.txt.
-	 *                                                    Costs a request, so the
-	 *                                                    index sync skips it and
-	 *                                                    the detail pass adds it.
+	 * @param bool                             $checksums Allow the fallback
+	 *                                                    request for a release
+	 *                                                    whose assets carry no
+	 *                                                    digest. The index sync
+	 *                                                    says no, the detail
+	 *                                                    pass says yes.
 	 * @return array<string, array<string, string>>
 	 */
 	public static function builds( array $assets, bool $checksums = true ): array {
@@ -198,7 +205,7 @@ class Mudlet_Releases_Release {
 			)
 		);
 
-		$sums   = $checksums ? self::checksums( $assets ) : array();
+		$sums   = self::digests( $assets );
 		$builds = array();
 
 		foreach ( $rules as $key => $rule ) {
@@ -224,14 +231,74 @@ class Mudlet_Releases_Release {
 			}
 		}
 
+		// Only now, and only if something is actually missing: the releases with
+		// no digest on their assets are the ones from before GitHub added the
+		// field, and asking for a file that answers a question already answered
+		// is the request this avoids.
+		if ( $checksums && self::unhashed( $builds ) ) {
+			$file = self::checksums( $assets );
+			foreach ( $builds as $key => $build ) {
+				if ( '' === $build['sha'] ) {
+					$builds[ $key ]['sha'] = $file[ $build['file'] ] ?? '';
+				}
+			}
+		}
+
 		return $builds;
+	}
+
+	/**
+	 * Whether any row still has no checksum.
+	 *
+	 * @param array<string, array<string, string>> $builds Build rows.
+	 */
+	private static function unhashed( array $builds ): bool {
+		foreach ( $builds as $build ) {
+			if ( '' === ( $build['sha'] ?? '' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * filename => sha256, out of the release JSON already in hand.
+	 *
+	 * GitHub stamps every release asset with a `digest` - "sha256:<hex>" - in
+	 * the same response that carries the name, the size and the URL. So for
+	 * anything published since it started doing that, a checksum costs no
+	 * request at all, and SHA256SUMS.txt below is a second copy of a number we
+	 * are already holding.
+	 *
+	 * The algorithm is read off the string rather than assumed. Anything that
+	 * is not sha256 is left out, and the file answers for it instead.
+	 *
+	 * @param array<int, array<string, mixed>> $assets Release assets.
+	 * @return array<string, string>
+	 */
+	public static function digests( array $assets ): array {
+		$sums = array();
+
+		foreach ( $assets as $asset ) {
+			$name   = (string) ( $asset['name'] ?? '' );
+			$digest = (string) ( $asset['digest'] ?? '' );
+
+			if ( '' !== $name && str_starts_with( $digest, 'sha256:' ) ) {
+				$sums[ $name ] = strtolower( substr( $digest, 7 ) );
+			}
+		}
+
+		return $sums;
 	}
 
 	/**
 	 * Read the release's SHA256SUMS.txt into filename => hash.
 	 *
-	 * One extra request per release, cached with it. A few hundred bytes, and
-	 * the only place the hashes exist.
+	 * The fallback, not the source. One extra request per release, a few hundred
+	 * bytes, and it says the same thing digests() reads for free out of the JSON
+	 * - so this runs only for a release whose assets predate GitHub stamping
+	 * them, where it is the only place the hashes exist.
 	 *
 	 * @param array<int, array<string, mixed>> $assets Release assets.
 	 * @return array<string, string>

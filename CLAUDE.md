@@ -29,7 +29,8 @@ npm run dev              # Vite dev server, client alone
 # the site
 cd wordpress && docker compose up -d   # -> http://localhost:8080
 
-# zips for a test site
+# zips for a test site (mudlet.zip carries the plugins and, with --with-demo,
+# the hero's client - it is the whole site)
 node wordpress/tools/build-dist.mjs    # -> wordpress/dist/*.zip
 ```
 
@@ -45,6 +46,53 @@ in `theme.css`.**
 (It was generated from a static `prototype/` until that became a second copy of
 the design and was deleted. `013c8e5` is the last commit with it, if a comment
 somewhere still points at it.)
+
+### One archive, and it updates itself
+
+The three plugins ship **inside the theme's zip**, under `plugins/`, and
+`theme/mudlet/inc/bundled-plugins.php` requires them from `functions.php`. So
+installing the site is one Upload Theme and nothing else, and updating it is one
+zip rather than four that can drift apart.
+
+They are still plugins, and for the same reason as before: a `mudlet_game` post
+is a post, and it is in the database whether or not anything is registering the
+post type this week. **A copy installed in `wp-content/plugins` always wins** —
+WordPress loads plugins long before it reaches a theme, so the plugin defines
+`MUDLET_GAMES_VERSION` first and the theme stands down on a `defined()` check,
+the same shape `mudlet-sync.php` already used for its `class_exists()` race.
+That is the escape hatch for a site that changes theme, which is why
+`build-dist.mjs` still builds the plugin zips and the release still publishes
+them. An installed copy older than the theme's gets an admin notice rather than
+being a silent surprise.
+
+Three things a plugin loses by not being installed, all in
+`plugin/shared/mudlet-bundle.php`: `plugins_loaded` has already fired when a
+theme is read (`Mudlet_Bundle::boot()` picks `after_setup_theme` instead),
+`plugins_url()` answers for `wp-content/plugins` only (`::url()` measures from
+wp-content), and `load_plugin_textdomain()` has the same problem (`::textdomain()`).
+There is no fourth seam for `register_activation_hook()`: what those hooks do is
+register the post type and flush, and the theme does that on
+`after_switch_theme`, with `switch_theme` cancelling the cron events on the way
+out.
+
+**The tag is the version.** `git push origin v0.2.0` runs
+`.github/workflows/release.yml`, which builds the demo client, runs
+`build-dist.mjs --with-demo --version 0.2.0` and publishes the four zips.
+`--version` writes the number into the *archives'* copies of `style.css` and the
+plugin headers and leaves the working tree alone, so there is no release commit
+and a tag and a header cannot disagree. A hyphenated tag is a prerelease and
+`releases/latest` skips it.
+
+The other half is `theme/mudlet/inc/updates.php`: `style.css` carries an
+`Update URI` on github.com, which since WP 6.1 both stops core asking
+wordpress.org about a theme it does not host and fires
+`update_themes_github.com`. That filter answers with the release's `mudlet.zip`
+asset — never `zipball_url`, which has the wrong folder inside it — cached
+twelve hours, and the theme opts itself into automatic updates
+(`MUDLET_AUTO_UPDATE` in `wp-config.php` turns that off). Since the asset is the
+whole site, one update carries the plugins and the hero's client too. The
+repository is read back out of the header rather than hardcoded, so a fork gets
+its own updates.
 
 ### The games list is not ours to type
 
@@ -123,13 +171,18 @@ re-deriving them is expensive.
 `demo/packages/mudlet-demo/` is a Mudlet package (Lua) zipped by
 `scripts/build-package.mjs` and installed into the profile on first open — a
 catch-all alias answers every command, which is what makes an *offline*
-profile playable. The package version is **derived**, not typed:
+profile playable. **Mudlet Web is not desktop Mudlet compiled for the browser**
+— the client is TypeScript, and what arrives as WebAssembly is Lua 5.1, PCRE2
+and SQLite, which is why a Mudlet package runs there unchanged. The world's
+prose says exactly that and used to say the other thing; do not put it back. The package version is **derived**, not typed:
 `build-package.mjs` hashes the Lua it zips onto `config.lua`'s number and
 writes the result into both the packaged `config.lua` and the generated
 `src/assets/mudlet-demo.version.ts` that `src/main.tsx` imports, so an edited
 world reaches returning visitors without anyone bumping two files. It also
-substitutes the world's `local SCRIPT_LINES` line with the real line count,
-which is what the terminal on the plinth quotes at the visitor.
+fills in the world's one generated line — `local FILES = {}` in
+`inventory.lua`, which comes back holding every module it zipped and the size
+it zipped it at. The terminal on the plinth quotes the total; the cellar under
+the Release Vault has the files themselves on shelves.
 
 **The world is a directory of modules, not one file.** An `.mpackage` is
 unzipped into `<profile>/<packageName>/` and Mudlet Web seeds `package.path`
@@ -140,7 +193,8 @@ file per concern — `core.lua` (the palette, the two kinds of link, the one
 `say()`), `urls.lua`, `site.lua` and `seed.lua`, `download.lua`,
 `people.lua` (the sage's ledger), `github.lua` (the clerk),
 `trigger.lua`, `catalogue.lua` and `kettle.lua` (the three things that script
-the client),
+the client), `frame.lua` (the Gallery's hook), `inventory.lua` (generated) and
+`crates.lua` (the cellar's shelf),
 `map.lua`, `verbs.lua`, `boot.lua`, and `rooms/<name>.lua` one per room,
 assembled by `rooms/init.lua`. The build globs `**/*.lua` and ships everything it finds,
 but a file nothing requires is dead weight — reach a new module from one that
@@ -155,7 +209,10 @@ connected room is a file in `rooms/`, a line in `rooms/init.lua`, and the exit
 in the room it hangs off — nothing in `map.lua`.** If you find yourself typing a
 coordinate you have misread this. Exits that contradict each other, point at
 nothing, or leave a room unreachable are reported to the debug console and the
-map is drawn without them, because the visitor must never see it.
+map is drawn without them, because the visitor must never see it. Which exits a
+room *shows* is one place as well: `D.waysOut` in `rooms/init.lua`, sorted, and
+both the console's `Exits:` line and the row on the bar call it rather than each
+walking the table themselves.
 
 **The bar over the console is the world's, not the page's.** The room you are in,
 the ways out of it and the `map` pill are Geyser labels the package draws into the
@@ -208,13 +265,62 @@ the imp says so instead of pretending. See `catalogue.lua` and `trigger.lua`.
 both begin with somebody at the keyboard; the half of Mudlet that runs when
 nobody is — a timer — only demonstrates itself once the visitor has walked away
 from where they set it. So `put the kettle on` in the Workshop makes a real
-`tempTimer`, prints the call as it makes it, and tells the visitor to leave;
+`tempTimer` and tells the visitor to leave;
 fifteen seconds later the line arrives wherever they have got to and names the
 room they are standing in, which it can only do because it reads `D.here` when
 the timer fires rather than when it was set. The click goes out through
 `dfeedTriggers` for the same reason the clerk's coin does, and the word `kettle`
 is in it deliberately: `trigger on kettle` first composes the Workshop's two
-lessons without either file arranging it. See `kettle.lua`.
+lessons without either file arranging it. It prints no source anywhere — not
+when the switch goes down, and not on `look kettle`, which names `tempTimer` and
+links the manual instead: only the two rooms whose subject *is* the Lua print
+theirs — the imp handing over a box with an alias on the lid, the bench meant
+for working at. See `kettle.lua`.
+
+**The Gallery is the other half of Mudlet, and the only room that fetches.** A
+trigger, an alias and a timer are all the client doing something to *text*; the
+interface layer is the thing the front page's screenshots are actually of, and
+the demo built Geyser for itself in `map.lua` and never handed it over. East of
+the front page — `up` was not available, because `map.lua` walks `up` and
+`north` as the same vector and it would have landed on the news room's square —
+is `/media/`, the one page on the site whose whole content is content. `hang 3`
+takes a real screenshot off the wall: `downloadFile` into the profile's own
+directory, then a `Geyser.Label` centred under the bar with the picture as its
+stylesheet's `background-image`. Three things were measured before that was
+written, and all three are counter-intuitive: **a miniconsole is not
+transparent** here (`setBackgroundColor(name, 0,0,0,0)` does nothing — labels
+are, which is why the bar is three of them); **`setBackgroundImage()` is not
+what draws the picture**, the stylesheet is; and **redrawing a label's contents
+is nearly free while moving one is ruinous** (60fps of re-echo against 1.4fps of
+sixty `:move()` calls), so nothing here animates. Unlike every other handover in
+this world it prints no source: the argument is the picture, and four lines
+under it is the console taking the room back. See `frame.lua`.
+
+**The ninth room is the easter egg, and it is allowed to teach nothing.** `down`
+twice from the front page — under the Release Vault, on the same z, which is
+the joke — is the package itself in crates, one per `.lua` file, stencilled
+with the line count the build wrote into `inventory.lua` — the heaviest twelve
+on the shelf and the rest counted behind them, because a shelf longer than the
+console is a shelf whose top nobody sees. `look core` gets a lid off by reading
+that file off the profile's own disk with `io.open` and **counting** it, comment
+against code: the shelf is a fact the build put there, the crate is the file that
+shipped, and the ratio is the joke. It used to print the first few lines
+instead, which opened every crate on somebody's header. The build counts comment
+and code apart for the same reason — the crates that win that joke are small
+ones the heaviest-twelve shelf can never show, so the shelf names the most
+over-explained one underneath the list, and which one that is falls out of the
+count rather than out of anybody's choice. Nothing about the room is hidden —
+the vault prints `down` with its other exits and the map draws the square — it
+is simply two floors further down than most people go. The other eight have covered the client
+from every side already; what this one adds is that the number the plinth
+quotes can be counted. The furniture is three jokes about languages — never
+about people, so that they survive the next person to commit — and one mark,
+which is two stencils on the inside of a lid and is deliberately not a
+signature: a byline would claim a file others will edit. Nothing there prints a
+line of a file any more, which retired a hazard worth keeping in mind if
+anything ever does again: **a line of source cannot go through `say()`**,
+because `decho` reads `<r,g,b>` as a colour tag and this package's own comments
+are full of things that look like one. See `crates.lua`, and `rooms/cellar.lua`.
 
 `demo/README.md` is thorough on the rest — how the embed strips the toolbar
 and login, the mapper, the link colour rules, the `say()` output path. Read it
@@ -229,6 +335,7 @@ somebody to write.
 ```sh
 cd wordpress && docker compose up -d     # -> http://localhost:8080
 node wordpress/tools/build-dist.mjs      # -> wordpress/dist/*.zip, for a test site
+git tag v0.2.0 && git push origin v0.2.0 # -> a GitHub release every site updates from
 ```
 
 `wordpress/README.md` is thorough. The parts worth knowing before touching
@@ -346,8 +453,35 @@ anything:
 - **All three record types are read-only in wp-admin.** A `mudlet_game`, a
   `mudlet_maker` and a `mudlet_release` are observed, not authored: every field
   is rewritten by the next sync, so each plugin replaces the post editor with a
-  record screen (no inputs, a resync button) and guards writes in
-  `wp_insert_post_data` so read-only holds on REST and Quick Edit too. Release
+  record screen (no inputs) and guards writes in `wp_insert_post_data` so
+  read-only holds on REST and Quick Edit too. **The resync button is over the
+  list, not on a record** — a games or makers sync reads one file and rewrites
+  every record from it, and a button on a record screen is unreachable on the
+  site that most needs it: a freshly uploaded plugin holds nothing until cron
+  reaches it. Releases keep a per-record button as well, because a release
+  genuinely is read one at a time; their list button is the cheap index pass.
+- **One menu, and one screen saying how often any of it runs.** All three
+  stores hang off a single **Mudlet** menu, whose own page (`Mudlet → Sync`) is
+  every cron job the three plugins have: cadence, last run, next run, and a
+  button to run it now. That screen, the menu and the scheduling live in
+  `wordpress/plugin/shared/mudlet-sync.php` — one of **two source files under
+  `plugin/shared/` that all three plugins carry a copy of** (the other is
+  `mudlet-bundle.php`, the seams for running from the theme), bundled by
+  `tools/build-dist.mjs` and bind-mounted by compose, first one loaded winning a
+  `class_exists()` race. Bundled rather than shared because a plugin reaching
+  into a sibling breaks when the sibling is deactivated, and a fourth plugin
+  owning a menu is a fourth thing to install. It holds no data — a menu, an option, and a wrapper over
+  `wp_schedule_event()` — and a plugin joins in by filtering `mudlet_sync_jobs`
+  and calling `Mudlet_Sync::reschedule()` in place of `wp_schedule_event()`.
+  **Edit it in `plugin/shared/`, never in a plugin.** Cadences default to
+  weekly and are stored in the `mudlet_sync_schedules` option; `Never` turns a
+  job off. The one exception is the releases *detail* pass, hourly, which does
+  nothing at all unless a record is flagged pending — it is the drain that
+  fills in changelogs two at a time, not a poll. (Checksums used to be its
+  other half. They are not any more: every release asset GitHub returns
+  carries its own `digest`, so the cheap index pass has the hashes already,
+  and `SHA256SUMS.txt` is only read for a release too old to have one.)
+  Release
   **announcement posts** are ordinary posts and are not affected, and so is the
   prose on `/the-makers/` above the roster.
 - **Releases come from GitHub, not from anyone typing.** A release post needs a
@@ -439,10 +573,15 @@ anything:
   them is ordinary Gutenberg. `seed/php/media-page.php` writes that body once
   and only while it is still empty — the single place this seed writes prose —
   seeding the live page's eight screencasts and sideloading the fifteen
-  community screenshots from mudlet.org, which are not in this repo.
+  community screenshots from mudlet.org, which are not in this repo. Both halves
+  are read back out by the seed endpoint for the demo's Gallery — the
+  screenshots through `mudlet_front_thumbs()`, the same call the front page's
+  thumbnail row uses, so adding one to that gallery adds it to three places and
+  nothing holds a second copy.
 - **The demo world reads the site through one endpoint.**
   `inc/demo-seed.php` registers `GET /wp-json/mudlet/v1/demo` and answers with
-  the current release, the games, the makers and the latest posts, all through
+  the current release, the games, the makers, the latest posts and `/media/`,
+  all through
   the same `function_exists()` seams the templates use — plus two facts that
   are not this site's to know and are read from upstream the way the games and
   the makers are: Mudlet's own `lua-function-list.json`, which is the imp's
@@ -450,7 +589,12 @@ anything:
   cabinet has and roughly how many hands filled them. Both are cached in a
   transient, and a transient is a cache rather than a record — so this is still
   theme code and not a plugin on purpose: unlike the data it serves it owns
-  nothing, and there is nothing in it for a theme rewrite to take with it.
+  nothing, and there is nothing in it for a theme rewrite to take with it. The
+  `/media/` block is the one part that is not a fact to print but a place to
+  fetch from: it carries screenshot URLs and their dimensions, because the
+  Gallery downloads the picture rather than describing it, and it is sized to
+  `large` — a 4MB original drawn at 400px wide inside a hero is somebody else's
+  data allowance.
 
 ## Not in the repo
 

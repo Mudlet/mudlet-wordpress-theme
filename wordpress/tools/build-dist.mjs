@@ -1,7 +1,9 @@
 // Pack the theme and the plugins into zips wp-admin will accept.
 //
-//   node wordpress/tools/build-dist.mjs              # -> wordpress/dist/*.zip
-//   node wordpress/tools/build-dist.mjs --with-demo  # ...theme carries the hero
+//   node wordpress/tools/build-dist.mjs                 # -> wordpress/dist/*.zip
+//   node wordpress/tools/build-dist.mjs --with-demo     # ...theme carries the hero
+//   node wordpress/tools/build-dist.mjs --version 1.2.3 # ...stamped, without touching the tree
+//   node wordpress/tools/build-dist.mjs --no-plugins    # ...theme carries only itself
 //   node wordpress/tools/build-dist.mjs --only mudlet-games
 //   node wordpress/tools/build-dist.mjs --out ../somewhere
 //
@@ -10,6 +12,18 @@
 // not by the file's name, so each archive has exactly one top-level folder
 // named for the slug - upload a second time and it offers to replace what is
 // there, because the folder matches.
+//
+// mudlet.zip is the whole site: the theme, and the three plugins under
+// plugins/, which the theme requires from functions.php unless the site has
+// them installed in wp-content/plugins. See the theme's inc/bundled-plugins.php
+// for the arbitration. The plugin zips are still built - they are how a site
+// that would rather have them as plugins gets them, and how a site that has
+// changed theme keeps its games - but nothing needs them to stand a site up.
+//
+// --version stamps the number into every header **in the archives only**; the
+// working tree is not touched. That is what the release workflow uses, so the
+// tag is the one place a version is written down and the checked-in headers
+// stay at whatever the last release was.
 //
 // Why the zip is written out by hand: nothing under wordpress/ has a
 // package.json, and the tools here run on bare node - `fetch-releases.mjs` does
@@ -54,6 +68,8 @@ const has = (f) => argv.includes(f);
 const val = (f, d) => { const i = argv.indexOf(f); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 
 const withDemo = has('--with-demo');
+const noPlugins = has('--no-plugins');
+const stampVersion = val('--version', null);
 const only = val('--only', null);
 const outDir = resolve(ROOT, val('--out', 'wordpress/dist'));
 
@@ -79,6 +95,36 @@ for (const pkg of PACKAGES) {
 	const files = [];
 	walk(src, src, files, pkg);
 
+	// The Mudlet menu, the sync schedules, and the seams that let a plugin run
+	// from inside the theme. Two source files under plugin/shared/, carried by
+	// all three plugins because a plugin reaching into a sibling breaks when
+	// the sibling is deactivated - whichever loads first wins the
+	// class_exists() race. Edited in plugin/shared/, never in a plugin, which
+	// is also how docker compose mounts it.
+	if (pkg.kind === 'plugin') {
+		for (const f of sharedFiles(pkg)) files.push(f);
+	}
+
+	// The theme carries the plugins. This is the whole reason mudlet.zip is
+	// the only archive a site needs: functions.php requires whatever it finds
+	// under plugins/, and stands down for any of the three that is installed
+	// in wp-content/plugins instead. Each gets its own copy of shared/, the
+	// same as its own zip does and for the same reason.
+	if (pkg.kind === 'theme' && !noPlugins) {
+		for (const p of PACKAGES.filter((x) => x.kind === 'plugin')) {
+			const src = join(WP, p.from);
+			if (!existsSync(src)) {
+				console.error(`  ! ${p.from} is missing - the theme will ship without it`);
+				continue;
+			}
+
+			const carried = [];
+			walk(src, src, carried, p);
+			for (const f of sharedFiles(p)) carried.push(f);
+			for (const f of carried) files.push({ abs: f.abs, rel: `plugins/${p.slug}/${f.rel}` });
+		}
+	}
+
 	// The hero's client, when asked for. It is not in the theme on disk:
 	// assets/demo/ is an empty bind-mount target for demo/dist (gitignored), so
 	// it is copied in from the real build here rather than shipped in the repo.
@@ -93,12 +139,17 @@ for (const pkg of PACKAGES) {
 		}
 	}
 
+	// --version, if given. Rewritten into the entry rather than onto disk, so
+	// a release is reproducible from a clean checkout and no commit is needed
+	// to cut one.
+	if (stampVersion) for (const f of files) stamp(pkg, f, stampVersion);
+
 	files.sort((a, b) => (a.rel < b.rel ? -1 : 1));
 
 	const zip = makeZip(pkg.slug, files);
 	const out = join(outDir, `${pkg.slug}.zip`);
 	writeFileSync(out, zip);
-	built.push({ ...pkg, files: files.length, bytes: zip.length, ver: pkg.version(src), out });
+	built.push({ ...pkg, files: files.length, bytes: zip.length, ver: stampVersion || pkg.version(src), out });
 }
 
 // ── say what happened ─────────────────────────────────────────────────
@@ -126,6 +177,11 @@ if (!withDemo) {
 	console.log('\n  The theme has no assets/demo/, so the hero stays on its scripted');
 	console.log('  session. --with-demo packs demo/dist into it (about +9 MB).');
 }
+if (noPlugins) {
+	console.log('\n  --no-plugins: the theme carries none, so a site built from mudlet.zip');
+	console.log('  alone has no games, makers or releases until the plugin zips are');
+	console.log('  installed the old way.');
+}
 console.log();
 
 // ── walking ───────────────────────────────────────────────────────────
@@ -145,6 +201,44 @@ function walk(root, dir, out, pkg) {
 		if (st.isDirectory()) walk(root, abs, out, pkg);
 		else if (st.isFile()) out.push({ abs, rel });
 	}
+}
+
+// The two files under plugin/shared/, addressed from inside one plugin. A
+// declaration rather than a const for the same reason crc32 is: the build
+// above runs at the top level, before anything down here is initialised.
+function sharedFiles(pkg) {
+	const shared = join(WP, 'plugin/shared');
+	if (!existsSync(shared)) {
+		console.error('  ! plugin/shared is missing - the plugins will have no Mudlet menu');
+		return [];
+	}
+
+	const carried = [];
+	walk(shared, shared, carried, pkg);
+	return carried.map((f) => ({ abs: f.abs, rel: `shared/${f.rel}` }));
+}
+
+// Whether an entry is the file somebody reads a version out of: style.css for
+// a theme, and <slug>.php for a plugin - wherever that plugin has been put,
+// which for the theme's copies is plugins/<slug>/.
+function isVersionFile(pkg, rel) {
+	if (pkg.kind === 'theme' && rel === 'style.css') return true;
+
+	const m = rel.match(/^(?:plugins\/([^/]+)\/)?([^/]+)\.php$/);
+	return !!m && m[2] === (m[1] || pkg.slug);
+}
+
+// Put `version` in the archive's copy of a header, leaving the file on disk
+// alone. Two forms, because a theme writes Version: in a CSS comment and a
+// plugin writes it in a docblock and again as a constant its own code reads.
+function stamp(pkg, f, version) {
+	if (!isVersionFile(pkg, f.rel)) return;
+
+	const text = readFileSync(f.abs, 'utf8')
+		.replace(/^(\s*(?:\*\s*)?Version:\s*).+$/m, `$1${version}`)
+		.replace(/(define\( 'MUDLET_[A-Z_]*VERSION', ')[^']*(' \);)/, `$1${version}$2`);
+
+	f.data = Buffer.from(text, 'utf8');
 }
 
 function readTheme(dir) {
@@ -207,7 +301,7 @@ function makeZip(folder, files) {
 
 	for (const f of files) {
 		const name = Buffer.from(`${folder}/${f.rel}`, 'utf8');
-		const raw = readFileSync(f.abs);
+		const raw = f.data ?? readFileSync(f.abs);
 		const deflated = raw.length ? deflateRawSync(raw, { level: 9 }) : Buffer.alloc(0);
 
 		// Only compress when it actually pays. Already-compressed PNG and JPEG

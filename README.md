@@ -1,8 +1,8 @@
 # mudlet.org redesign
 
-A redesigned mudlet.org as a real WordPress theme, with a real Mudlet running
-in its hero — [`@mudlet/mudlet-web`](https://www.npmjs.com/package/@mudlet/mudlet-web)
-built as a six-room MUD you can type into.
+A redesigned mudlet.org as a real WordPress theme, with Mudlet's browser edition
+running in its hero — [`@mudlet/mudlet-web`](https://www.npmjs.com/package/@mudlet/mudlet-web)
+built as a nine-room MUD you can type into.
 
 ```
 wordpress/         the theme, three plugins, and a Docker stack that boots a

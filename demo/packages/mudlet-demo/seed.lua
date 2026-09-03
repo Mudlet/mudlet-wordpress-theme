@@ -38,6 +38,40 @@ local function fill(into, from, keys)
     end
 end
 
+-- The wall of frames, and the reel beside it.
+--
+-- Two lists rather than one because they fail differently: a screenshot is a
+-- URL this world will try to fetch, and a screencast is a link it only ever
+-- prints. A shot with no url is no use to the room and is dropped here rather
+-- than checked for at the moment somebody reaches for it.
+local function pictures(shots)
+    local clean = {}
+    if type(shots) ~= 'table' then return clean end
+    for _, shot in ipairs(shots) do
+        if type(shot) == 'table' and type(shot.url) == 'string' and shot.url ~= '' then
+            clean[#clean + 1] = {
+                url   = shot.url,
+                title = tostring(shot.title or ''),
+                w     = tonumber(shot.w) or 0,
+                h     = tonumber(shot.h) or 0,
+            }
+        end
+    end
+    return clean
+end
+
+local function films(list)
+    local clean = {}
+    if type(list) ~= 'table' then return clean end
+    for _, film in ipairs(list) do
+        if type(film) == 'table' and type(film.title) == 'string' and film.title ~= ''
+            and type(film.url) == 'string' and film.url ~= '' then
+            clean[#clean + 1] = { title = film.title, url = film.url }
+        end
+    end
+    return clean
+end
+
 -- A notice needs a headline and somewhere to go; the date, the author and the
 -- clause under it are decoration and may be missing.
 local function notices(posts)
@@ -150,6 +184,13 @@ function D.applySeed(data)
     end
 
     fill(SITE.packages, data.packages, { 'count', 'authors', 'url' })
+
+    fill(SITE.media, data.media, { 'count', 'url' })
+    if type(data.media) == 'table' then
+        local shots, reel = pictures(data.media.shots), films(data.media.films)
+        if #shots > 0 then SITE.media.shots = shots end
+        if #reel > 0 then SITE.media.films = reel end
+    end
 
     fill(SITE.news, data.news, { 'count', 'url' })
     if type(data.news) == 'table' then

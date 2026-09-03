@@ -11,9 +11,28 @@ Set `Mudlet-4.22.0` — or just `4.22.0` — on a post and this supplies:
 | release notes | its Markdown body, rendered |
 | changelog | every pull request merged since the previous release |
 | counts — *"47 new features, 78 improvements, 207 fixes"* | those pull requests, by category |
-| download rows — size, URL, SHA-256 per platform | the release assets and its `SHA256SUMS.txt` |
+| download rows — size, URL, SHA-256 per platform | the release assets, whose JSON carries the hash |
 
 Nobody types a number that can drift from what shipped.
+
+## Where this runs
+
+Normally **inside the theme**. `mudlet.zip` carries this plugin under
+`plugins/mudlet-releases/` and the theme’s `functions.php` requires it, so a site
+installs one archive and activates nothing.
+
+`mudlet-releases.zip` is still built, and still published on every release, for a
+site that would rather have it in `wp-content/plugins` — and a copy there
+**wins**: WordPress loads plugins long before it reaches a theme, so
+`MUDLET_RELEASES_VERSION` is already defined by the time the theme looks and the
+theme stands down. An installed copy older than the theme’s gets an admin
+notice rather than being a silent surprise.
+
+Either way the data is the same — `mudlet_release` records in the database, which
+outlive both. What changes is only wiring, and all of it is in
+`shared/mudlet-bundle.php`: when to boot (`plugins_loaded` has already fired
+when a theme is read), where the assets are, where the translations are. See
+the theme’s `inc/bundled-plugins.php`.
 
 ## The changelog comes from pull requests, not from the notes
 
@@ -114,18 +133,30 @@ plugin categorises them on import, so the rules live in one place and the file
 cannot drift from what the site would have worked out itself.
 
 Afterwards two cron jobs keep it current: a twice-daily index pass costing one
-request (the releases list includes assets, so thirty releases' download rows
-come free), and an hourly detail pass that fills in checksums and changelogs two
-at a time.
+request (the releases list includes assets, and each asset carries its own
+`digest`, so thirty releases' download rows come free — hashes and all), and an
+hourly detail pass that fills in changelogs two at a time.
 
 `wp mudlet-releases list` shows what is stored and what is still pending.
 
+### The hash is in the JSON, not in the file
+
+Every release asset GitHub returns carries `"digest": "sha256:..."` in the same
+response as its name, size and URL, so a checksum costs no request at all. The
+release also publishes a `SHA256SUMS.txt`, which says the same thing for one
+extra round trip — that is now the **fallback**, reached only when a matched
+asset has no digest, which in practice means a release old enough to predate
+the field. `Mudlet_Releases_Release::digests()` is the source; `::checksums()`
+is the file.
+
 ### One trap worth knowing
 
-`store()` recomputes download rows without checksums, because fetching those
-costs a request. Anything that misses the store and falls back to the API lands
-there — so it explicitly carries existing hashes forward rather than blanking a
-column that was correct a moment earlier. That bug bit once already.
+`store()` recomputes download rows on the cheap path, which used to mean
+without checksums. Anything that misses the store and falls back to the API
+lands there — so it explicitly carries existing hashes forward rather than
+blanking a column that was correct a moment earlier. That bug bit once already,
+and the carry-over stays even now that the digest usually fills the column
+first: a release with no digest still depends on it.
 
 ## Contributors come from the same compare
 
@@ -183,6 +214,20 @@ and Quick Edit included.
 
 One action: **Re-read from GitHub**, which drops the cached compare first, so
 it actually re-reads rather than handing back the answer it already had.
+
+This plugin's three cron jobs — the index pass, the detail drain and the cache
+warm — are listed with their cadences on **Mudlet → Sync**, the page the shared
+menu draws. The index ships `weekly`; the detail pass ships `hourly` and is the
+one number on that screen that looks wrong and is not, because it costs nothing
+at all unless a record is flagged pending.
+
+A record keeps its button here, unlike the games and makers plugins, because a
+release *is* read one at a time and "re-read this one" is a real thing to want.
+Over the list there is a second, **Check GitHub for releases**: the cheap index
+pass, one request, which is how a new release arrives and the only thing there
+is to press on a site with no records yet. Index only — the detail pass costs a
+compare of up to six pages per release against a 60-an-hour limit, and the
+hourly job spends that two records at a time.
 
 Mind the boundary. This is the **record**. A release **announcement post** is
 an ordinary post somebody writes, and nothing here touches it.

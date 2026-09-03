@@ -54,6 +54,9 @@ class Mudlet_Makers_Admin {
 		add_filter( 'post_row_actions', array( __CLASS__, 'row_actions' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-' . Mudlet_Makers_Store::POST_TYPE, '__return_empty_array' );
 
+		add_action( 'manage_posts_extra_tablenav', array( __CLASS__, 'tablenav' ) );
+		add_filter( 'mudlet_sync_jobs', array( __CLASS__, 'sync_job' ) );
+
 		add_action( 'pre_get_posts', array( __CLASS__, 'list_order' ) );
 
 		add_action( 'admin_post_' . self::SYNC_ACTION, array( __CLASS__, 'handle_sync' ) );
@@ -280,7 +283,10 @@ class Mudlet_Makers_Admin {
 	}
 
 	/**
-	 * Where it came from, and the one thing you can do about it.
+	 * Where it came from, and when it was last read.
+	 *
+	 * No sync button here: one dialog describes everybody, so a sync is always
+	 * all of them and belongs over the list — see tablenav().
 	 *
 	 * @param WP_Post $post Maker.
 	 */
@@ -319,12 +325,6 @@ class Mudlet_Makers_Admin {
 					?>
 				</tbody>
 			</table>
-
-			<p class="mudlet-rec__actions">
-				<a class="button button-primary" href="<?php echo esc_url( self::sync_url() ); ?>">
-					<?php esc_html_e( 'Sync from Mudlet', 'mudlet-makers' ); ?>
-				</a>
-			</p>
 		</div>
 		<?php
 	}
@@ -441,6 +441,84 @@ class Mudlet_Makers_Admin {
 	}
 
 	// ── sync now ──────────────────────────────────────────────────────
+
+	/**
+	 * Put this sync on the Mudlet → Sync screen.
+	 *
+	 * The screen is a list of whoever registers here, so a plugin that is not
+	 * active is a row that is not drawn rather than a broken one.
+	 *
+	 * @param array<string, array<string, mixed>> $jobs Registered syncs.
+	 * @return array<string, array<string, mixed>>
+	 */
+	public static function sync_job( array $jobs ): array {
+		$count = Mudlet_Makers_Sync::count();
+
+		$jobs[ Mudlet_Makers_Sync::HOOK ] = array(
+			'label'    => __( 'Makers', 'mudlet-makers' ),
+			'note'     => __( 'One request to Mudlet\'s src/dlgAboutDialog.cpp, and a GitHub avatar for anybody whose picture has changed.', 'mudlet-makers' ),
+			'default'  => Mudlet_Makers_Sync::EVERY,
+			'synced'   => (int) get_option( Mudlet_Makers_Sync::SYNCED ),
+			'summary'  => sprintf(
+				/* translators: %d: number of makers on record */
+				_n( '%d on record', '%d on record', $count, 'mudlet-makers' ),
+				$count
+			),
+			'sync_url' => self::sync_url(),
+		);
+
+		return $jobs;
+	}
+
+	/**
+	 * The button, over the list.
+	 *
+	 * Two reasons it is here and not on a record. A sync reads one dialog and
+	 * rewrites everybody from it, so "sync this person" is not a thing that
+	 * exists; and a fresh install has no records to hang a button on — it
+	 * syncs nothing until cron gets to it an hour later, and until then the
+	 * only screen there is is this empty one.
+	 *
+	 * @param string $which Which tablenav is being drawn.
+	 */
+	public static function tablenav( string $which ): void {
+		$screen = get_current_screen();
+
+		if ( 'top' !== $which || ! $screen || ! self::ours( (string) $screen->post_type ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		$synced = (int) get_option( Mudlet_Makers_Sync::SYNCED );
+		$count  = Mudlet_Makers_Sync::count();
+		?>
+		<div class="alignleft actions">
+			<a class="button" href="<?php echo esc_url( self::sync_url() ); ?>">
+				<?php esc_html_e( 'Sync from Mudlet', 'mudlet-makers' ); ?>
+			</a>
+			<span class="mudlet-sync__note">
+				<?php
+				if ( $synced ) {
+					printf(
+						/* translators: 1: human-readable time difference, 2: number of makers */
+						esc_html( _n( 'Last synced %1$s ago · %2$d maker on record', 'Last synced %1$s ago · %2$d makers on record', $count, 'mudlet-makers' ) ),
+						esc_html( human_time_diff( $synced ) ),
+						(int) $count
+					);
+				} else {
+					esc_html_e( 'Never synced yet — the first run is due within minutes.', 'mudlet-makers' );
+				}
+				?>
+			</span>
+		</div>
+		<style>
+			.mudlet-sync__note{display:inline-block;margin-left:9px;line-height:30px;color:#646970}
+		</style>
+		<?php
+	}
 
 	/**
 	 * The nonce-protected URL behind the button.

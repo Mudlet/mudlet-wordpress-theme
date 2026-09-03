@@ -49,7 +49,7 @@ class Mudlet_Releases_Store {
 				'labels'             => array(
 					'name'          => __( 'Releases', 'mudlet-releases' ),
 					'singular_name' => __( 'Release', 'mudlet-releases' ),
-					'menu_name'     => __( 'Mudlet releases', 'mudlet-releases' ),
+					'menu_name'     => __( 'Releases', 'mudlet-releases' ),
 					'search_items'  => __( 'Search releases', 'mudlet-releases' ),
 					'not_found'     => __( 'No releases synced yet.', 'mudlet-releases' ),
 					// The screen is a reader, not an editor, and the heading is the
@@ -63,10 +63,8 @@ class Mudlet_Releases_Store {
 				'has_archive'        => false,
 				'rewrite'            => false,
 				'show_ui'            => true,
-				'show_in_menu'       => true,
+				'show_in_menu'       => Mudlet_Sync::MENU,
 				'show_in_rest'       => true,
-				'menu_icon'          => 'dashicons-download',
-				'menu_position'      => 26,
 				'supports'           => array( 'title', 'editor', 'custom-fields' ),
 				'capabilities'       => array(
 					// Nothing here is authored by hand - it is overwritten on
@@ -266,8 +264,10 @@ class Mudlet_Releases_Store {
 
 		$post_id = (int) $post_id;
 
-		// Assets come with the list, so build rows are free here. Checksums are
-		// not - store_detail() or an import fills those in.
+		// Assets come with the list, and so does each one’s sha256, so a build
+		// row is free here - checksums included. Only a release old enough to
+		// have no digest on its assets leaves the column empty for
+		// store_detail() or an import to fill in from SHA256SUMS.txt.
 		$builds = Mudlet_Releases_Release::builds( (array) ( $raw['assets'] ?? array() ), false );
 
 		// ...which means this must not clobber hashes that are already known.

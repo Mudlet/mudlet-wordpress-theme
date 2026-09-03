@@ -45,7 +45,7 @@ while ( have_posts() ) :
 						<?php
 						echo esc_html(
 							! empty( $mudlet_maker['core'] )
-								? __( 'On the Mudlet project now.', 'mudlet' )
+								? __( 'Core developer', 'mudlet' )
 								: __( 'Has contributed to Mudlet.', 'mudlet' )
 						);
 						?>

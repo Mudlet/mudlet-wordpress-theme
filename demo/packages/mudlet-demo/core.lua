@@ -22,16 +22,65 @@ local C = {
 -- stay in the world keep the colour of the line they sit in.
 local U = '<u>'
 
--- The terminal on the plinth quotes this package's own size back at the
--- visitor, and a hand-typed number is wrong the moment anyone edits the world.
--- scripts/build-package.mjs counts the .lua files it zips and rewrites the
--- literal below on every build, failing if this line stops matching the pattern
--- it looks for. What is written here is only what an unbuilt copy would claim.
-local SCRIPT_LINES = 0
-
 -- 1315 -> "1,315". One separator is all a package this size will ever need.
 local function thousands(n)
     return (tostring(n):gsub('^(%d+)(%d%d%d)$', '%1,%2'))
+end
+
+-- Columns, for the two lists in this world long enough to need them: the sage's
+-- ledger of thirty names, and the shelf of crates under the Release Vault.
+--
+-- The most columns that fit at the tightest gap, then the widest gap that still
+-- fits at that count. Both are needed, and the gap is why: this console is a
+-- panel in a web page — about 68 characters wide on a laptop and 38 on a phone
+-- — and at 38 a shape that only fits once the gap comes down from three spaces
+-- to two is the difference between two columns and one, which for a list of
+-- thirty is the difference between fifteen rows and thirty. The whole point of
+-- either list is seeing all of it at once.
+--
+-- `cell` is the width of one column's contents and `indent` the margin in front
+-- of the first. getColumnCount is the displayable width, which is the question
+-- being asked — not getWindowWrap, which is where the buffer folds text
+-- appended to it and is unset in this profile. It measures the live element, so
+-- it answers 0 before the console has mounted; the ceiling is the right guess
+-- then, because that is the shape the hero opens at.
+local GAP_MAX, GAP_MIN = 3, 1
+
+-- How wide the console is, or 0 if it will not say. Its own function because
+-- the crates under the Release Vault ask for a different reason: they print
+-- lines out of a real file, and a real file has no opinion about the width of
+-- the window somebody is reading it in.
+local function width()
+    if not getColumnCount then return 0 end
+    local ok, n = pcall(getColumnCount)
+    return (ok and type(n) == 'number' and n > 0) and n or 0
+end
+
+local function columns(cell, maxCols, indent)
+    local width = width()
+    if width <= 0 then return maxCols, GAP_MAX end
+
+    -- Every column but the last padded out to a cell plus the gap, then the
+    -- last one standing on its own.
+    local function widestRow(cols, gap)
+        return indent + (cols - 1) * (cell + gap) + cell
+    end
+
+    local cols = 1
+    for c = maxCols, 2, -1 do
+        if widestRow(c, GAP_MIN) <= width then
+            cols = c
+            break
+        end
+    end
+    local gap = GAP_MIN
+    for g = GAP_MAX, GAP_MIN + 1, -1 do
+        if widestRow(cols, g) <= width then
+            gap = g
+            break
+        end
+    end
+    return cols, gap
 end
 
 -- Output ---------------------------------------------------------------------
@@ -127,7 +176,8 @@ local DIRS = {
 }
 
 return {
-    C = C, U = U, SCRIPT_LINES = SCRIPT_LINES, ROOM_EVENT = ROOM_EVENT, DIRS = DIRS,
-    thousands = thousands, link = link, cmd = cmd, say = say,
+    C = C, U = U, ROOM_EVENT = ROOM_EVENT, DIRS = DIRS,
+    thousands = thousands, columns = columns, width = width,
+    link = link, cmd = cmd, say = say,
     spell = spell, spellCap = spellCap,
 }
