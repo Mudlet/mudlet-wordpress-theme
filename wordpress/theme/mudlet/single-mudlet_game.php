@@ -40,7 +40,7 @@ while ( have_posts() ) :
 					<?php if ( ! empty( $mudlet_game['domain'] ) ) : ?>
 						<p class="sub">
 							<?php if ( ! empty( $mudlet_game['site'] ) ) : ?>
-								<a href="<?php echo esc_url( $mudlet_game['site'] ); ?>" rel="external nofollow"><?php echo esc_html( $mudlet_game['domain'] ); ?></a>
+								<a href="<?php echo esc_url( $mudlet_game['site'] ); ?>" target="_blank" rel="external nofollow noopener"><?php echo esc_html( $mudlet_game['domain'] ); ?></a>
 							<?php else : ?>
 								<?php echo esc_html( $mudlet_game['domain'] ); ?>
 							<?php endif; ?>
@@ -108,7 +108,7 @@ while ( have_posts() ) :
 								?>
 								<?php echo $mudlet_i ? '<span class="sep">&middot;</span>' : ''; ?>
 								<?php // Beside the link rather than inside it: the underline would otherwise run under the glyph and read as a strike through it. ?>
-								<?php mudlet_icon( $mudlet_link_icon, 'specs__i' ); ?><a href="<?php echo esc_url( $mudlet_link['url'] ); ?>" rel="external nofollow"><?php echo esc_html( $mudlet_link['label'] ); ?></a>
+								<?php mudlet_icon( $mudlet_link_icon, 'specs__i' ); ?><a href="<?php echo esc_url( $mudlet_link['url'] ); ?>" target="_blank" rel="external nofollow noopener"><?php echo esc_html( $mudlet_link['label'] ); ?></a>
 							<?php endforeach; ?>
 						</p>
 					<?php endif; ?>

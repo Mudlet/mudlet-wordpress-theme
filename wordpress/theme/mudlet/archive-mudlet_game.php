@@ -114,7 +114,7 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 							<?php foreach ( $mudlet_hero_tags as $mudlet_tag ) : ?>
 								<?php $mudlet_tag_icon = mudlet_get_icon( mudlet_game_tag_icon( $mudlet_tag['key'] ), 'gtag__i' ); ?>
 								<?php if ( $mudlet_tag['url'] ) : ?>
-									<a class="gtag gtag--link" href="<?php echo esc_url( $mudlet_tag['url'] ); ?>" rel="external nofollow" data-tag="<?php echo esc_attr( $mudlet_tag['key'] ); ?>"><?php echo $mudlet_tag_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- inline SVG from the theme's own set. ?><?php echo esc_html( $mudlet_tag['label'] ); ?></a>
+									<a class="gtag gtag--link" href="<?php echo esc_url( $mudlet_tag['url'] ); ?>" target="_blank" rel="external nofollow noopener" data-tag="<?php echo esc_attr( $mudlet_tag['key'] ); ?>"><?php echo $mudlet_tag_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- inline SVG from the theme's own set. ?><?php echo esc_html( $mudlet_tag['label'] ); ?></a>
 								<?php else : ?>
 									<span class="gtag" data-tag="<?php echo esc_attr( $mudlet_tag['key'] ); ?>"><?php echo $mudlet_tag_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- inline SVG from the theme's own set. ?><?php echo esc_html( $mudlet_tag['label'] ); ?></span>
 								<?php endif; ?>

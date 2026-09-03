@@ -78,7 +78,7 @@ if ( ! $mudlet_games ) {
 				<?php endif; ?>
 				<?php if ( ! empty( $mudlet_game['site'] ) ) : ?>
 					<span class="dot" aria-hidden="true">·</span>
-					<a href="<?php echo esc_url( (string) $mudlet_game['site'] ); ?>"><?php echo esc_html( (string) ( $mudlet_game['domain'] ?: $mudlet_game['site'] ) ); ?></a>
+					<a href="<?php echo esc_url( (string) $mudlet_game['site'] ); ?>" target="_blank" rel="external nofollow noopener"><?php echo esc_html( (string) ( $mudlet_game['domain'] ?: $mudlet_game['site'] ) ); ?></a>
 				<?php endif; ?>
 			</p>
 		</article>

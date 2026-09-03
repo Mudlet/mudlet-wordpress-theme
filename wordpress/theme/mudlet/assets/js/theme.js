@@ -1182,7 +1182,7 @@
 					Array.prototype.forEach.call(t.childNodes, function (n) {
 						el.appendChild(n.cloneNode(true));
 					});
-					if (url) { el.href = url; el.rel = 'external nofollow'; }
+					if (url) { el.href = url; el.target = '_blank'; el.rel = 'external nofollow noopener'; }
 					tags.appendChild(el);
 				});
 			}
