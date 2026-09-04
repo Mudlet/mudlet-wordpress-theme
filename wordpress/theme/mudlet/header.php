@@ -35,10 +35,11 @@ $mudlet_languages = mudlet_languages();
 			</a>
 
 			<?php
-			// Below 52rem the nav and the utilities fold into the panel after
-			// this, and this button opens it. The button is the only new
-			// markup: the panel is the same anchors the bar draws, so there
-			// is no second copy of the menu to keep in step.
+			// Below 64rem - the width at which the row stops fitting - the
+			// nav and the utilities fold into the panel after this, and this
+			// button opens it. The button is the only new markup: the panel
+			// is the same anchors the bar draws, so there is no second copy
+			// of the menu to keep in step.
 			?>
 			<button class="burger" type="button" aria-label="<?php esc_attr_e( 'Menu', 'mudlet' ); ?>" aria-expanded="false" aria-controls="topmenu">
 				<?php
@@ -63,10 +64,36 @@ $mudlet_languages = mudlet_languages();
 						'primary',
 						array(
 							array( __( 'News', 'mudlet' ), mudlet_news_url() ),
-							array( __( 'Gallery', 'mudlet' ), mudlet_page_url( 'media', '/media/' ), 'lo' ),
-							array( __( 'Packages', 'mudlet' ), 'https://packages.mudlet.org/', 'lo' ),
-							array( __( 'Docs', 'mudlet' ), 'https://wiki.mudlet.org', 'lo' ),
-							array( __( 'Forum', 'mudlet' ), 'https://forums.mudlet.org', 'lo' ),
+							array( __( 'Gallery', 'mudlet' ), mudlet_page_url( 'media', '/media/' ) ),
+							array( __( 'Packages', 'mudlet' ), 'https://packages.mudlet.org/' ),
+							array( __( 'Docs', 'mudlet' ), 'https://wiki.mudlet.org' ),
+							array( __( 'Forum', 'mudlet' ), 'https://forums.mudlet.org' ),
+							// The two dropdowns mudlet.org ends its bar with. A
+							// parent is a button and never a link (see
+							// inc/nav-walker.php), so the page it used to point at
+							// is the first row of its own panel, which is what the
+							// live menu does too.
+							array(
+								__( 'About', 'mudlet' ),
+								'',
+								'',
+								array(
+									array( __( 'About', 'mudlet' ), mudlet_page_url( 'about', '/about/' ) ),
+									array( __( 'Vision', 'mudlet' ), mudlet_page_url( 'vision', '/about/vision/' ) ),
+									array( __( 'The Makers', 'mudlet' ), mudlet_page_url( 'the-makers', '/the-makers/' ) ),
+									array( __( 'Contact Us', 'mudlet' ), mudlet_page_url( 'contact', '/contact/' ) ),
+								),
+							),
+							array(
+								__( 'Help', 'mudlet' ),
+								'',
+								'',
+								array(
+									array( __( 'Known Issues', 'mudlet' ), 'https://wiki.mudlet.org/w/Known_Issues' ),
+									array( __( 'Contribute', 'mudlet' ), mudlet_page_url( 'contribute', '/contribute/' ) ),
+									array( __( 'The Manual', 'mudlet' ), 'https://wiki.mudlet.org/w/Manual:Contents' ),
+								),
+							),
 						)
 					);
 					?>

@@ -55,6 +55,7 @@ define( 'MUDLET_RELEASES_FILE', __FILE__ );
 require_once __DIR__ . '/shared/mudlet-bundle.php';
 require_once __DIR__ . '/shared/mudlet-sync.php';
 require_once __DIR__ . '/includes/class-github-client.php';
+require_once __DIR__ . '/includes/class-links.php';
 require_once __DIR__ . '/includes/class-release.php';
 require_once __DIR__ . '/includes/class-changelog.php';
 require_once __DIR__ . '/includes/class-store.php';
@@ -78,6 +79,7 @@ function mudlet_releases_boot(): void {
 
 	Mudlet_Sync::boot();
 
+	Mudlet_Releases_Links::init();
 	Mudlet_Releases_Store::init();
 	Mudlet_Releases_Sync::init();
 	Mudlet_Releases_Post_Tag::init();

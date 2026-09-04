@@ -63,7 +63,16 @@ $icons  = array(
 
 			<div class="dltable" id="downloads">
 				<?php foreach ( $builds as $key => $build ) : ?>
-					<div class="dlrow" data-os="<?php echo esc_attr( $key ); ?>">
+					<?php
+					// data-latest is the version-less alias. The row's own link
+					// stays version-pinned, because the checksum printed beside
+					// it describes that exact file - but the code, the copy
+					// button and the emailed link all hand this build to
+					// somewhere else, and are read after the next release has
+					// shipped. theme.js prefers it for those three.
+					?>
+					<div class="dlrow" data-os="<?php echo esc_attr( $key ); ?>"
+						<?php if ( ! empty( $build['latest'] ) ) : ?>data-latest="<?php echo esc_url( $build['latest'] ); ?>"<?php endif; ?>>
 						<div class="dlrow__id">
 							<?php mudlet_icon( $icons[ $key ] ?? 'monitor' ); ?>
 							<div>
@@ -125,6 +134,21 @@ $icons  = array(
 								</button>
 							<?php endif; ?>
 							<a class="btn btn--ghost" href="<?php echo esc_url( $build['url'] ); ?>"><?php esc_html_e( 'Download', 'mudlet' ); ?></a>
+							<?php
+							// Only when the row is not already pointing there:
+							// a mirror nobody can route around is a single
+							// point of failure, but two links to the same file
+							// is just noise.
+							if ( ! empty( $build['github'] ) && $build['github'] !== $build['url'] ) :
+								/* translators: %s: platform name */
+								$mudlet_from_github = sprintf( __( 'Download %s from GitHub', 'mudlet' ), $build['label'] );
+								?>
+								<a class="dlsrc" href="<?php echo esc_url( $build['github'] ); ?>" target="_blank" rel="noopener"
+									title="<?php echo esc_attr( $mudlet_from_github ); ?>">
+									<?php mudlet_icon( 'github' ); ?>
+									<span class="screen-reader-text"><?php echo esc_html( $mudlet_from_github ); ?></span>
+								</a>
+							<?php endif; ?>
 						</div>
 
 						<?php
@@ -176,6 +200,40 @@ $icons  = array(
 			</div>
 
 			<div class="ways">
+				<?php
+				// First, because the shortest way in is the one that installs
+				// nothing - and it is the answer for the visitor the panel at
+				// the top of this page took itself off for: a phone, a
+				// Chromebook, anything with no build of its own in the table.
+				//
+				// Deliberately not a row in that table: every row there is a
+				// file, with a size, a checksum and a QR of its URL, and this
+				// is a page to open.
+				?>
+				<div class="way">
+					<?php mudlet_icon( 'globe' ); ?>
+					<h3><?php esc_html_e( 'In your browser', 'mudlet' ); ?></h3>
+					<p>
+						<?php
+						printf(
+							/* translators: 1: link reading "Mudlet Web", 2: link reading "the source" */
+							esc_html__( '%1$s opens a profile in a browser tab with nothing to install, and Mudlet packages and Lua run in it unchanged. Read %2$s.', 'mudlet' ),
+							'<a href="https://mudlet.github.io/mudlet-web/">' . esc_html__( 'Mudlet Web', 'mudlet' ) . '</a>',
+							'<a href="https://github.com/Mudlet/mudlet-web">' . esc_html__( 'the source', 'mudlet' ) . '</a>'
+						);
+						?>
+						<?php
+						// Only where there is a build of it framed on the front
+						// page to point at. Without one the hero stays scripted
+						// and this would be sending somebody to look at a
+						// terminal that is a picture of one.
+						if ( mudlet_demo_src() ) {
+							echo ' ' . esc_html__( 'It is what the terminal on the front page is running.', 'mudlet' );
+						}
+						?>
+					</p>
+				</div>
+
 				<div class="way">
 					<?php mudlet_icon( 'chrome' ); ?>
 					<h3><?php esc_html_e( 'ChromeOS', 'mudlet' ); ?></h3>
@@ -207,14 +265,52 @@ $icons  = array(
 				<div class="way">
 					<?php mudlet_icon( 'truck' ); ?>
 					<h3><?php esc_html_e( 'Portable', 'mudlet' ); ?></h3>
-					<p><?php esc_html_e( 'The Linux build is portable. Extract the launcher somewhere permanent, then run Mudlet from there.', 'mudlet' ); ?></p>
+					<p>
+						<?php
+						printf(
+							/* translators: 1: the file name portable.txt, 2: link reading "The wiki has the steps" */
+							esc_html__( 'Every build can run from a USB stick: put an empty %1$s beside the executable and Mudlet keeps its profiles, packages and settings in a folder next to itself. %2$s.', 'mudlet' ),
+							'<code>portable.txt</code>',
+							'<a href="https://wiki.mudlet.org/w/Manual:Portable_App">' . esc_html__( 'The wiki has the steps', 'mudlet' ) . '</a>'
+						);
+						?>
+					</p>
 				</div>
 
-				<div class="way way--wide">
+				<?php
+				// One tile wide, like the rest. It used to span two because of
+				// the clone line under it: at the narrowest the grid ever draws
+				// - three columns at the container's full width - that line is
+				// 290px in a 320px box, so it fits, and six tiles make two rows
+				// of three rather than a row with a hole in it. In the band of
+				// widths where three columns are tighter than that, the line
+				// scrolls inside its own box, which is what `.way code` has
+				// always done on a narrow screen.
+				?>
+				<div class="way">
 					<?php mudlet_icon( 'code' ); ?>
 					<h3><?php esc_html_e( 'Build it yourself', 'mudlet' ); ?></h3>
 					<p><?php esc_html_e( 'The wiki carries build instructions for each OS.', 'mudlet' ); ?></p>
-					<code>git clone https://github.com/Mudlet/Mudlet</code>
+					<?php
+					// The command stays selectable text and the button sits
+					// beside it, not inside it: that <code> is its own
+					// horizontal scroll container on a narrow screen, and a
+					// control within one scrolls away from the hand reaching
+					// for it. Nothing here repeats the command - theme.js reads
+					// the <code> next to the button, the way a download row
+					// reads its own link - and the button ships hidden,
+					// because without the script it copies nothing.
+					?>
+					<div class="clone">
+						<code>git clone https://github.com/Mudlet/Mudlet</code>
+						<button class="clone__cp" type="button" hidden>
+							<?php
+							mudlet_icon( 'copy', 'cp' );
+							mudlet_icon( 'check', 'ok' );
+							?>
+							<span class="screen-reader-text"><?php esc_html_e( 'Copy the clone command', 'mudlet' ); ?></span>
+						</button>
+					</div>
 				</div>
 
 				<div class="way">
@@ -225,7 +321,7 @@ $icons  = array(
 						printf(
 							/* translators: %s: link reading "Browse the archive" */
 							esc_html__( 'Every previous installer is still available, back to the early releases. %s.', 'mudlet' ),
-							'<a href="https://github.com/Mudlet/Mudlet/releases">' . esc_html__( 'Browse the archive', 'mudlet' ) . '</a>'
+							'<a href="' . esc_url( mudlet_download_archive_url() ) . '">' . esc_html__( 'Browse the archive', 'mudlet' ) . '</a>'
 						);
 						?>
 					</p>

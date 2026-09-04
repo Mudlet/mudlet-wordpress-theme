@@ -1,0 +1,6 @@
+# Output of the seed's migration phase.
+#
+# Written by the run, not by hand, and not tracked: the translation map is
+# derived from an export that is itself gitignored.
+*
+!.gitignore

@@ -27,6 +27,8 @@ database away, and the next `up` provisions from scratch.
 | `plugin/mudlet-makers/` | the credits, read from Mudlet’s own About dialog |
 | `plugin/mudlet-shots/` | screenshots people send the site, held out of reach until somebody has reviewed them |
 | `plugin/shared/` | one menu, the sync schedules, and the seams that let a plugin run from the theme — carried by all of them |
+| `MIGRATION.md` | taking the live mudlet.org onto this theme: the release pipeline, which plugins stay, which links must keep working |
+| `ANALYTICS.md` | Matomo — three bugs to fix, and a proposal for what to track |
 
 The plugins **ship inside the theme**, under `plugins/`, and the stack
 mounts them there rather than into `wp-content/plugins` so that the local site
@@ -63,6 +65,18 @@ Honest answer, because this is the thing that went wrong with Divi:
   form shortcode (the "Contact form" box on `/contact/`). `/media/` is the
   furthest end of that: the screencasts and the whole screenshot gallery are
   blocks in the page body, so all of it is Gutenberg — see **Media** below.
+- **Written by writing the page**: the contents list. A page or a post with more
+  than two `h2`s gets an outline in the rail beside it — *On this page* — and
+  the anchors are stamped onto the headings in the same pass that reads them,
+  so it cannot go stale and its links cannot 404 into the middle of the page.
+  Nothing to fill in and nothing to keep in step: add a heading and it is in the
+  list. Two headings is not a structure, so it stays off, and a heading that
+  already carries an id keeps it, which is how one gets pinned. Only pages using
+  the **default template** — /about/, /contribute/, the legal ones. A page with
+  a template of its own (`/download/`, `/contact/`, `/the-makers/`, `/games/`)
+  is built out of sections whose headings belong to the template rather than to
+  whoever wrote the page, so it has none. See `mudlet_outline()` and
+  `mudlet_outline_panel()` in `inc/template-tags.php`.
 - **Not editable — it is theme markup**: the homepage sections. The hero
   headline, the six feature panels, the games grid, the "hop in" cards. The copy
   there is load-bearing on the layout, so moving it into the database on day one
@@ -700,6 +714,80 @@ into `site.lua` as its fallback, which is also what it shows anywhere there is
 no WordPress — a dev server, a `file://` copy. Renaming a
 field here is a change to `demo/packages/mudlet-demo/site.lua` as well.
 
+## Search
+
+The box in the header is a command palette (`/` or ctrl-K) over three sources,
+and the results page is two of them:
+
+| | |
+|---|---|
+| `DATA.search` | the twenty newest pages and posts, inline with the page — titles only, drawn on the keystroke |
+| `mudlet/v1/search` | the query the results page runs: the documents, pages, posts, games and makers |
+| `mudlet/v1/search/wiki` | wiki.mudlet.org |
+
+The first two are `inc/search.php` and predate the third. The wiki is
+`inc/wiki-search.php`, and it is there because most of what anybody searches
+this site for is in the manual while the site itself is forty pages and a news
+log: `tempTimer` used to return "No matching results" from a site whose own
+header links to the page that answers it.
+
+The palette asks the last two **in parallel** and draws each as it lands — the
+site answers out of the database and the wiki over somebody else's network, and
+one request would make every keystroke wait for the slower. Wiki rows come last,
+under a rule, labelled `Wiki`, and are never mixed into the site's own. The
+results page prints the same thing under its own rows, from the same call.
+
+**The panel holds ten rows, and that is a budget rather than a detail.** Eight
+site rows and then the wiki's is a block that exists only below the fold, which
+is what this looked like first: so the palette shows **five** of the site's,
+**three** of the wiki's, and a way out of each — the sticky *See all N results*
+to the results page, and *Search the wiki*, which is offered whenever the wiki
+answered at all. Nothing is lost by the cut, because the row that offers the
+rest of the site is one of the ten. The ten fit because `theme.css` gives the
+panel 34rem; it was 28.
+
+Three things about the wiki are worth knowing before touching that file:
+
+- **Cloudflare sits in front of it, and it is stricter than the wiki.**
+  `api.php` and `Special:Search` answer **403** to a browser and a server alike;
+  `rest.php/v1/search/page` answers JSON to anything. That is the only way in,
+  and since it carries no `Access-Control-Allow-Origin` the request cannot be
+  made from the visitor's browser — so it is made here, and cached here.
+  `index.php?search=` is the one search URL on that host a person can open,
+  which is where *Search the wiki* goes.
+- **The answers are cached**, which `inc/search.php` deliberately does not do.
+  The reasoning inverts: a `WP_Query` costs a millisecond, and this costs an
+  outbound request on somebody else's server on the pause in somebody's typing.
+  Six hours for an answer, five minutes for a failure.
+- **The search ranks every translation of a page separately** — the wiki's first
+  fourteen answers for `trigger` are two pages and twelve copies of one of them.
+  `mudlet_wiki_search_copy()` reduces a hit to the page it is a copy of and how
+  good a copy it is for the language being read; the caller keeps one row per
+  page, and the title drops the `/en` a reader of English did not ask for.
+- **What comes back is wikitext, not prose**, so
+  `mudlet_wiki_search_snippet()` is the small part of a wikitext parser a
+  one-line excerpt needs — not tag-stripping. Four of its rules are there
+  because a sweep over ~200 live excerpts put them there, and each is a thing
+  that was on the page before it was written:
+  - `{{#description2:…}}` is **unwrapped, not dropped**: it is the sentence the
+    page wrote about itself, and deleting it with the other templates left two
+    rows in twenty with a title and nothing under it.
+  - An excerpt is a window, so a `{{`, a `[[`, a `<!--` or a heading's `=` can
+    arrive without its partner. Everything after an unclosed `{{` is a template
+    name; everything before an unopened `}}` is a template's *content*, which is
+    often prose — so the two halves are treated differently, and
+    `mudlet_wiki_search_pairs()` drops the brackets a pair-matcher leaves over.
+  - Entities are decoded **twice**, because parts of this wiki are escaped twice
+    over and one pass leaves `&amp;mdash;` as `&mdash;`.
+  - Tags are named rather than stripped: `if x < 3 then` is what half this wiki
+    is made of and `<color>` is how it writes a placeholder, so `strip_tags()`
+    would eat both. Headings are found by their *pair* of `=`, for the same
+    reason: `x = 1` stays.
+
+`mudlet_wiki_search_enabled` turns the whole thing off — the route, the
+palette's second request and the block on the results page together — and
+`mudlet_wiki_origin` points it at another wiki.
+
 ## Languages
 
 Polylang is installed and the five languages (en, de, it, ru, zh) are created by
@@ -820,8 +908,10 @@ Booted and verified: a clean `down -v` + `up` provisions and imports end to end,
 and `/`, `/news/`, `/news/page/2/`, `/download/`, the pages, category and year
 archives, search and 404 all return the right status with no PHP notices.
 
-- The search palette indexes the twenty most recent pages and posts from PHP. A
-  real index belongs behind the REST API.
+- The search palette's *first* pass is still the twenty most recent pages and
+  posts, inline with the page and matched on titles. Everything past that
+  keystroke is the REST routes — the site's documents and the wiki — so the
+  inline list is a head start rather than the index. See *Search* above.
 - Polylang is configured with five languages and the imported translations are
   linked, but the language switcher has only been exercised on English. The
   pages themselves are unwritten in every language, English included.
@@ -832,4 +922,41 @@ archives, search and 404 all return the right status with no PHP notices.
   contact form plugin — install one and paste its shortcode into the "Contact
   form" box on `/contact/`. Nothing on that page sends mail today. The
   address beside it does, and is real.
-- No comment templates — comments are closed site-wide and the design draws none.
+- **Comments are drawn, and the archive is the reason.** The import brings 155
+  approved comments on 55 posts, the oldest from 2008 and the newest a month
+  before the export. For most of this theme's life none of them rendered: there
+  was no `comments.php`, three files said "the theme draws no comment list" as
+  though it were a decision, and the one place it was enforced —
+  `default_comment_status` — only ever governed posts created *after* it ran.
+  Every imported post arrives `comment_status: open`, so the threads were live
+  and reachable by anything posting straight to `wp-comments-post.php`, and
+  invisible to the people they were addressed to.
+
+  `comments.php` and `inc/comments.php` draw them now, in four states: with
+  comments and open, list and form; with comments and closed, the list stays and
+  the form goes, because fifteen years of replies are worth reading on a post
+  nobody will reply to again; empty and open, just the form; empty and closed,
+  nothing at all. Styles are in `wp.css`, not `theme.css`, on the same split as
+  the download page's mail form — a comment list has no meaning outside
+  WordPress.
+
+  **Avatars follow Settings → Discussion.** mudlet.org shows Gravatars and
+  `show_avatars` is on, so that is what renders; with it off the initials come
+  back and no third-party request is made. This was hardcoded to initials at
+  first, on the argument that every other face on the site is initials or a
+  self-published picture and that an `<img>` per comment is a request to
+  Automattic carrying a hash of the commenter's address and every reader's IP.
+  The argument stands, but it is not a theme's to enforce: WordPress has had
+  that switch since 2.5, and hardcoding past it makes the checkbox in wp-admin
+  a lie. Honouring it puts the privacy position in the hands of whoever runs
+  the site.
+
+  **No website field**, which *is* a theme decision, because core has no
+  setting for it: a do-follow link on mudlet.org for the price of a comment is
+  what `mudlet-shots` already refuses for the price of a picture. Dropping it
+  needs care — core re-adds its own cookie-consent checkbox to any custom
+  `fields` array (`comment-template.php:2595`) with wording promising to
+  remember a website this form never asks for. mudlet.org offers no such
+  checkbox, so the baseline sets `show_comments_cookies_opt_in` to 0 and
+  `inc/comments.php` checks the same option — turn it back on and the box
+  returns, worded for the fields this form actually has.

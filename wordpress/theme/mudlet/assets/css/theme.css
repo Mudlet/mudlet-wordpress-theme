@@ -102,7 +102,30 @@ button{font:inherit; color:inherit}
 #site .topnav a{font-size:.9rem; font-weight:500; text-decoration:none; color:var(--dim);
   padding:.4rem .65rem; border-radius:7px}
 #site .topnav a:hover{color:var(--ink); background:var(--band)}
-@media (max-width:64rem){ #site .topnav a.lo{display:none} }
+/* A nav item with children. The button is the anchor above with a caret
+   bolted on - same size, same padding, same states - because it sits in the
+   same row and any difference between them would read as a mistake. The panel
+   is the language menu's, hung off the left edge instead of the right: these
+   are in the middle of the bar, and one opening rightwards from there would
+   walk off the end of a narrow window. */
+#site .nav__grp{position:relative; display:flex}
+#site .nav__top{display:flex; align-items:center; gap:.3rem; font-family:inherit;
+  font-size:.9rem; font-weight:500; color:var(--dim); background:transparent;
+  border:0; padding:.4rem .65rem; border-radius:7px; cursor:pointer}
+#site .nav__top:hover,#site .nav__top[aria-expanded="true"]{color:var(--ink); background:var(--band)}
+#site .nav__top .crt{width:.7rem; height:.7rem; opacity:.7}
+#site .nav__sub{position:absolute; left:0; top:calc(100% + .5rem); z-index:5;
+  margin:0; padding:.3rem; list-style:none; min-width:11rem; background:var(--card);
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 18px 34px -18px rgba(var(--sh),.5)}
+#site .nav__sub[hidden]{display:none}
+/* the rest of the row is .topnav a already; these two are what a panel adds */
+#site .nav__sub a{display:block; white-space:nowrap}
+/* The row either fits or it is a drawer; there is no middle state where the
+   bar keeps some of it. Measured, the whole header - logo, seven items, the
+   utilities and the button - needs about 61rem, so it folds at 64rem, which
+   is also the one breakpoint the drawer below opens at. Two breakpoints here
+   is what left a window 52-64rem wide showing "News" and nothing else, with
+   no way to reach the rest. */
 
 /* — utilities: search, language, the one call to action — */
 #site .util{display:flex; align-items:center; gap:.45rem; padding-left:.85rem;
@@ -113,7 +136,11 @@ button{font:inherit; color:inherit}
 #site .searchbtn:hover{color:var(--ink); background:var(--band)}
 #site .searchbtn svg{width:1.05rem; height:1.05rem}
 
-#site .palette{width:min(34rem,calc(100vw - 2rem)); max-height:min(28rem,calc(100vh - 8rem));
+/* 34rem of height, not the 28 this opened at: the list is two blocks now — the
+   site's rows and the wiki's — and each ends in a row out of it. At 28rem the
+   panel held eight rows, which is the site's half and a glimpse of the wiki's.
+   The calc still wins on a short window, and the list still scrolls. */
+#site .palette{width:min(34rem,calc(100vw - 2rem)); max-height:min(34rem,calc(100vh - 8rem));
   margin:11vh auto auto; padding:0; overflow:hidden; color:var(--ink);
   background:var(--card); border:1px solid var(--line); border-radius:14px;
   box-shadow:0 40px 80px -28px rgba(var(--sh),.6)}
@@ -147,6 +174,12 @@ button{font:inherit; color:inherit}
   padding:.35rem 0 .35rem; background:var(--card); border-top:1px solid var(--line)}
 #site .palette__all button .t{color:var(--dim)}
 #site .palette__all button[aria-selected="true"] .t{color:var(--link)}
+/* The wiki's block: a rule where the site's results end, and its own way out at
+   the bottom of it. That one is not sticky — a single row can hold the bottom
+   edge, and the site's results own it. */
+#site .palette__group{margin-top:.35rem; padding-top:.35rem; border-top:1px solid var(--line)}
+#site .palette__out button .t{color:var(--dim)}
+#site .palette__out button[aria-selected="true"] .t{color:var(--link)}
 #site .palette__empty{padding:1.6rem 1rem; text-align:center; color:var(--dim); font-size:.9rem}
 #site .palette__empty[hidden]{display:none}
 #site .palette__foot{display:flex; gap:1.1rem; padding:.55rem 1rem; font-size:.72rem; color:var(--dim);
@@ -288,8 +321,10 @@ button{font:inherit; color:inherit}
 #site .util .btn{font-size:.84rem; padding:.42rem .95rem; flex:none; white-space:nowrap}
 
 /* — the narrow-screen menu — */
-/* Hidden until the bar runs out of room for the row, which is also the width
-   at which the wrapper stops being display:contents. */
+/* Hidden until the bar runs out of room for the row (64rem, measured above),
+   which is also the width at which the wrapper stops being display:contents.
+   One number, in one place: the moment anything would drop out of the bar,
+   all of it is in here instead. */
 #site .burger{display:none; margin-left:auto; align-items:center; justify-content:center;
   width:2.05rem; height:2.05rem; color:var(--dim); background:transparent;
   border:1px solid transparent; border-radius:7px; cursor:pointer}
@@ -300,13 +335,13 @@ button{font:inherit; color:inherit}
 #site .top[data-nav="open"] .burger .bars{display:none}
 #site .top[data-nav="open"] .burger .ex{display:block}
 
-@media (max-width:52rem){
+@media (max-width:64rem){
   #site .burger{display:flex}
   /* A panel hung off .top, which is sticky and therefore already the
      containing block - so it spans the bar edge to edge and carries .w's own
      inline padding rather than sitting inside it. No overflow:auto on it: the
      language menu below opens out of this box, and a scroll container would
-     clip it. It is five links and a row of icons; it fits. */
+     clip it. It is seven items and a row of icons; it fits. */
   #site .menu{display:none; position:absolute; left:0; right:0; top:100%;
     padding:.55rem clamp(1.1rem,4vw,2rem) .9rem; background:var(--card);
     border-bottom:1px solid var(--line);
@@ -316,9 +351,16 @@ button{font:inherit; color:inherit}
      is a surface, so the two go solid together and read as one panel */
   #site .top[data-nav="open"]{background:var(--card)}
   #site .topnav{margin-left:0; display:block}
-  /* the ones the bar drops at 64rem are exactly what this is for */
-  #site .topnav a.lo{display:block}
   #site .topnav a{display:block; font-size:1rem; padding:.6rem .7rem}
+  /* In a column there is nothing to open a panel over: the caret goes to the
+     far end and the list drops into the flow under it, ruled off rather than
+     boxed, so a drawer of five links and two groups still reads as one list. */
+  #site .nav__grp{display:block}
+  #site .nav__top{width:100%; justify-content:space-between; font-size:1rem; padding:.6rem .7rem}
+  #site .nav__sub{position:static; min-width:0; margin:0 0 .25rem .7rem;
+    padding:0 0 0 .7rem; background:transparent; border:0; border-left:1px solid var(--line);
+    border-radius:0; box-shadow:none}
+  #site .nav__sub a{font-size:.95rem}
   #site .util{gap:.35rem; margin-top:.55rem; padding:.7rem .2rem 0;
     border-left:0; border-top:1px solid var(--line)}
   #site .util .lang{display:block; margin-left:.25rem}
@@ -746,6 +788,15 @@ button{font:inherit; color:inherit}
   color:var(--dim); background:transparent; border:1px solid var(--line);
   border-radius:8px; cursor:pointer; transition:.15s}
 #site .dlact[hidden]{display:none}   /* no script, no drawer to open */
+/* The way round the mirror: the same file, from GitHub. The mark alone, and
+   deliberately without the .dlact border - it navigates away rather than
+   opening the drawer, so it should not read as a fourth control in the group.
+   Quiet on purpose: this is the answer to "that link won't load for me", not a
+   second thing to choose between. */
+#site .dlsrc{display:grid; place-items:center; width:1.6rem; height:2rem; flex:none;
+  color:var(--dim); transition:.15s}
+#site .dlsrc svg{width:1.05rem; height:1.05rem}
+#site .dlsrc:hover{color:var(--ink)}
 #site .dlact svg{width:1.05rem; height:1.05rem}
 #site .dlact:hover{color:var(--ink); background:var(--band)}
 /* The open one stays lit, because its drawer is the only thing on screen
@@ -826,13 +877,59 @@ button{font:inherit; color:inherit}
 #site .way p{font-size:.88rem; line-height:1.65; color:var(--dim)}
 #site .way a{color:var(--link); font-weight:500; text-decoration:none}
 #site .way a:hover{text-decoration:underline; text-underline-offset:3px}
-/* two columns once there is room for two, so the clone line fits on one */
-@media (min-width:40rem){ #site .way--wide{grid-column:span 2} }
-/* and never wrap it: scroll instead, on the narrow screens that still cannot */
+/* No .way--wide any more: "Build it yourself" was the only tile that ever took
+   two columns, and it did so to keep its `git clone` line on one row. It does
+   not hold that at one column, and the note that used to claim it did had the
+   wrong number for the narrowest tile: three columns bottom out at 278px, not
+   at 320px. Measured, the line needs 305px and gets it only at the widest
+   three-column tile (364px) and in the two-column layouts under 850px —
+   through the middle of the three-column band it scrolls, which is what the
+   rule below has always been for. The tile is one column because six tiles
+   make two rows of three; the clone line scrolls, as it was always going to. */
+/* It wraps rather than scrolls, which is the opposite of what it used to do.
+   A command that wraps is a command somebody can mistype at the break, so the
+   old rule kept it on one line and let the tile scroll sideways — and since
+   the line only ever fitted at the widest tile (see above), what that bought
+   in practice was a scrollbar inside a card at most window widths. The copy
+   button beside it is what settles the argument: the break cannot be mistyped
+   by anyone who presses the button, and the visitor no longer has to drag a
+   309px line through a 208px window to read the end of it. `anywhere` rather
+   than break-all so it takes the space in "git clone" first and only breaks
+   inside the URL when even that is not enough. */
 #site .way code{display:block; margin-top:.6rem; padding:.5rem .6rem; background:var(--band);
-  white-space:nowrap; overflow-x:auto;
+  overflow-wrap:anywhere;
   border:1px solid var(--line); border-radius:6px; font-family:var(--display);
-  font-size:.72rem; color:var(--ink); word-break:break-all}
+  font-size:.72rem; color:var(--ink)}
+/* The clone line and the button that copies it are one box, not two beside
+   each other. A second bordered box with its own gap costs 38px of a tile
+   that has 322px at its widest and 238px at its narrowest, and since the line
+   wraps, every pixel it takes is a pixel closer to a third line. Sharing one
+   box costs 24px instead, and reads as one control rather than as a button
+   that drifted up against a field. So the border, the background and the
+   radius move up here from the code, and the button keeps only its ink.
+   Centred rather than aligned to the first line, because what it copies is
+   all of the lines. */
+#site .clone{display:flex; align-items:center; margin-top:.6rem;
+  background:var(--band); border:1px solid var(--line); border-radius:6px}
+#site .clone code{margin-top:0; flex:1 1 auto; min-width:0;
+  background:transparent; border:0; border-radius:0}
+#site .clone__cp{flex:none; display:grid; place-items:center; width:1.6rem; height:1.6rem;
+  margin-right:.15rem; color:var(--dim); background:transparent; border:0;
+  border-radius:4px; cursor:pointer; transition:.15s}
+#site .clone__cp[hidden]{display:none}   /* no script, nothing to copy with */
+#site .clone__cp:hover{color:var(--ink)}
+#site .clone__cp svg{width:.9rem; height:.9rem}
+/* the tick takes the copy icon's place for a second and a half, the way the
+   theme toggle and the burger show the state they would move you to */
+#site .clone__cp .ok{display:none}
+#site .clone__cp[data-copied]{color:var(--mark)}
+#site .clone__cp[data-copied] .cp{display:none}
+#site .clone__cp[data-copied] .ok{display:block}
+/* A file name inside a sentence is not a command to run: the rule above dresses
+   the clone line, and this undoes the block half of it for the one word the
+   Portable tile sets in the middle of its prose. */
+#site .way p code{display:inline; margin:0; padding:.08rem .35rem; border:0;
+  border-radius:4px; white-space:normal; word-break:normal; font-size:.85em}
 
 /* said once, not once per platform tab as the current page does */
 #site .calls{display:grid; gap:.85rem; grid-template-columns:repeat(auto-fit,minmax(19rem,1fr))}
@@ -1038,10 +1135,37 @@ button{font:inherit; color:inherit}
 #site .cat:hover{background:var(--band); color:var(--ink)}
 #site .cat[aria-pressed="true"]{background:var(--band); color:var(--link); font-weight:600}
 
-#site .rsel{width:100%; font-family:var(--display); font-size:.84rem; color:var(--ink);
-  background:var(--card); border:1px solid var(--line); border-radius:8px;
-  padding:.5rem .6rem; cursor:pointer}
-#site .rsel:hover{border-color:var(--accent2)}
+/* The year jump was the one control here the browser drew rather than this
+   stylesheet: a native <select>, with an OS dropdown behind it and an OS arrow
+   on it, in the middle of a rail of hand-drawn rows. It is a <details> now, and
+   what opens is the years as what they already were — links to real archives,
+   in the same shape as the categories above them, count and all. It works with
+   no JavaScript, which the select could not: a select cannot be a link, so it
+   needed a change handler to go anywhere. */
+#site .ydrop{border:1px solid var(--line); border-radius:8px; background:var(--card)}
+#site .ydrop:hover{border-color:var(--accent2)}
+#site .ydrop summary{display:flex; align-items:center; gap:.5rem; padding:.5rem .6rem;
+  font-family:var(--display); font-size:.84rem; color:var(--ink); cursor:pointer;
+  border-radius:7px; list-style:none}
+/* Safari still draws the disclosure triangle from the shadow DOM. */
+#site .ydrop summary::-webkit-details-marker{display:none}
+#site .ydrop summary .crt{width:.7rem; height:.7rem; margin-left:auto; opacity:.7;
+  transition:rotate .15s}
+#site .ydrop[open] summary .crt{rotate:180deg}
+/* Two columns: nineteen years down one of them is a scroll in a panel that is
+   trying to save somebody a scroll. Two columns is also what sets the cap —
+   16rem clears the ten rows this site has, so nothing scrolls today, and still
+   stops the sticky rail growing past the window on the site that has been
+   posting for thirty years. The bar is styled for that day. */
+#site .ylist{display:grid; grid-template-columns:1fr 1fr; gap:.05rem;
+  max-height:16rem; overflow-y:auto; padding:.3rem; border-top:1px solid var(--line);
+  scrollbar-width:thin; scrollbar-color:var(--dim) transparent}
+#site .ylist a{display:flex; align-items:baseline; gap:.6ch; padding:.32rem .45rem;
+  border-radius:6px; font-family:var(--display); font-size:.8rem; color:var(--dim);
+  text-decoration:none; transition:.13s}
+#site .ylist a .n{margin-left:auto; font-size:.72rem; opacity:.6}
+#site .ylist a:hover{background:var(--band); color:var(--ink)}
+#site .ylist a[aria-current="true"]{background:var(--band); color:var(--link); font-weight:600}
 
 #site .rlinks{display:flex; flex-direction:column; gap:.55rem; font-size:.89rem}
 #site .rlinks a{display:flex; gap:.6ch; color:var(--dim); text-decoration:none}
@@ -1128,9 +1252,27 @@ button{font:inherit; color:inherit}
 /* The article column keeps its 53rem reading measure; the rail takes the
    width beside it rather than the article growing into it. */
 #site .post{padding-block:var(--secpad)}
-#site .postgrid{display:grid; grid-template-columns:minmax(0,1fr) 15.5rem;
+/* A plain page borrows both — same grid, same measure, same rail — because a
+   page like /contribute/ is the same kind of document as a release post and was
+   being read at the container's full 74rem. */
+#site .postgrid,#site .pagegrid{display:grid; grid-template-columns:minmax(0,1fr) 15.5rem;
   column-gap:clamp(1.75rem,4vw,3.5rem); align-items:start}
-#site .postmain{min-width:0; max-width:53rem}
+#site .postmain,#site .pagemain{min-width:0; max-width:53rem}
+/* A page with fewer than three headings has no outline, so it has no rail, so
+   it holds no column open for one — and then it takes that width rather than
+   sitting centred in it. Two pages of the same kind starting at the container's
+   left edge is worth more here than the reading measure: /about/ has three
+   headings and /vision/ has two, and centring only the second one made them
+   read as different templates. The 53rem measure is the rail's other half;
+   with no rail beside it, it is a 21rem gutter holding nothing.
+
+   Keeping the cap here has been tried and reverted. It reads well enough on
+   /vision/, which is all paragraphs — but the same rule catches /media/, whose
+   content is a carousel and a grid of screencast cards, and neither of those is
+   read at a measure. It squeezed them to 848px and put 336px of nothing beside
+   them. A page with no rail is not a column, so it is not given one. */
+#site .pagegrid--solo{grid-template-columns:minmax(0,1fr)}
+#site .pagegrid--solo .pagemain{max-width:none}
 
 #site .crumbs{display:flex; align-items:baseline; gap:.6ch; flex-wrap:wrap;
   font-family:var(--display); font-size:.78rem; color:var(--dim); margin-bottom:1.6rem}
@@ -1329,10 +1471,15 @@ button{font:inherit; color:inherit}
   margin-top:2.25rem; padding-top:1.75rem; border-top:1px solid var(--line)}
 
 @media (max-width:68rem){
-  #site .postgrid{grid-template-columns:1fr}
+  #site .postgrid,#site .pagegrid{grid-template-columns:1fr}
   /* with the rail gone the container narrows too, so the article is centred
-     in the page rather than pinned to the left of a 74rem box */
+     in the page rather than pinned to the left of a 74rem box. The page does
+     it to the grid rather than to .w, because .page--page is also /games/,
+     /contact/, a game, a maker and the 404, and none of those is a column. */
   #site .post .w{max-width:53rem}
+  /* A page that never had a rail is full width at every size, so it is not one
+     of the ones losing one here. */
+  #site .pagegrid:not(.pagegrid--solo){max-width:53rem; margin-inline:auto}
   /* Everything the rail holds has a home in the article at this width: the
      version and date are in the header, the counts are in the changelog, and
      the outline and the actions come back into the column. Nothing is lost

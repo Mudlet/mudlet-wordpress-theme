@@ -98,6 +98,33 @@ function mudlet_initials( string $name ): string {
 	return function_exists( 'mb_strtoupper' ) ? mb_strtoupper( $first . $last ) : strtoupper( $first . $last );
 }
 
+/**
+ * Where "older versions" points.
+ *
+ * Every build mudlet.org has ever shipped is on mudlet.org: CI scps each asset
+ * to wp-content/files/ as the platform finishes building, before the GitHub
+ * release even exists, and nothing is ever removed. What serves that directory
+ * is Apache's own index - not WordPress - so this is a plain URL rather than
+ * anything routed, and the C/O parameters are mod_autoindex's own sort: newest
+ * first.
+ *
+ * GitHub's release list is the obvious alternative and carries more per release
+ * (changelogs, checksums). It is not the default for the same reason the
+ * download rows are not: a download page that sends people off-site is a
+ * download page that fails wherever GitHub is throttled. The filter is there
+ * for whoever decides that trade differently.
+ *
+ * @return string
+ */
+function mudlet_download_archive_url(): string {
+	/**
+	 * Filter the archive URL behind "Browse the archive".
+	 *
+	 * @param string $url The archive URL.
+	 */
+	return (string) apply_filters( 'mudlet_download_archive_url', content_url( 'files/?C=M;O=D' ) );
+}
+
 add_action( 'admin_notices', 'mudlet_releases_plugin_notice' );
 /**
  * Say so, once, if the plugin is missing.

@@ -21,21 +21,10 @@ while ( have_posts() ) :
 
 	// Built once and printed twice — in the rail, which is sticky and is where
 	// it is meant to be read, and in the article for the widths where the rail
-	// is gone. The CSS shows exactly one of the two; see .prose .outline.
-	// Two headings is a page, not a structure worth a table of contents.
-	$outline = '';
-	if ( count( $headings ) > 2 ) {
-		ob_start();
-		?>
-		<b><?php esc_html_e( 'In this post', 'mudlet' ); ?></b>
-		<div class="olist">
-			<?php foreach ( $headings as $h ) : ?>
-				<a href="#<?php echo esc_attr( $h['id'] ); ?>"><?php echo esc_html( $h['text'] ); ?></a>
-			<?php endforeach; ?>
-		</div>
-		<?php
-		$outline = (string) ob_get_clean();
-	}
+	// is gone. The CSS shows exactly one of the two; see .prose .outline. A
+	// plain page draws the same thing, which is why the markup is a template
+	// tag rather than a block of this file.
+	$outline = mudlet_outline_panel( $headings, __( 'In this post', 'mudlet' ) );
 	?>
 
 	<div class="page page--post">
@@ -95,6 +84,14 @@ while ( have_posts() ) :
 							<?php endif; ?>
 							<a class="btn btn--ghost" href="https://forums.mudlet.org/"><?php esc_html_e( 'Discuss on the forum', 'mudlet' ); ?></a>
 						</div>
+
+						<?php
+						// After the post and its actions, before the navigation
+						// that leaves it: the discussion is about this post, and
+						// "older post" is not. Draws nothing on a post with no
+						// comments whose comments are closed - see comments.php.
+						comments_template();
+						?>
 
 						<nav class="postnav" aria-label="<?php esc_attr_e( 'More posts', 'mudlet' ); ?>">
 							<?php

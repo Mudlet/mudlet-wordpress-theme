@@ -191,7 +191,7 @@ class Mudlet_Releases_Store {
 			'prerelease'  => '1' === (string) $get( 'prerelease' ),
 			'counts'      => (array) $get( 'counts', array() ),
 			'counts_from' => (array) $get( 'counts', array() ) ? 'pulls' : 'body',
-			'builds'      => (array) $get( 'builds', array() ),
+			'builds'      => Mudlet_Releases_Links::decorate( (array) $get( 'builds', array() ) ),
 			'contributors' => (array) $get( 'contributors', array() ),
 			'changelog'   => Mudlet_Releases_Markdown::to_html( $body ),
 			'body'        => $body,

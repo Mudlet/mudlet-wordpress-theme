@@ -44,9 +44,28 @@ if ( ! $page ) {
 	return;
 }
 
-if ( '' !== trim( (string) $page->post_content ) ) {
+/*
+ * Three cases, not two.
+ *
+ * Empty is the original one: write the page. Somebody's own prose is the
+ * protected one: never touch it. The third arrived with the baseline import -
+ * mudlet.org's /media/ page, whose body is eleven et_pb_* blocks that render as
+ * nothing without Divi. That is not content to protect, it is precisely what
+ * the migration replaces, so it is overwritten and said out loud.
+ *
+ * The test is the shortcode rather than the page's history, because that is the
+ * fact on the page: a body made of tags for a plugin this site does not have.
+ */
+$body   = trim( (string) $page->post_content );
+$is_old = ( '' !== $body ) && ( false !== strpos( $body, '[et_pb_' ) );
+
+if ( '' !== $body && ! $is_old ) {
 	WP_CLI::log( '  · media page already has content - leaving it alone' );
 	return;
+}
+
+if ( $is_old ) {
+	WP_CLI::log( '  · replacing the imported Divi body with the gallery' );
 }
 
 /*

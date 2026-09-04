@@ -191,6 +191,62 @@
 /* The empty state on an archive holds a link back, which reads as a chip. */
 #site .pempty .chip { margin-left: .5ch; }
 
+/* ── the wiki, under a search ─────────────────────────────────────────
+   A search results page prints what wiki.mudlet.org said under the site's own
+   rows and never mixed into them — the same order the palette draws in, out of
+   the same call. Here rather than in theme.css because the prototype had no
+   results page for this to be part of: it exists only once WordPress is
+   answering a query. See inc/wiki-search.php and search.php.
+
+   Rows and not cards, because the list above it is rows: the same date-rail
+   shape as .prow with the date column taken out. */
+#site .wres { margin-top: 2.5rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
+#site .wres__h {
+	display: flex;
+	align-items: center;
+	gap: 1.1ch;
+	margin-bottom: .5rem;
+	font-family: var(--display);
+	font-size: .75rem;
+	font-weight: 600;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: var(--dim);
+}
+#site .wres__h::before { content: '>'; color: var(--mark); }
+#site .wres__h::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+#site .wres__row {
+	display: block;
+	padding: .95rem .85rem;
+	border-bottom: 1px solid var(--line);
+	text-decoration: none;
+	transition: background .15s;
+}
+#site .wres__row:hover { background: var(--band); }
+#site .wres__row h3 { font-size: 1rem; transition: color .15s; }
+/* the mark rides in on hover — the same > the rows above it use */
+#site .wres__row h3::before {
+	content: '>';
+	margin-left: -1.1ch;
+	margin-right: .35ch;
+	color: var(--mark);
+	opacity: 0;
+	transition: opacity .15s;
+}
+#site .wres__row:hover h3 { color: var(--link); }
+#site .wres__row:hover h3::before { opacity: 1; }
+#site .wres__row p {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	margin-top: .3rem;
+	font-size: .89rem;
+	line-height: 1.6;
+	color: var(--dim);
+}
+#site .wres__all { margin-top: 1.2rem; }
+
 /* ── changelog height ─────────────────────────────────────────────────
    The prototype's changelog was eleven hand-written lines; a real one is four
    hundred. Left alone, that puts ten thousand pixels between the article and
@@ -1263,4 +1319,278 @@
 		flex-basis: 100%;
 		min-height: 5.4em;
 	}
+}
+
+/* ── comments ─────────────────────────────────────────────────────────
+   Here rather than in theme.css for the same reason the download page's mail
+   form and the screenshot form are: a comment list has no meaning outside
+   WordPress, and the static design this theme grew out of had nothing to draw
+   for it. See inc/comments.php for why there are no avatars.
+
+   The list is <ol> and threaded, so the nesting has to come from the markup
+   rather than a fixed indent — .children is core's class and can go five deep
+   before max_depth stops it. The indent is deliberately small: a fifteen-year
+   thread five levels down would otherwise be a column two words wide. */
+#site .cmts {
+	margin: 2.2rem 0 0;
+	padding-top: 1.6rem;
+	border-top: 1px solid var(--line);
+}
+#site .cmts__head {
+	font-family: var(--display);
+	font-weight: var(--dw);
+	font-size: 1.05rem;
+	letter-spacing: var(--dls);
+	margin: 0 0 1.1rem;
+}
+#site .cmts__list,
+#site .cmts__list .children {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+#site .cmts__list .children {
+	margin-top: .9rem;
+	padding-left: 1.1rem;
+	border-left: 1px solid var(--line);
+}
+#site .cmt {
+	margin: 0 0 1.1rem;
+}
+#site .cmt__body {
+	padding: .9rem 1rem 1rem;
+	background: var(--band);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+#site .cmt__head {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .3rem;
+	margin-bottom: .5rem;
+	font-family: var(--display);
+	font-size: .82rem;
+	color: var(--dim);
+}
+#site .cmt__who {
+	color: var(--ink);
+	font-weight: 600;
+}
+/* Somebody who can edit posts here, so a reader can tell a maintainer's answer
+   from a passer-by's. Not a role name: "Administrator" on a comment is an
+   invitation, and what matters is only that they are one of the project's. */
+#site .cmt__badge {
+	font-size: .7rem;
+	line-height: 1;
+	padding: .2rem .4rem;
+	border-radius: 999px;
+	color: var(--on-accent);
+	background: var(--orange);
+}
+#site .cmt__when {
+	color: var(--dim);
+	text-decoration: none;
+}
+#site .cmt__when:hover {
+	color: var(--link);
+	text-decoration: underline;
+}
+#site .cmt__held {
+	margin: 0 0 .5rem;
+	font-size: .82rem;
+	color: var(--orange);
+}
+/* The body is untrusted prose from fifteen years of strangers, so it is capped
+   the way .prose is and its images are held inside the box rather than trusted
+   to be a sensible width. */
+#site .cmt__text {
+	font-size: .93rem;
+	line-height: 1.6;
+}
+#site .cmt__text > :first-child { margin-top: 0 }
+#site .cmt__text > :last-child { margin-bottom: 0 }
+#site .cmt__text img {
+	max-width: 100%;
+	height: auto;
+}
+#site .cmt__text pre {
+	overflow-x: auto;
+}
+/* Reply, and Cancel reply, are the same control at opposite ends of the same
+   action, so they are drawn the same: a small ghost pill, .btn--ghost's colours
+   at the size the two of them actually want. Not .btn--ghost itself — that is
+   theme.css's, sized for the page's own buttons, and a comment needs something
+   that sits inside a paragraph without pushing the line apart. */
+#site .cmt__reply {
+	margin: .6rem 0 0;
+}
+#site .cmt__reply a,
+#site .comment-reply-title small a {
+	display: inline-flex;
+	align-items: center;
+	padding: .3rem .75rem;
+	font-family: var(--display);
+	font-size: .76rem;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--ink);
+	background: transparent;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background .12s, border-color .12s, color .12s;
+}
+#site .cmt__reply a:hover,
+#site .comment-reply-title small a:hover {
+	color: var(--link);
+	background: var(--band);
+	border-color: var(--orange);
+}
+#site .cmt__reply a:focus-visible,
+#site .comment-reply-title small a:focus-visible {
+	outline: 2px solid var(--orange);
+	outline-offset: 2px;
+}
+#site .cmts__closed {
+	margin: 1.2rem 0 0;
+	font-size: .88rem;
+	color: var(--dim);
+}
+
+/* The form. Same shape as the screenshot form above — a stacked label/field
+   row — because they are the only two places on the site a stranger types
+   something and presses a button. */
+#site .cmtform {
+	margin-top: 1.6rem;
+	padding: 1.15rem 1.25rem 1.25rem;
+	background: var(--band);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+/* Pressing Reply swaps this heading's text and puts a Cancel reply pill inside
+   it, and the pill is taller than the line of type it lands in - so the heading
+   grew by a few pixels and shoved the form down at the moment of the click.
+   A flex row with the pill's own height as a floor means the space is already
+   reserved: the pill appears into it rather than pushing it open.
+
+   The form still travels up the page to sit under the comment being answered.
+   That move is core's comment-reply.js and is the point of the button; what is
+   fixed here is the jolt that used to come with it. */
+#site .comment-reply-title {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .6ch;
+	min-height: 1.5rem;
+	font-family: var(--display);
+	font-weight: var(--dw);
+	font-size: 1rem;
+	letter-spacing: var(--dls);
+	margin: 1.8rem 0 0;
+}
+#site .cmtform__note {
+	margin: 0 0 .8rem;
+	font-size: .8rem;
+	color: var(--dim);
+}
+#site .cmtform__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .55rem;
+	margin: 0 0 .7rem;
+}
+#site .cmtform__row label {
+	flex: none;
+	width: 7.5rem;
+	font-family: var(--display);
+	font-size: .82rem;
+	color: var(--dim);
+}
+/* The textarea is a block, not a labelled row. A word in the left column
+   beside a five-line box left "Comment" stranded at the top of a tall empty
+   rectangle; the label is still there for screen readers (see
+   inc/comments.php) and the placeholder carries the visible half. */
+#site .cmtform__row--full {
+	display: block;
+}
+#site .cmtform__row--full textarea {
+	width: 100%;
+}
+#site .cmtform textarea::placeholder,
+#site .cmtform input::placeholder {
+	color: var(--dim);
+	opacity: 1;
+}
+#site .cmtform input[type="text"],
+#site .cmtform input[type="email"],
+#site .cmtform textarea {
+	flex: 1 1 16rem;
+	min-width: 0;
+	font-family: var(--display);
+	font-size: .84rem;
+	color: var(--ink);
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: .45rem .6rem;
+}
+#site .cmtform textarea {
+	line-height: 1.55;
+	resize: vertical;
+}
+/* Right, under the fields rather than under the label column: the button is
+   the end of the form, and every row above it has its right edge in the same
+   place. */
+#site .cmtform .form-submit {
+	margin: 0;
+	text-align: right;
+}
+#site .cmtform .form-submit input[type="submit"] {
+	font-family: var(--display);
+	font-size: .84rem;
+}
+/* Core prints "Cancel reply" inside the reply title, as a <small> around a
+   link. The <small> is only a wrapper here — it is the <a> that gets drawn as
+   the pill above, so this just gives it room and stops it inheriting the
+   heading's size. */
+#site .comment-reply-title small {
+	font-size: 1rem;
+	font-weight: 400;
+}
+/* The cookie opt-in is a checkbox and its sentence, not a labelled field, so it
+   opts out of the label column the other rows share. */
+#site .cmtform__row--check {
+	gap: .4rem;
+	font-size: .82rem;
+	color: var(--dim);
+}
+#site .cmtform__row--check label {
+	width: auto;
+	flex: 1 1 auto;
+	font-family: inherit;
+	font-size: inherit;
+}
+/* A real Gravatar rather than the initials box. Same circle and same size, but
+   an <img> needs the crop: the served file is square, and a theme that assumed
+   so would stretch the first one that is not. */
+#site .cmt__head .avatar--img {
+	object-fit: cover;
+	background: var(--band);
+}
+/* The required marker. Colour rather than weight: it sits inside a dim label,
+   and a bolder asterisk in the same grey reads as a footnote. */
+#site .cmtform__req {
+	color: var(--orange);
+}
+/* Replying moves the form into the list, and core puts it there as a plain
+   <div> sibling between two <li class="cmt">. The gap between comments lives on
+   .cmt's own margin-bottom, which that div has not got, so the form's bottom
+   edge sat flush against the comment underneath it — measured at 0px. It gets
+   the same gap the comments give each other. The space above it comes from the
+   .cmt it was opened under, so only this side was missing. */
+#site .cmts__list #respond {
+	margin-bottom: 1.1rem;
 }

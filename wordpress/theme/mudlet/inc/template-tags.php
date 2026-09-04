@@ -187,24 +187,81 @@ function mudlet_news_categories(): array {
 }
 
 /**
- * Years that actually have posts, for the archive jump.
+ * Years that actually have posts, and how many each holds, for the archive jump.
  *
- * @return string[]
+ * The count comes out of the same GROUP BY that finds the years, so the rail's
+ * year rows carry a number for nothing - and the rail's category rows have
+ * carried one all along, which is what makes the two read as one list.
+ *
+ * Versioned key: the shape changed from a list of years to years-to-counts, and
+ * a site updating mid-day would otherwise serve a day of the old one.
+ *
+ * @return array<string, int> Year => posts in it, newest first.
  */
 function mudlet_archive_years(): array {
 	global $wpdb;
-	$cached = get_transient( 'mudlet_archive_years' );
+	$cached = get_transient( 'mudlet_archive_years_2' );
 	if ( is_array( $cached ) ) {
 		return $cached;
 	}
-	$years = $wpdb->get_col(
-		"SELECT DISTINCT YEAR(post_date) FROM {$wpdb->posts}
+	$rows = $wpdb->get_results(
+		"SELECT YEAR(post_date) AS y, COUNT(*) AS n FROM {$wpdb->posts}
 		 WHERE post_type = 'post' AND post_status = 'publish'
-		 ORDER BY post_date DESC"
+		 GROUP BY y ORDER BY y DESC",
+		ARRAY_A
 	);
-	$years = array_map( 'strval', (array) $years );
-	set_transient( 'mudlet_archive_years', $years, DAY_IN_SECONDS );
+
+	$years = array();
+	foreach ( (array) $rows as $row ) {
+		$years[ (string) $row['y'] ] = (int) $row['n'];
+	}
+
+	set_transient( 'mudlet_archive_years_2', $years, DAY_IN_SECONDS );
 	return $years;
+}
+
+/**
+ * The rows of an outline, or '' when a document has no structure worth one.
+ *
+ * Built once and printed twice by its caller - in the rail, where it is meant
+ * to be read, and inside the column for the widths where the rail is gone. The
+ * stylesheet shows exactly one of the two; see `.prose .outline`.
+ *
+ * A post and a page both draw one, which is why this is here rather than in
+ * either template, and the label is the caller's because "In this post" is not
+ * something to say on /about/.
+ *
+ * $min is the caller's too, and the two callers want different numbers for a
+ * reason that is not taste. A post's rail is never empty - the release, its
+ * counts, the download buttons and the discuss links are all in it - so the
+ * outline is one panel among several there and 3 is a quality bar: two headings
+ * is a document, not a structure, and an outline over them lists the two things
+ * already on the screen. A plain page's rail is the outline and nothing else,
+ * so on a page that same number decides whether there is a rail at all, and the
+ * question stops being "is this structure worth listing" and becomes "is there
+ * anything to put here".
+ *
+ * @param array<int, array{id:string,text:string}> $headings As mudlet_outline() hands them back.
+ * @param string                                   $label    The panel's own heading.
+ * @param int                                      $min      Headings needed before there is a panel.
+ * @return string
+ */
+function mudlet_outline_panel( array $headings, string $label, int $min = 3 ): string {
+	if ( count( $headings ) < max( 1, $min ) ) {
+		return '';
+	}
+
+	ob_start();
+	?>
+	<b><?php echo esc_html( $label ); ?></b>
+	<div class="olist">
+		<?php foreach ( $headings as $heading ) : ?>
+			<a href="#<?php echo esc_attr( $heading['id'] ); ?>"><?php echo esc_html( $heading['text'] ); ?></a>
+		<?php endforeach; ?>
+	</div>
+	<?php
+
+	return (string) ob_get_clean();
 }
 
 /**
@@ -316,4 +373,32 @@ function mudlet_pager(): void {
 		?>
 	</nav>
 	<?php
+}
+
+/**
+ * Is a page's content a canvas rather than a column?
+ *
+ * /vision/ and /media/ are both `page.php`, and until now both were sorted by
+ * how many headings they had - which is a fact about the prose and says nothing
+ * about the shape. It got them both wrong at once: /vision/ ran its paragraphs
+ * at 119 characters a line for want of a measure, while /media/ had its
+ * carousel squeezed into one.
+ *
+ * So ask the content instead. A gallery, a set of columns, a table, an embed
+ * and anything the editor marked wide or full are all things whose whole point
+ * is width; a page holding one is a canvas, gets no rail and no measure, and
+ * takes the container.
+ *
+ * A lone `<figure><img>` is deliberately not on that list. An illustration in
+ * the middle of an argument is still an argument, and `.prose figure img`
+ * already caps one at 28rem and centres it in the measure.
+ *
+ * @param string $html Rendered post content.
+ * @return bool
+ */
+function mudlet_page_is_canvas( string $html ): bool {
+	return 1 === preg_match(
+		'/\b(?:wp-block-(?:gallery|columns|table|embed)|is-style-mudlet-(?:carousel|screencasts)|align(?:wide|full))\b/',
+		$html
+	);
 }

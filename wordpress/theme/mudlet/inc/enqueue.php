@@ -85,6 +85,10 @@ function mudlet_script_data(): array {
 		// inc/search.php.
 		'search'    => mudlet_search_index(),
 		'searchUrl' => esc_url_raw( rest_url( 'mudlet/v1/search' ) ),
+		// The manual, asked in parallel with the site and drawn under it. Empty
+		// when the wiki has been switched off, which is how the palette knows
+		// not to ask - see inc/wiki-search.php.
+		'searchWikiUrl' => mudlet_wiki_search_enabled() ? esc_url_raw( rest_url( 'mudlet/v1/search/wiki' ) ) : '',
 		// A REST request is not inside the language's URLs, so the language
 		// travels with the question. Empty without Polylang.
 		'searchLang' => mudlet_current_language_slug(),
@@ -102,6 +106,13 @@ function mudlet_script_data(): array {
 			/* translators: %s: total number of results */
 			'searchAll'  => __( 'See all %s results', 'mudlet' ),
 			'searchSrc'  => __( 'Search', 'mudlet' ),
+			// The end of the wiki's own block, and the only way from the
+			// palette to the wiki's search. Never a count: MediaWiki's REST
+			// search answers rows and no total, and a number worked out here
+			// would be a guess printed as a fact. Same words as the chip under
+			// the block on the results page, because it is the same offer.
+			'searchWikiAll' => __( 'Search the wiki', 'mudlet' ),
+			'searchWikiSrc' => __( 'Wiki', 'mudlet' ),
 			/* translators: %s: number of games currently matching the filter */
 			'gamesShown' => __( '%s shown', 'mudlet' ),
 			// The screenshot carousel and its lightbox. Every control on both is

@@ -81,7 +81,7 @@ class Mudlet_Releases_Release {
 			'prerelease' => ! empty( $raw['prerelease'] ),
 			'counts'     => $counts,
 			'counts_from'=> $changelog ? 'pulls' : 'body',
-			'builds'     => self::builds( (array) ( $raw['assets'] ?? array() ) ),
+			'builds'     => Mudlet_Releases_Links::decorate( self::builds( (array) ( $raw['assets'] ?? array() ) ) ),
 			'changelog'  => Mudlet_Releases_Markdown::to_html( $body ),
 			'body'       => $body,
 		);
@@ -217,6 +217,11 @@ class Mudlet_Releases_Release {
 					continue;
 				}
 
+				// Only what GitHub said. Where a *site* sends people - its own
+				// mirror, or the version-less alias - depends on an option and
+				// on home_url(), neither of which is a fact about the release,
+				// so neither is stored: Mudlet_Releases_Links::decorate() adds
+				// them on the way back out. See class-links.php.
 				$builds[ $key ] = array(
 					'file'  => $name,
 					'label' => $label,

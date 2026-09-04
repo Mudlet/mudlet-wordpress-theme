@@ -45,7 +45,6 @@ if ( 1 === $paged && have_posts() ) {
 					?>
 				</span></p>
 				<h2><?php single_post_title( '', true ); ?></h2>
-				<p class="sub"><?php esc_html_e( 'Releases, what we are working on, and the occasional word from the games that run on Mudlet.', 'mudlet' ); ?></p>
 			</div>
 
 			<?php

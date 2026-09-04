@@ -24,6 +24,71 @@
 	var DATA = window.MUDLET || {};
 	var S = DATA.strings || {};
 
+	// ── copy on click ────────────────────────────────────────────────────
+	// Three buttons on the download page do the same thing: put a string on
+	// the clipboard, say "copied" for a second and a half, and put themselves
+	// back. What differs between them is only where the string comes from,
+	// how a button says a word (its own label, a span inside it, or a tick
+	// swapped in for the copy icon) and what to do when there is no clipboard
+	// at all - so those are the arguments, and the rest is here.
+	//
+	//   read()       the string, read at the moment of the press
+	//   show(word)   paint the button with the word, or '' to put it back
+	//   fail(flash)  no clipboard at all. `flash` says a word and undoes it,
+	//                for a caller that answers in the button; return true to
+	//                leave the button dead, for one that has given up on it.
+	//
+	// Held apart from the clipboard call below because they answer different
+	// questions - this one is what a button does, that one is what a browser
+	// can do - and the browser half is the one with the history in it.
+	function copyOnClick(btn, read, show, fail) {
+		var spent = false;   // a caller that gave up stays given up
+		var busy = false;    // and a press mid-flash is the same press twice
+
+		function flash(word) {
+			busy = true;
+			show(word);
+			setTimeout(function () { busy = false; show(''); }, 1500);
+		}
+
+		btn.addEventListener('click', function () {
+			if (spent || busy) return;
+			copyText(
+				read(),
+				function () { flash(S.copied || 'copied'); },
+				function () { spent = fail(flash) === true; }
+			);
+		});
+	}
+
+	// ── put a string on the clipboard ────────────────────────────────────
+	// No page here can assume the async clipboard is there: an older browser
+	// has only execCommand, and an insecure origin or a sandboxed frame
+	// withholds both. Try the modern one, fall back to the hidden textarea,
+	// and call `fail` only when there is no clipboard at all.
+	function copyText(text, ok, fail) {
+		function legacy() {
+			try {
+				var ta = document.createElement('textarea');
+				ta.value = text;
+				ta.setAttribute('readonly', '');
+				ta.style.cssText = 'position:fixed;top:0;left:-9999px';
+				document.body.appendChild(ta);
+				ta.select();
+				var done = document.execCommand('copy');
+				document.body.removeChild(ta);
+				if (done) ok();
+				return done;
+			} catch (err) { return false; }
+		}
+
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(text).then(ok, function () { if (!legacy()) fail(); });
+		} else if (!legacy()) {
+			fail();
+		}
+	}
+
 	// ── the narrow-screen menu ───────────────────────────────────────────
 	// One nav in the document, drawn two ways: a row in the bar, or a panel
 	// under it. Which one is a media query's business, so the open state has
@@ -60,20 +125,47 @@
 
 	// ── header utilities: language menu and the theme toggle ─────────────
 	(function () {
-		var btn = document.querySelector('#site .lang__btn');
-		var menu = document.querySelector('#site .lang__menu');
+		// The language switcher and the nav's dropdowns are one behaviour: a
+		// button, a panel it owns, one open at a time, and anything else that
+		// gets clicked shuts them. Collected as pairs rather than written
+		// twice, because a second copy of this is a second copy of the Escape
+		// handling and the outside-click handling too.
+		var pops = [];
+		var langBtn = document.querySelector('#site .lang__btn');
+		var langMenu = document.querySelector('#site .lang__menu');
+		if (langBtn && langMenu) pops.push([langBtn, langMenu]);
+		Array.prototype.forEach.call(document.querySelectorAll('#site .nav__grp'), function (grp) {
+			var b = grp.querySelector('.nav__top');
+			var m = grp.querySelector('.nav__sub');
+			if (b && m) pops.push([b, m]);
+		});
 
-		if (btn && menu) {
-			var close = function () { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-			btn.addEventListener('click', function (e) {
-				e.stopPropagation();
-				var opening = menu.hidden;
-				menu.hidden = !opening;
-				btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+		if (pops.length) {
+			var show = function (pair, on) {
+				pair[1].hidden = !on;
+				pair[0].setAttribute('aria-expanded', on ? 'true' : 'false');
+			};
+			var closeAll = function () { pops.forEach(function (p) { show(p, false); }); };
+
+			pops.forEach(function (pair) {
+				pair[0].addEventListener('click', function (e) {
+					e.stopPropagation();
+					var opening = pair[1].hidden;
+					closeAll();
+					show(pair, opening);
+				});
 			});
-			menu.addEventListener('click', function (e) { e.stopPropagation(); });
-			document.addEventListener('click', close);
-			document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+			// The language menu swallows its own clicks so that picking a
+			// language out of the narrow-screen drawer does not also close the
+			// drawer under it. A nav panel is only links, which navigate.
+			if (langMenu) langMenu.addEventListener('click', function (e) { e.stopPropagation(); });
+			document.addEventListener('click', closeAll);
+			document.addEventListener('keydown', function (e) {
+				if (e.key !== 'Escape') return;
+				var open = document.querySelector('#site .nav__top[aria-expanded="true"]');
+				closeAll();
+				if (open) open.focus();
+			});
 		}
 
 		var theme = document.querySelector('#site .theme');
@@ -109,18 +201,25 @@
 
 	// ── search palette — "/" or ctrl/cmd-K, IDE style ────────────────────
 	//
-	// Two sources, one list. DATA.search is a flat [title, source, url] index
+	// Three sources, one list. DATA.search is a flat [title, source, url] index
 	// of the newest pages and posts, inline with the page: it draws on the
 	// keystroke, matches titles only, and is all there is when the REST API
 	// cannot be reached. DATA.searchUrl is mudlet/v1/search, which runs the
 	// query the results page runs — the documents, not their titles — and
-	// replaces that first pass a moment later.
+	// replaces that first pass a moment later. DATA.searchWikiUrl is
+	// mudlet/v1/search/wiki, which is wiki.mudlet.org.
 	//
-	// That second half exists because the box used to disagree with itself: a
-	// word in the body of a page suggested nothing as you typed and then found
-	// it the instant you pressed Enter. Submitting still falls through to
-	// WordPress's own search when nothing is highlighted, so the palette stays
-	// a shortcut over real search rather than a replacement for it.
+	// The second exists because the box used to disagree with itself: a word in
+	// the body of a page suggested nothing as you typed and then found it the
+	// instant you pressed Enter. The third exists because most of what anyone
+	// searches this site for is in the manual, and the site's own content is
+	// forty pages and a news log. Submitting still falls through to WordPress's
+	// own search when nothing is highlighted, so the palette stays a shortcut
+	// over real search rather than a replacement for it.
+	//
+	// The two requests go out together and neither waits for the other: the
+	// site answers from the database and the wiki over somebody else's network,
+	// and each half draws as it lands.
 	(function () {
 		var open = document.querySelector('#site .searchbtn');
 		var dlg = document.querySelector('#site .palette');
@@ -132,6 +231,9 @@
 
 		var ITEMS = Array.isArray(DATA.search) ? DATA.search : [];
 		var URL_ = typeof DATA.searchUrl === 'string' ? DATA.searchUrl : '';
+		// Empty when the site has switched the wiki off, which is the whole of
+		// how this side knows not to ask.
+		var WIKI = typeof DATA.searchWikiUrl === 'string' ? DATA.searchWikiUrl : '';
 		// The palette asks in the language the visitor is reading, because the
 		// results page it hands off to answers in that language and a count
 		// that disagrees with the page it links to is worse than no count.
@@ -139,10 +241,20 @@
 		var LIVE = !!URL_ && typeof window.fetch === 'function';
 		var MIN = 2;    // in step with the floor in inc/search.php
 		var WAIT = 160; // one pause in the typing, not one request per letter
+		// How much of the site's half is shown once the wiki has answered. The
+		// route sends eight, and the panel holds ten rows — measured, at the
+		// 34rem theme.css gives it — so eight of them and then the wiki's three
+		// is a block that exists only below the fold. Five, three, and a row out
+		// of each is exactly ten. Nothing is lost: the row that offers the rest
+		// of the site is one of them.
+		var SITE_MAX = 5;
 		var NONE = empty.textContent;
 
 		var shown = [], cursor = 0;
 		var timer = null, seq = 0, ctrl = null, busy = false;
+		// What each half of one question has answered so far, and how many of
+		// them are still out. Both are cleared on every keystroke.
+		var got = { site: null, wiki: null }, waiting = 0;
 
 		function draw(items, keep) {
 			// `keep` holds the highlight on the same destination when the
@@ -157,7 +269,11 @@
 				var li = document.createElement('li');
 				var b = document.createElement('button');
 				b.type = 'button';
-				if (item[3]) li.className = 'palette__all'; // the way out to the results page
+				// item[3] is what the row is when it is not a result: 'all' for
+				// the sticky way out to the results page, 'out' for the way out
+				// to the wiki's own search, 'group' for the first row of the
+				// wiki's block, which is where the list is divided.
+				if (item[3]) li.className = 'palette__' + item[3];
 				b.setAttribute('aria-selected', 'false');
 				b.innerHTML = '<span class="t"></span><span class="src"></span>';
 				b.querySelector('.t').textContent = item[0];
@@ -185,6 +301,9 @@
 			if (ctrl) { ctrl.abort(); ctrl = null; }
 			seq++; // anything already in flight answers to a number nobody holds
 			busy = false;
+			waiting = 0;
+			got.site = null;
+			got.wiki = null;
 		}
 		function render(q) {
 			stop();
@@ -192,45 +311,90 @@
 			draw(local(q));
 			if (busy) timer = setTimeout(function () { ask(q.trim()); }, WAIT);
 		}
-		// A palette is eight rows tall and a search is not. When the count says
-		// so, the list ends in a row to the results page — a real row, so it
-		// arrows and clicks like the others, and go() needs to know nothing
-		// about it beyond the URL it carries.
-		function all(q, total) {
+		// A palette is ten rows tall and a search is not, so the list ends
+		// in a row out of it — a real row, so it arrows and clicks like the
+		// others and go() needs to know nothing about it beyond the URL it
+		// carries. Sticky, so it is reachable without scrolling to it.
+		//
+		// It counts against what is *shown* rather than what came back, because
+		// the site's half is cut short to make room for the wiki's: eight rows
+		// and then three is a wiki nobody ever sees, which is what this looked
+		// like first.
+		function all(q, count) {
+			if (!got.site || got.site.total <= count) return null;
 			// The form's own action and field, so the row lands exactly where
 			// submitting would - language included.
 			var href = (form.getAttribute('action') || '') + '?s=' + encodeURIComponent(q);
 			if (LANG) href += '&lang=' + encodeURIComponent(LANG);
 			return [
-				(S.searchAll || 'See all %s results').replace('%s', String(total)),
+				(S.searchAll || 'See all %s results').replace('%s', String(got.site.total)),
 				S.searchSrc || 'Search',
 				href,
-				true
+				'all'
 			];
+		}
+		// The list as it stands, redrawn each time a half of it lands. The
+		// site's documents replace the typed-ahead titles; until they arrive —
+		// or on a site whose REST API cannot be reached, where they never do —
+		// the titles stay on screen and the wiki's rows go under them.
+		//
+		// The wiki's block ends in its own way out, and it is offered whenever
+		// the wiki said anything at all: a row on the wiki is a page, and the
+		// question "what else does the manual have" is the one this block is
+		// there to raise. Not sticky — one row can pin to the bottom edge, and
+		// the site's owns it.
+		function paint(q) {
+			var wiki = got.wiki && got.wiki.rows.length ? got.wiki.rows : null;
+			var rows = got.site ? got.site.rows.slice() : local(q);
+			if (wiki) rows = rows.slice(0, SITE_MAX);
+
+			var end = all(q, rows.length);
+
+			if (wiki) {
+				// The first of them carries the divider, and the flag is put on
+				// a copy: these rows are redrawn on every keystroke that lands.
+				rows = rows.concat(wiki.map(function (row, i) {
+					return i ? row : row.slice(0, 3).concat('group');
+				}));
+				if (got.wiki.url) {
+					rows.push([
+						S.searchWikiAll || 'Search the wiki',
+						S.searchWikiSrc || 'Wiki',
+						got.wiki.url,
+						'out'
+					]);
+				}
+			}
+			if (end) rows.push(end);
+			draw(rows, true);
 		}
 		function ask(q) {
 			var token = seq;
 			var opts = {};
 			if (window.AbortController) { ctrl = new AbortController(); opts.signal = ctrl.signal; }
-			var url = URL_ + '?q=' + encodeURIComponent(q.slice(0, 100));
-			if (LANG) url += '&lang=' + encodeURIComponent(LANG);
+			var tail = '?q=' + encodeURIComponent(q.slice(0, 100));
+			if (LANG) tail += '&lang=' + encodeURIComponent(LANG);
+			waiting = WIKI ? 2 : 1;
+			grab(URL_ + tail, 'site', token, q, opts);
+			if (WIKI) grab(WIKI + tail, 'wiki', token, q, opts);
+		}
+		// One request, one half of the list. A half that fails — offline, 404,
+		// a site with the REST API turned off, a wiki behind a firewall — leaves
+		// its slot null, which is what paint() reads as "draw the other one".
+		function grab(url, half, token, q, opts) {
 			fetch(url, opts).then(function (r) {
 				return r.ok ? r.json() : null;
+			}).catch(function () {
+				return null;
 			}).then(function (data) {
 				if (token !== seq) return; // a later keystroke won
-				busy = false;
-				ctrl = null;
-				var rows = data && Array.isArray(data.rows) ? data.rows : null;
-				if (!rows) { draw(shown, true); return; }
-				if (data.total > rows.length) rows = rows.concat([all(q, data.total)]);
-				draw(rows, true);
-			}).catch(function () {
-				// Offline, 404, or a site with the REST API turned off: the
-				// typed-ahead titles are still on screen, and Enter still works.
-				if (token !== seq) return;
-				busy = false;
-				ctrl = null;
-				draw(shown, true);
+				got[half] = data && Array.isArray(data.rows) ? data : null;
+				waiting--;
+				busy = waiting > 0;
+				// The controller aborts both halves, so it is only spent once
+				// the second of them has answered.
+				if (!busy) ctrl = null;
+				paint(q);
 			});
 		}
 		function go(item) {
@@ -646,7 +810,12 @@
 			var acts = row.querySelectorAll('.dlact[data-face]');
 			if (!key || !name || !link || !more || !acts.length) return;
 
-			var url = new URL(link.getAttribute('href'), location.href).href;
+			// The row's link is version-pinned - the checksum beside it names
+			// that exact file - but everything in the drawer hands the build to
+			// somewhere else: a phone, an inbox, a thread somebody reads next
+			// year. Those want the alias that always resolves to the current
+			// build. Falls back to the row's link where there is no alias.
+			var url = new URL(row.getAttribute('data-latest') || link.getAttribute('href'), location.href).href;
 			var art = row.querySelector('.dlqr');
 			var say = row.querySelector('.dlpane__say');
 			var out = row.querySelector('.dlurl');
@@ -689,18 +858,19 @@
 			});
 
 			if (cp) {
-				cp.addEventListener('click', function () {
-					var was = cp.textContent;
-					function back() { setTimeout(function () { cp.textContent = was; }, 1500); }
-					function done() { cp.textContent = S.copied || 'copied'; back(); }
+				// The label, taken once, for the same reason the checksum's
+				// truncation is: read per press it would become "copied".
+				var was = cp.textContent;
+				copyOnClick(
+					cp,
+					function () { return url; },
+					function (word) { cp.textContent = word || was; },
 					// no clipboard (older browser, or a sandbox that withholds
 					// it): the link is already printed beside this button, so
-					// send the visitor there rather than fail quietly
-					function fail() { cp.textContent = str.selectIt || ''; back(); }
-					if (navigator.clipboard && navigator.clipboard.writeText)
-						navigator.clipboard.writeText(url).then(done, fail);
-					else fail();
-				});
+					// send the visitor there rather than fail quietly. It says
+					// so in the button, so it borrows the same timer.
+					function (flash) { flash(str.selectIt || ''); }
+				);
 			}
 
 			// ── and the form that mails it ───────────────────────────────
@@ -957,45 +1127,79 @@
 
 	// ── checksums: show a short form, copy the whole thing ───────────────
 	(function () {
-		document.addEventListener('click', function (e) {
-			var b = e.target.closest && e.target.closest('#site .sha');
-			if (!b || b.hasAttribute('data-revealed')) return;
+		Array.prototype.forEach.call(document.querySelectorAll('#site .sha'), function (b) {
 			var full = b.getAttribute('data-sha');
 			var v = b.querySelector('.sha__v');
+			if (!full || !v) return;
+
+			// The truncation, taken once. Read per press it would eventually
+			// be the word "copied", and the row would keep it.
 			var shown = v.innerHTML;
 
-			function ok() {
-				b.setAttribute('data-copied', '');
-				v.textContent = S.copied || 'copied';
-				setTimeout(function () { v.innerHTML = shown; b.removeAttribute('data-copied'); }, 1500);
-			}
-			// no clipboard (older browser, or a sandbox that withholds it): show
-			// the full value instead so it can still be selected
-			function fail() {
-				b.setAttribute('data-revealed', '');
-				v.textContent = full;
-			}
-			function legacy() {
-				try {
-					var ta = document.createElement('textarea');
-					ta.value = full;
-					ta.setAttribute('readonly', '');
-					ta.style.cssText = 'position:fixed;top:0;left:-9999px';
-					document.body.appendChild(ta);
-					ta.select();
-					var done = document.execCommand('copy');
-					document.body.removeChild(ta);
-					if (done) ok();
-					return done;
-				} catch (err) { return false; }
-			}
-
-			if (navigator.clipboard && navigator.clipboard.writeText) {
-				navigator.clipboard.writeText(full).then(ok, function () { if (!legacy()) fail(); });
-			} else if (!legacy()) {
-				fail();
-			}
+			copyOnClick(
+				b,
+				function () { return full; },
+				function (word) {
+					if (word) {
+						b.setAttribute('data-copied', '');
+						v.textContent = word;
+					} else {
+						b.removeAttribute('data-copied');
+						v.innerHTML = shown;
+					}
+				},
+				// no clipboard (older browser, or a sandbox that withholds it):
+				// show the full value instead so it can still be selected, and
+				// stop offering a button that has been shown not to work
+				function () {
+					b.setAttribute('data-revealed', '');
+					v.textContent = full;
+					return true;
+				}
+			);
 		});
+	})();
+
+	// ── the clone line, under "Build it yourself" ────────────────────────
+	// The command is read out of the <code> beside the button rather than
+	// carried a second time in an attribute, so the page has one copy of it
+	// and the button cannot go stale against what the visitor is looking at.
+	// The tick is the only feedback there is room for, so the label under it
+	// changes too - it is all a screen reader has.
+	(function () {
+		var box = document.querySelector('#site .clone');
+		var btn = box && box.querySelector('.clone__cp');
+		var code = box && box.querySelector('code');
+		if (!btn || !code) return;
+
+		var label = btn.querySelector('.screen-reader-text');
+		var said = label ? label.textContent : '';
+		btn.hidden = false;   // without this script it copies nothing
+
+		copyOnClick(
+			btn,
+			function () { return code.textContent.trim(); },
+			function (word) {
+				if (word) {
+					btn.setAttribute('data-copied', '');
+				} else {
+					btn.removeAttribute('data-copied');
+				}
+				if (label) label.textContent = word || said;
+			},
+			// No clipboard at all: the command is printed right there and is
+			// selectable, so select it and let the visitor take it from there
+			// rather than leave the press unanswered. The button stays live -
+			// unlike the checksum it has nothing left to reveal.
+			function () {
+				var sel = window.getSelection && window.getSelection();
+				if (!sel || !document.createRange) return;
+				var range = document.createRange();
+				range.selectNodeContents(code);
+				sel.removeAllRanges();
+				sel.addRange(range);
+			}
+		);
 	})();
 
 	// ── post outline ─────────────────────────────────────────────────────
@@ -1025,16 +1229,44 @@
 		});
 	})();
 
-	// ── archive: jump to a year ──────────────────────────────────────────
-	// Every year is its own archive URL, so the select navigates. Its option
-	// values are those URLs, built in sidebar-news.php.
+	// ── the archive's year jump ──────────────────────────────────────────
+	// It used to be a <select> whose options carried archive URLs and a change
+	// handler that navigated to one; it is a <details> full of <a> now, so the
+	// jump itself needs no script and works with this file absent. See .ydrop
+	// in theme.css.
+	//
+	// What is left is the one thing a <details> does not do and every other
+	// panel on this page does: a native one stays open until its own summary is
+	// pressed again, so a rail with an abandoned list hanging out of it is the
+	// visitor's to tidy up. This is the same dismissal the header's menus have —
+	// a click outside, or Escape — and nothing else. Picking a year navigates,
+	// which closes it by loading a page.
 	(function () {
-		var sel = document.getElementById('yearsel');
-		if (!sel) return;
-		sel.addEventListener('change', function () {
-			if (sel.value) window.location.href = sel.value;
+		var drop = document.querySelector('#site .ydrop');
+		if (!drop) return;
+
+		function close(focus) {
+			if (!drop.open) return;
+			drop.open = false;
+			if (focus) {
+				var sum = drop.querySelector('summary');
+				if (sum) sum.focus();
+			}
+		}
+
+		document.addEventListener('click', function (e) {
+			var t = e.target;
+			if (t.closest && t.closest('#site .ydrop')) return;
+			close(false);
+		});
+
+		// Escape puts the focus back on the summary, because the visitor who
+		// pressed it is on the keyboard; an outside click leaves it alone.
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape') close(true);
 		});
 	})();
+
 	// ── /games/: filter the shelf, and reshuffle the panel ───────────────
 	//
 	// The whole list is already on the page - forty-odd cards, alphabetical, no

@@ -131,6 +131,13 @@ services:
       # IMPORT_MEDIA below, which is about the news export's own attachments.
       SEED_MEDIA_PAGE: ${SEED_MEDIA_PAGE:-1}
       SEED_MEDIA: ${SEED_MEDIA:-1}
+      # Placeholder files behind the download links, so the local site
+      # exercises the mirror rather than falling back to GitHub. See
+      # seed/php/mirror.php.
+      SEED_MIRROR: ${SEED_MIRROR:-1}
+      # Whether the migration phase drops Polylang. 0 stops after the baseline,
+      # leaving the five languages up so you can see what is about to go.
+      SEED_DROP_POLYLANG: ${SEED_DROP_POLYLANG:-1}
       IMPORT_MEDIA: ${IMPORT_MEDIA:-0}
     volumes:
       - wp:/var/www/html
@@ -170,6 +177,11 @@ services:
       - ./plugin/mudlet-shots:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-shots
       - ./plugin/shared:/var/www/html/wp-content/themes/mudlet/plugins/mudlet-shots/shared
       - ./seed:/seed:ro
+      # Writable, because the migration phase produces something worth keeping:
+      # the Polylang translation map, which only exists while Polylang is still
+      # active and is what the 301 table is built from. See
+      # seed/php/migrate-polylang.php.
+      - ./seed/out:/seed/out
     entrypoint: ["/bin/sh", "/seed/setup.sh"]
     # One shot. It is idempotent, so `docker compose up seed` re-runs it safely
     # after you drop a WXR export into seed/wxr/.

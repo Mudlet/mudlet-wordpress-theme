@@ -48,6 +48,22 @@ else
 		--skip-email
 fi
 
+#══════════════════════════════════════════════════════════════════════
+# BASELINE — mudlet.org as it stands
+#
+# Nothing in this phase is this project's opinion. It reproduces the live site:
+# its settings, its plugins, its content, its menus, its comments and its five
+# languages. The point is that the MIGRATION phase below can then be run against
+# a realistic starting state, and wordpress/MIGRATION.md rehearsed rather than
+# performed once, on production, from a document.
+#
+# What a WXR cannot carry is the gap this phase fills by hand: options. An
+# export has no wp_options at all, so blogname, the permalink shape, the front
+# page and - the one that breaks quietly - which menu is in which location are
+# all set here. Marked TODO where the live value still needs reading off
+# wp-admin rather than being inferred.
+#══════════════════════════════════════════════════════════════════════
+
 log "Site options"
 $WP option update blogname "$SITE_TITLE"
 $WP option update blogdescription "$SITE_TAGLINE"
@@ -56,14 +72,20 @@ $WP option update date_format "j F Y"
 $WP option update start_of_week 1
 # The permalink shape the post links assume: /2026/07/slug/.
 $WP rewrite structure '/%year%/%monthnum%/%postname%/'
-$WP option update posts_per_page 18
-# Comments are off: the forum is where discussion happens, and the theme draws
-# no comment list.
-$WP option update default_comment_status closed
-$WP option update default_ping_status closed
-
-log "Activating the theme"
-$WP theme activate mudlet
+# mudlet.org takes comments, so the baseline does too - 155 approved ones come
+# in with the import and its posts carry comment_status=open individually
+# anyway, which this option would not have reached. The theme draws them:
+# comments.php and inc/comments.php, added once it turned out the threads had
+# been live and unrendered the whole time. Whether the new site keeps taking
+# new ones is still a migration question; see MIGRATION.md.
+$WP option update default_comment_status open
+$WP option update default_ping_status open
+# mudlet.org offers no "save my details for next time" checkbox, so neither does
+# the baseline. This is the option behind it - core adds that field to any
+# comment form, including a theme's own, whenever it is on. inc/comments.php
+# checks the same option, so turning it back on here puts the box back with
+# wording that matches the fields this form actually has.
+$WP option update show_comments_cookies_opt_in 0
 
 # Is there a real export to import? Decided once, up front, because it changes
 # what the rest of the script should create: a WXR from the live site brings its
@@ -88,6 +110,97 @@ for slug in hello-world sample-page privacy-policy-2; do
 	fi
 done
 
+# ── languages ─────────────────────────────────────────────────────────
+if [ "${SEED_LANGUAGES:-1}" = "1" ]; then
+	log "Polylang"
+	if ! $WP plugin is-installed polylang 2>/dev/null; then
+		$WP plugin install polylang
+	fi
+	$WP plugin activate polylang
+	# Polylang ships no WP-CLI commands, so the languages are created through
+	# its own admin model. See the file for why that is done the long way.
+	$WP eval-file "$SEED/php/languages.php"
+fi
+
+# ── the import ────────────────────────────────────────────────────────
+# The baseline itself. Everything mudlet.org has that an export can carry comes
+# in here: 315 posts in five languages, 28 pages with their bodies untouched,
+# the four nav menus, the categories and their translations, 155 approved
+# comments and 497 attachment records. Only Flamingo's contact-form archive is
+# missing, and that is deliberate - see tools/filter-wxr.js.
+#
+# This runs BEFORE the pages section on purpose. WordPress resolves a slug
+# collision by renaming the incoming post, not the one already sitting there, so
+# a seed that created its pages first would import "about-2" and never say so.
+log "Importing the live site"
+if [ "$HAVE_EXPORT" = "1" ]; then
+	# Clear any placeholders left by an earlier run before importing. They are
+	# tagged with _mudlet_placeholder precisely so this can find them, and they
+	# have to go first: they hold the slugs the real posts want, and WordPress
+	# resolves that collision by renaming the incoming post, not the squatter.
+	stale=$($WP post list --post_type=post --post_status=any \
+		--meta_key=_mudlet_placeholder --format=ids 2>/dev/null || true)
+	if [ -n "$stale" ]; then
+		# shellcheck disable=SC2086
+		$WP post delete $stale --force >/dev/null
+		note "removed $(echo "$stale" | wc -w | tr -d ' ') placeholder posts"
+		# and the categories that were seeded for them, if nothing else uses them
+		for slug in release informational press; do
+			id=$($WP term list category --slug="$slug" --field=term_id 2>/dev/null || true)
+			count=$($WP term list category --slug="$slug" --field=count 2>/dev/null || echo 1)
+			if [ -n "$id" ] && [ "$count" = "0" ]; then
+				$WP term delete category "$id" >/dev/null
+				note "removed empty seeded category $slug"
+			fi
+		done
+	fi
+
+	$WP plugin is-installed wordpress-importer 2>/dev/null || $WP plugin install wordpress-importer
+	$WP plugin activate wordpress-importer
+
+	# Attachments are skipped by default: the export carries URLs, not files, so
+	# fetching them means 178 posts' worth of requests against the live site.
+	# Set IMPORT_MEDIA=1 when you actually want the images.
+	if [ "${IMPORT_MEDIA:-0}" = "1" ]; then
+		skip=""
+	else
+		skip="--skip=attachment"
+	fi
+
+	# A restore happens once. Re-running the seed re-applies the migration on
+	# top of what is already there, and must not import a second time: the WXR
+	# importer deduplicates posts by GUID but does no such thing for menu items,
+	# so a second pass silently doubles every row of the header menu. That was
+	# measured, not guessed - 17 items became 32.
+	#
+	# The stamp is the export's own name and size, so dropping a newer export in
+	# does import it. SEED_REIMPORT=1 forces one regardless.
+	stamp=""
+	for f in "$SEED"/wxr/*.xml; do
+		stamp="$stamp$(basename "$f"):$(wc -c < "$f" | tr -d ' ') "
+	done
+
+	if [ "$($WP option get mudlet_seed_import 2>/dev/null || true)" = "$stamp" ] && [ "${SEED_REIMPORT:-0}" != "1" ]; then
+		note "baseline already imported - skipping (SEED_REIMPORT=1 to force)"
+	else
+		for f in "$SEED"/wxr/*.xml; do
+			note "importing $(basename "$f")"
+			# shellcheck disable=SC2086
+			$WP import "$f" --authors=create $skip
+		done
+		$WP option update mudlet_seed_import "$stamp" >/dev/null
+	fi
+elif [ "${SEED_DEMO_POSTS:-1}" = "1" ]; then
+	if [ "$($WP post list --post_type=post --format=count)" = "0" ]; then
+		note "no export in seed/wxr/ - writing placeholder posts instead"
+		$WP eval-file "$SEED/php/demo-posts.php"
+	else
+		note "posts already present - leaving them alone"
+	fi
+else
+	note "no export in seed/wxr/ and demo posts disabled"
+fi
+
 # ── categories ────────────────────────────────────────────────────────
 # The ones the live site uses. The theme keys its pill colours off these slugs.
 # Only seeded when there is no export: otherwise the import supplies the real
@@ -106,6 +219,17 @@ else
 	create_term "Informational" "informational"
 	create_term "Press" "press"
 fi
+
+#══════════════════════════════════════════════════════════════════════
+# MIGRATION — this project's changes, on top
+#
+# Everything below is a change this project makes to the site above, in roughly
+# the order wordpress/MIGRATION.md gives. Each step is meant to be legible as a
+# thing somebody will one day do to production.
+#══════════════════════════════════════════════════════════════════════
+
+log "Activating the theme"
+$WP theme activate mudlet
 
 # ── pages ─────────────────────────────────────────────────────────────
 log "Pages"
@@ -145,7 +269,14 @@ ensure_page() {
 	note "created $slug (#$PAGE_ID)"
 }
 
-ensure_page home        "Home"
+# mudlet.org's front page is "home-2" - plain "home" was taken years ago by
+# something since deleted - so with an export present the front page is adopted
+# rather than created. Only a site with no export gets a fresh "home".
+HOME_SLUG=home
+if $WP post list --post_type=page --post_status=any --name=home-2 --format=ids 2>/dev/null | grep -q .; then
+	HOME_SLUG=home-2
+fi
+ensure_page "$HOME_SLUG" "Home"
 HOME_ID=$PAGE_ID
 ensure_page news        "News"
 NEWS_ID=$PAGE_ID
@@ -163,6 +294,9 @@ ensure_page privacy-policy    "Privacy policy"
 ensure_page terms-of-service  "Terms of service"
 
 log "Front page and posts page"
+# The news list's length is this project's choice, not a setting inherited from
+# the live site, which is why it is here and not in the baseline options.
+$WP option update posts_per_page 18
 $WP option update show_on_front page
 $WP option update page_on_front "$HOME_ID"
 $WP option update page_for_posts "$NEWS_ID"
@@ -200,9 +334,21 @@ fi
 # override the real ones. The `mudlet_release` option remains available as a
 # deliberate override, but nothing writes it automatically.
 
-# ── menus ─────────────────────────────────────────────────────────────
+# ── menus ───────────────────────────────────────
+# The header menu is not built here any more: the export carries it. mudlet.org's
+# "Main" is already the shape this seed used to type out by hand - four top-level
+# pages, then About and Help as dropdowns over the same children, then Wiki,
+# Forum and Packages. Building a second one beside it only invited the two to
+# drift. What the seed still owns is the half a WXR cannot carry: which menu is
+# in which location, because that lives in theme_mods and no export has it.
 log "Menus"
-if ! $WP menu list --fields=slug --format=csv | grep -qx "header"; then
+
+MAIN_MENU=$($WP menu list --fields=slug,name --format=csv 2>/dev/null | awk -F, '$1=="main"{print $1}')
+if [ -n "$MAIN_MENU" ]; then
+	$WP menu location assign main primary >/dev/null
+	note "imported 'Main' assigned to the header"
+elif ! $WP menu list --fields=slug --format=csv | grep -qx "header"; then
+	# No export, so no Main. A minimal stand-in, so the header is not empty.
 	$WP menu create "Header" >/dev/null
 	$WP menu item add-post header "$NEWS_ID" --title="News" >/dev/null
 	$WP menu item add-post header "$MEDIA_ID" --title="Gallery" --classes="lo" >/dev/null
@@ -210,29 +356,43 @@ if ! $WP menu list --fields=slug --format=csv | grep -qx "header"; then
 	$WP menu item add-custom header "Docs" "https://wiki.mudlet.org" --classes="lo" >/dev/null
 	$WP menu item add-custom header "Forum" "https://forums.mudlet.org" --classes="lo" >/dev/null
 	$WP menu location assign header primary >/dev/null
-	note "header menu assigned"
+	note "no export - created a minimal header menu"
 fi
 
+# The footer row is this project's, and the live site has no equivalent, so it
+# is created rather than assigned.
 if ! $WP menu list --fields=slug --format=csv | grep -qx "footer-project"; then
 	$WP menu create "Footer Project" >/dev/null
 	for slug in about vision the-makers contribute contact; do
-		id=$($WP post list --post_type=page --name="$slug" --format=ids)
+		id=$($WP post list --post_type=page --name="$slug" --format=ids 2>/dev/null || true)
 		[ -n "$id" ] && $WP menu item add-post footer-project "$id" >/dev/null
 	done
 	$WP menu location assign footer-project footer-project >/dev/null
-	note "footer menu assigned"
+	note "footer-project menu created"
 fi
 
-# ── languages ─────────────────────────────────────────────────────────
-if [ "${SEED_LANGUAGES:-1}" = "1" ]; then
-	log "Polylang"
-	if ! $WP plugin is-installed polylang 2>/dev/null; then
-		$WP plugin install polylang
-	fi
-	$WP plugin activate polylang
-	# Polylang ships no WP-CLI commands, so the languages are created through
-	# its own admin model. See the file for why that is done the long way.
-	$WP eval-file "$SEED/php/languages.php"
+# ── dropping Polylang ──────────────────────────────────
+# MIGRATION.md decision 4, rehearsed. This is the step that cannot be undone on
+# production - the translation map only exists while Polylang is still active -
+# so it is the one most worth having a local copy of to practise on.
+#
+# SEED_DROP_POLYLANG=0 stops after the baseline, leaving the five languages up,
+# which is how you look at what is about to be removed.
+if [ "${SEED_DROP_POLYLANG:-1}" = "1" ]; then
+	log "Dropping Polylang"
+	$WP eval-file "$SEED/php/migrate-polylang.php"
+fi
+
+# ── the media page ────────────────────────────────────────────────────
+# The one page this seed writes prose into, and it writes it only while the page
+# is still empty - see the file for why that exception is worth making. It is
+# also the only step that fetches anything from mudlet.org: fifteen community
+# screenshots into the media library, because a carousel with nothing in it
+# demonstrates nothing. SEED_MEDIA=0 skips the download and leaves the page with
+# its screencasts and an empty gallery to fill.
+if [ "${SEED_MEDIA_PAGE:-1}" = "1" ]; then
+	log "Media page"
+	$WP eval-file "$SEED/php/media-page.php"
 fi
 
 # ── the releases plugin (this repo) ───────────────────────────────────
@@ -254,6 +414,16 @@ if [ -f "$SEED/releases.json" ]; then
 else
 	note "no seed/releases.json - the store will fill itself from the API"
 	note "generate one with: node wordpress/tools/fetch-releases.mjs"
+fi
+
+# mudlet.org serves every build from wp-content/files/ rather than from GitHub,
+# and the download rows, the /latest/ aliases and "Browse the archive" all point
+# there. With no mirror a dev copy quietly takes the other branch - everything
+# falls back to GitHub - so the behaviour that changed is the one you cannot
+# see. This writes a few hundred bytes per asset in place of ~130 MB.
+# SEED_MIRROR=0 leaves the links on GitHub.
+if [ "${SEED_MIRROR:-1}" = "1" ]; then
+	$WP eval-file "$SEED/php/mirror.php"
 fi
 
 # ── the games plugin (this repo) ──────────────────────────────────────
@@ -332,69 +502,6 @@ if [ "${SEED_RELEASE_PLUGIN:-1}" = "1" ]; then
 	fi
 fi
 
-# ── the media page ────────────────────────────────────────────────────
-# The one page this seed writes prose into, and it writes it only while the page
-# is still empty - see the file for why that exception is worth making. It is
-# also the only step that fetches anything from mudlet.org: fifteen community
-# screenshots into the media library, because a carousel with nothing in it
-# demonstrates nothing. SEED_MEDIA=0 skips the download and leaves the page with
-# its screencasts and an empty gallery to fill.
-if [ "${SEED_MEDIA_PAGE:-1}" = "1" ]; then
-	log "Media page"
-	$WP eval-file "$SEED/php/media-page.php"
-fi
-
-# ── news ──────────────────────────────────────────────────────────────
-log "News posts"
-if [ "$HAVE_EXPORT" = "1" ]; then
-	# Clear any placeholders left by an earlier run before importing. They are
-	# tagged with _mudlet_placeholder precisely so this can find them, and they
-	# have to go first: they hold the slugs the real posts want, and WordPress
-	# resolves that collision by renaming the incoming post, not the squatter.
-	stale=$($WP post list --post_type=post --post_status=any \
-		--meta_key=_mudlet_placeholder --format=ids 2>/dev/null || true)
-	if [ -n "$stale" ]; then
-		# shellcheck disable=SC2086
-		$WP post delete $stale --force >/dev/null
-		note "removed $(echo "$stale" | wc -w | tr -d ' ') placeholder posts"
-		# and the categories that were seeded for them, if nothing else uses them
-		for slug in release informational press; do
-			id=$($WP term list category --slug="$slug" --field=term_id 2>/dev/null || true)
-			count=$($WP term list category --slug="$slug" --field=count 2>/dev/null || echo 1)
-			if [ -n "$id" ] && [ "$count" = "0" ]; then
-				$WP term delete category "$id" >/dev/null
-				note "removed empty seeded category $slug"
-			fi
-		done
-	fi
-
-	$WP plugin is-installed wordpress-importer 2>/dev/null || $WP plugin install wordpress-importer
-	$WP plugin activate wordpress-importer
-
-	# Attachments are skipped by default: the export carries URLs, not files, so
-	# fetching them means 178 posts' worth of requests against the live site.
-	# Set IMPORT_MEDIA=1 when you actually want the images.
-	if [ "${IMPORT_MEDIA:-0}" = "1" ]; then
-		skip=""
-	else
-		skip="--skip=attachment"
-	fi
-
-	for f in "$SEED"/wxr/*.xml; do
-		note "importing $(basename "$f")"
-		# shellcheck disable=SC2086
-		$WP import "$f" --authors=create $skip
-	done
-elif [ "${SEED_DEMO_POSTS:-1}" = "1" ]; then
-	if [ "$($WP post list --post_type=post --format=count)" = "0" ]; then
-		note "no export in seed/wxr/ - writing placeholder posts instead"
-		$WP eval-file "$SEED/php/demo-posts.php"
-	else
-		note "posts already present - leaving them alone"
-	fi
-else
-	note "no export in seed/wxr/ and demo posts disabled"
-fi
 
 $WP rewrite flush
 $WP cache flush 2>/dev/null || true

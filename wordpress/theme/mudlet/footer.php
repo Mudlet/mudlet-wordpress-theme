@@ -66,7 +66,23 @@ $mudlet_search_lang = mudlet_current_language_slug();
 					<a href="https://forums.mudlet.org"><?php mudlet_icon( 'chat' ); ?><?php esc_html_e( 'Forum', 'mudlet' ); ?></a>
 					<a href="https://discord.gg/kuYvMQ9"><?php mudlet_icon( 'discord' ); ?><?php esc_html_e( 'Discord', 'mudlet' ); ?></a>
 					<a href="https://github.com/Mudlet/Mudlet"><?php mudlet_icon( 'github' ); ?><?php esc_html_e( 'GitHub', 'mudlet' ); ?></a>
+					<?php
+					// The one account the live site's footer links that this one
+					// did not. Its markup still points at twitter.com and labels
+					// the icon X; the label is the account's name today, so this
+					// follows it to the host that name belongs to.
+					?>
+					<a href="https://x.com/mudlet"><?php mudlet_icon( 'x' ); ?>X</a>
 					<a href="<?php echo esc_url( mudlet_news_url() ); ?>"><?php mudlet_icon( 'rss' ); ?><?php esc_html_e( 'News', 'mudlet' ); ?></a>
+					<?php
+					// The feed itself, under the page it feeds. It is discoverable
+					// already - add_theme_support( 'automatic-feed-links' ) puts it
+					// in the <head> - but only to a reader that goes looking in the
+					// markup, and this is where a person looks. The two icons are
+					// different on purpose: a newspaper for the page, the antenna
+					// for the feed. See inc/icons.php.
+					?>
+					<a href="<?php echo esc_url( get_feed_link() ); ?>"><?php mudlet_icon( 'feed' ); ?><?php esc_html_e( 'RSS feed', 'mudlet' ); ?></a>
 				</div>
 
 				<div class="foot__col"><b><?php esc_html_e( 'Project', 'mudlet' ); ?></b>

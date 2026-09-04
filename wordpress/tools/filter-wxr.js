@@ -1,19 +1,36 @@
-// Cut a wp-admin export down to the parts worth importing.
+// Scrub a wp-admin export of what must never leave the production server.
 //
 //   node wordpress/tools/filter-wxr.js seed/export/whatever.xml
 //   -> seed/wxr/whatever.filtered.xml
 //
-// A "Tools -> Export -> All content" export is not just posts. mudlet.org's
-// carries Divi layout records, Shortcoder entries, theme CSS, the nav menus
-// that point at Divi pages, the pages themselves (whose bodies are et_pb_*
-// shortcodes that render as nothing without Divi) - and, most importantly,
-// Flamingo's archive of Contact Form 7 submissions: real names and real email
-// addresses from people who wrote to the project.
+// This used to cut the export down to "the parts worth importing" - posts and
+// attachments, nothing else. It does the opposite now, and the reason is the
+// seed's shape: seed/setup.sh runs a BASELINE phase that reproduces mudlet.org
+// as it stands and then a MIGRATION phase that applies this project's changes
+// on top, so that wordpress/MIGRATION.md can be rehearsed locally instead of
+// being performed once, on production, from a document. A baseline that has
+// already dropped the pages and the menus is not a baseline.
 //
-// None of that belongs in a development database, and the last item does not
-// belong outside the production server at all. So the raw export stays in
-// seed/export/ (gitignored, never imported) and only the filtered file reaches
-// seed/wxr/, which is what the seed script imports.
+// So everything in the export is kept, with one exception, and it is not a
+// matter of taste: Flamingo's archive of Contact Form 7 submissions is real
+// names and real email addresses of people who wrote to the project. That does
+// not belong outside the production server at all. The raw export stays in
+// seed/export/ (gitignored, never imported) and only the scrubbed file reaches
+// seed/wxr/, which is what the seed imports.
+//
+// What this means for the things that used to be dropped:
+//
+//   page              28 of them, bodies untouched. Nine are prose; two are
+//                     Divi soup whose templates never call the_content()
+//                     anyway. inc/divi-cleanup.php strips orphaned et_pb_*
+//                     tags at display time, so nothing here rewrites a body.
+//   nav_menu_item     49, in four menus. The live "Main" already carries the
+//                     About and Help dropdowns, so the seed no longer builds
+//                     a header menu by hand - it assigns this one.
+//   et_pb_layout      Divi's own library. Inert without Divi, and part of the
+//   custom_css        starting state. Pretending they are not there is the
+//   shortcoder        instruction: nothing here alters a body to suit us.
+//   wpcf7_contact_form
 //
 // Why a hand-written scanner rather than a regex or an XML library: WXR wraps
 // every value in CDATA, and post bodies legitimately contain things like
@@ -21,33 +38,21 @@
 // walks the document once, skipping the interior of every CDATA section, so a
 // tag is only ever recognised where it is really a tag. That is the whole
 // trick; everything else here is bookkeeping.
-//
-// Bodies are passed through as they are. Eight of the posts still carry Divi
-// shortcodes, and inc/divi-cleanup.php papers over them at display time until
-// somebody deals with them properly.
 
 const fs = require('fs');
 const path = require('path');
 
-// Post types worth having. Everything else is dropped.
-//
-//   post              the news, in every language - this is the point
-//   attachment        kept in the file, but `wp import --skip=attachment`
-//                     ignores them unless IMPORT_MEDIA=1
-const KEEP_TYPES = new Set(['post', 'attachment']);
+// The only post types dropped, and the only reason to drop one: these two hold
+// personal data. flamingo_contact is one record per person who ever used the
+// contact form; flamingo_inbound is the messages themselves.
+const DROP_TYPES = new Set(['flamingo_contact', 'flamingo_inbound']);
 
-// Taxonomies worth having. Four of these are Polylang's own bookkeeping -
-// language/post_translations for posts, term_language/term_translations for the
-// categories, which are translated too. Dropping any of them flattens five
-// languages into one.
-const KEEP_TAXONOMIES = new Set([
-  'category',
-  'post_tag',
-  'language',
-  'post_translations',
-  'term_language',
-  'term_translations',
-]);
+// Every taxonomy is kept. Polylang's four - language/post_translations for
+// posts, term_language/term_translations for the categories - are what make the
+// migration's "deactivate Polylang" step something that can be rehearsed:
+// without them there are no translations to unpublish and no map to build 301s
+// from. nav_menu is kept for the menus above.
+
 
 const argv = process.argv.slice(2);
 if (!argv.length) {
@@ -130,21 +135,11 @@ const tally = (bag, key) => { bag[key] = (bag[key] || 0) + 1; };
 const cdata = (tag, value) =>
   `<${tag}><![CDATA[${String(value).split(']]>').join(']]]]><![CDATA[>')}]]></${tag}>`;
 
-/**
- * The prose of a body, as characters, for checking that a conversion did not
- * quietly lose any.
- *
- * Characters rather than words because unwrapping the Etherpad spans in the
- * 3.11 announcement rejoins words they had split down the middle - "Y" and "ou"
- * become "You" - and a word count reads that repair as two words lost.
- */
-let metaDropped = 0;
-
 for (const [start, end] of findBlocks(xml, 'item')) {
   const chunk = xml.slice(start, end);
   const type = tagValue(chunk, 'wp:post_type') || '(none)';
 
-  if (!KEEP_TYPES.has(type)) {
+  if (DROP_TYPES.has(type)) {
     tally(dropped, type);
     drop(start, end);
     continue;
@@ -153,29 +148,9 @@ for (const [start, end] of findBlocks(xml, 'item')) {
 }
 
 for (const [start, end] of findBlocks(xml, 'wp:term')) {
-  const chunk = xml.slice(start, end);
-  const tax = tagValue(chunk, 'wp:term_taxonomy') || '(none)';
-  if (KEEP_TAXONOMIES.has(tax)) {
-    tally(kept, `term:${tax}`);
-  } else {
-    tally(dropped, `term:${tax}`);
-    drop(start, end);
-  }
+  const tax = tagValue(xml.slice(start, end), 'wp:term_taxonomy') || '(none)';
+  tally(kept, `term:${tax}`);
 }
-
-// Divi's own postmeta. A few hundred rows saying which builder version last
-// touched each body: bookkeeping for a plugin this site does not have, and no
-// use to a fresh database. The bodies keep their shortcodes; this is only the
-// builder's own state.
-for (const [start, end] of findBlocks(xml, 'wp:postmeta')) {
-  if (/^_et_/.test(tagValue(xml.slice(start, end), 'wp:meta_key'))) {
-    metaDropped++;
-    drop(start, end);
-  }
-}
-
-// Also drop the <wp:tag> and <wp:category> header blocks for nothing - they are
-// fine - but nav menus come through as their own term type handled above.
 
 edits.sort((a, b) => a.start - b.start);
 
@@ -201,7 +176,6 @@ console.log('  kept');
 for (const [k, v] of Object.entries(kept).sort((a, b) => b[1] - a[1])) console.log(`    ${pad(v)}  ${k}`);
 console.log('\n  dropped');
 for (const [k, v] of Object.entries(dropped).sort((a, b) => b[1] - a[1])) console.log(`    ${pad(v)}  ${k}`);
-if (metaDropped) console.log(`    ${pad(metaDropped)}  postmeta:_et_* (Divi's own bookkeeping)`);
 
 console.log(`\n  -> ${path.relative(process.cwd(), outPath)}  ${(out.length / 1048576).toFixed(1)} MB\n`);
 

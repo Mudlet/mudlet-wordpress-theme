@@ -30,17 +30,38 @@ $years   = mudlet_archive_years();
 		</div>
 	</div>
 
-	<?php if ( $years ) : ?>
+	<?php
+	if ( $years ) :
+		// On a year archive the summary carries the year in place of the
+		// prompt, which is the panel saying where you are without having to
+		// stay open to say it. It is deliberately not rendered `open` there:
+		// picking a year navigates, and a list that comes back expanded reads
+		// as a press that did not take.
+		$here = is_year() ? (string) get_query_var( 'year' ) : '';
+		?>
 		<div class="rpanel">
 			<b><?php esc_html_e( 'Archive', 'mudlet' ); ?></b>
-			<label class="vh" for="yearsel"><?php esc_html_e( 'Jump to a year', 'mudlet' ); ?></label>
-			<?php // Real archive URLs, so the control navigates rather than scrolls. ?>
-			<select class="rsel" id="yearsel">
-				<option value=""><?php esc_html_e( 'Jump to a year…', 'mudlet' ); ?></option>
-				<?php foreach ( $years as $year ) : ?>
-					<option value="<?php echo esc_url( get_year_link( (int) $year ) ); ?>"><?php echo esc_html( $year ); ?></option>
-				<?php endforeach; ?>
-			</select>
+			<?php
+			// A <details> and a grid of real archive links, not a <select>: the
+			// select was the one control on the site the browser drew rather
+			// than the stylesheet, and - because a select cannot be a link - it
+			// needed a change handler to go anywhere, so it did nothing at all
+			// without JavaScript. These are the same URLs as <a>, which is what
+			// the rest of the rail is.
+			?>
+			<details class="ydrop">
+				<summary>
+					<span><?php echo $here ? esc_html( $here ) : esc_html__( 'Jump to a year…', 'mudlet' ); ?></span>
+					<?php mudlet_icon( 'caret', 'crt' ); ?>
+				</summary>
+				<div class="ylist">
+					<?php foreach ( $years as $year => $count ) : ?>
+						<a href="<?php echo esc_url( get_year_link( (int) $year ) ); ?>"<?php echo $here === (string) $year ? ' aria-current="true"' : ''; ?>>
+							<?php echo esc_html( $year ); ?><span class="n"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
+						</a>
+					<?php endforeach; ?>
+				</div>
+			</details>
 		</div>
 	<?php endif; ?>
 
@@ -55,11 +76,17 @@ $years   = mudlet_archive_years();
 		</div>
 	</div>
 
+	<?php
+	// Both rows are feeds, because the panel says Subscribe. The second used to
+	// be the releases *page* on GitHub, which is a place to read them and not a
+	// thing a reader can follow - GitHub publishes the same list at
+	// `releases.atom`, so the row now points at that and says which it is.
+	?>
 	<div class="rpanel">
 		<b><?php esc_html_e( 'Subscribe', 'mudlet' ); ?></b>
 		<div class="rlinks">
-			<a href="<?php echo esc_url( get_feed_link() ); ?>"><?php esc_html_e( 'RSS feed', 'mudlet' ); ?></a>
-			<a href="https://github.com/Mudlet/Mudlet/releases"><?php esc_html_e( 'Releases on GitHub', 'mudlet' ); ?></a>
+			<a href="<?php echo esc_url( get_feed_link() ); ?>"><?php esc_html_e( 'News (RSS)', 'mudlet' ); ?></a>
+			<a href="https://github.com/Mudlet/Mudlet/releases.atom"><?php esc_html_e( 'GitHub releases (Atom)', 'mudlet' ); ?></a>
 		</div>
 	</div>
 </aside>

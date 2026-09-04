@@ -620,6 +620,24 @@ anything:
   is never stored; eight characters of a salted hash of it are, which answers
   "are these six the same person" and nothing else. See
   `wordpress/plugin/mudlet-shots/README.md`.
+- **Search has three sources and the third is the wiki.** The palette draws the
+  inline title index on the keystroke, then `mudlet/v1/search` (the documents,
+  `inc/search.php`) and `mudlet/v1/search/wiki` (`inc/wiki-search.php`) **in
+  parallel**, because the site answers from the database and the wiki over
+  somebody else's network. Wiki rows come last, labelled `Wiki`, never mixed in;
+  `search.php` prints the same under its own results. The wiki is asked
+  server-side and cached, which is not a preference: Cloudflare answers **403**
+  to `api.php` and `Special:Search` for browser and server alike, and
+  `rest.php/v1/search/page` — the one way in — sends no CORS header, so the
+  browser cannot ask it. What it answers is unrendered wikitext, and it ranks
+  every translation of a page separately, so a snippet is *parsed* — an excerpt
+  is a window and its `{{`, `[[` and `=` arrive without their partners — and the
+  copies of one page are folded to the one in the language being read.
+  `index.php?search=` is the only search URL on that host a person can open. One
+  filter, `mudlet_wiki_search_enabled`, turns off route, palette and block
+  together. **The palette's ten rows are a budget**: five of the site's, three of
+  the wiki's, and a way out of each, because eight site rows and then the wiki's
+  is a block nobody ever sees. If you add a row here, take one away.
 - **The demo world reads the site through one endpoint.**
   `inc/demo-seed.php` registers `GET /wp-json/mudlet/v1/demo` and answers with
   the current release, the games, the makers, the latest posts and `/media/`,

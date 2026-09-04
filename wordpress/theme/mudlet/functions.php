@@ -23,6 +23,7 @@ require_once __DIR__ . '/inc/blocks.php';
 require_once __DIR__ . '/inc/nav-walker.php';
 require_once __DIR__ . '/inc/icons.php';
 require_once __DIR__ . '/inc/search.php';
+require_once __DIR__ . '/inc/wiki-search.php';
 require_once __DIR__ . '/inc/template-tags.php';
 require_once __DIR__ . '/inc/front-content.php';
 require_once __DIR__ . '/inc/front-art.php';
@@ -36,6 +37,7 @@ require_once __DIR__ . '/inc/contact.php';
 require_once __DIR__ . '/inc/demo-seed.php';
 require_once __DIR__ . '/inc/release-meta.php';
 require_once __DIR__ . '/inc/divi-cleanup.php';
+require_once __DIR__ . '/inc/comments.php';
 require_once __DIR__ . '/inc/languages.php';
 require_once __DIR__ . '/inc/updates.php';
 
