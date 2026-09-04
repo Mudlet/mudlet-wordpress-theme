@@ -479,3 +479,61 @@ function mudlet_game_telnet_url( array $game ): string {
 function mudlet_telnet_protocols(): array {
 	return array( 'telnet', 'telnets' );
 }
+
+/**
+ * Where Mudlet Web lives.
+ *
+ * Its own host, not this one: the hero's client is a build of the same package
+ * served from here for the same-origin reasons demo/README.md gives, but it is
+ * a one-room offline world with no proxy behind it and cannot connect anybody
+ * to Achaea. The public deployment can. A filter, because a fork - or a staging
+ * site pointed at a branch build - should not have to patch a template.
+ *
+ * @return string Base URL with a trailing slash, or '' to draw no link at all.
+ */
+function mudlet_web_url(): string {
+	return (string) apply_filters( 'mudlet_web_url', 'https://mudlet-web.mudlet.org/' );
+}
+
+/**
+ * The same game, in a browser tab.
+ *
+ * Mudlet Web takes ?play=<slug> and opens that bundled profile connected, which
+ * is the telnet:// link's other half: one for the reader who already has Mudlet
+ * installed, one for the reader who has not and is not going to install
+ * anything to find out whether they like MUDs.
+ *
+ * The slug is derived from the game's *name* with Mudlet Web's own rule -
+ * `.toLowerCase().replace(/[^a-z0-9]+/g, '-')`, trimmed - rather than read off
+ * post_name, which is a different rule that happens to agree on today's
+ * forty-three. sanitize_title() folds accents before slugifying, so a profile
+ * named "Café Noir" would be stored as `cafe-noir` and asked for as
+ * `caf-noir`; and a post slug is subject to WordPress's own collision
+ * suffixing, so the day a page called /games/infinity/ exists the record
+ * quietly becomes `infinity-2`. Neither would show up here - the link would
+ * simply open Mudlet Web on its profile list, looking like the visitor
+ * mis-clicked. So this mirrors upstream's rule literally: if it changes there,
+ * change it here.
+ *
+ * Guarded on mudlet_game_telnet_url() rather than on its own copy of the same
+ * checks: Mudlet Web only offers the profiles with a real host and a port, so
+ * the set of games worth linking is the set that already has an address worth
+ * linking. (The tutorial and self-test profiles never reach the database at
+ * all - the sync flags them internal - so this is belt and braces.)
+ *
+ * @param array<string, mixed> $game A row from mudlet_games().
+ * @return string An https:// URL, or '' if this game has no address.
+ */
+function mudlet_game_web_url( array $game ): string {
+	$base = mudlet_web_url();
+	if ( '' === $base || '' === mudlet_game_telnet_url( $game ) ) {
+		return '';
+	}
+
+	$slug = trim( (string) preg_replace( '/[^a-z0-9]+/', '-', strtolower( (string) ( $game['name'] ?? '' ) ) ), '-' );
+	if ( '' === $slug ) {
+		return '';
+	}
+
+	return add_query_arg( 'play', $slug, $base );
+}

@@ -439,6 +439,19 @@ anything:
   `mudlet_telnet_protocols()` or a fifth of the links come out empty; and a port
   is an identifier, not a quantity, so it never goes through
   `number_format_i18n()` — that is where "port 4,000" comes from.
+- **And it has a second half that needs no client at all.** Mudlet Web takes
+  `?play=<slug>` and opens that same bundled profile connected in a tab, so
+  every game shows two rows: `connect` for the reader who has Mudlet, `browser`
+  for the reader who has not and is not going to install anything to find out
+  whether they like MUDs. `mudlet_game_web_url()` builds it, guarded on the
+  telnet link so the two agree about which games have an address worth linking,
+  over `mudlet_web_url()` — a filter, and the *public* deployment, not the
+  hero's build of the same package: that one is an offline world with no proxy
+  behind it and cannot connect anybody to Achaea. **The slug is derived from the
+  game's name with Mudlet Web's own rule, never read off `post_name`** — the two
+  are different rules that agree on today's forty-three, and where they part
+  (an accent, or WordPress's `-2` collision suffix) the link fails by opening
+  the profile list, which looks like a mis-click rather than a bug.
 - **The makers roster comes from Mudlet too.** One `mudlet_maker` post per
   person the client credits, created by `wordpress/plugin/mudlet-makers/` from
   `src/dlgAboutDialog.cpp`, with the GitHub avatar as the featured image.

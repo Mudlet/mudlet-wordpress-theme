@@ -486,17 +486,23 @@
 	line-clamp: 4;
 	overflow: hidden;
 }
-#site .gfeat__connect {
+/* Two rows, not one: an address for the client on this machine and a link for
+   the one in a tab. They are the same subject and are set as one block, which
+   is why the first sits tight above the second rather than each carrying the
+   gap that separates the pair from the tags. */
+#site .gfeat__connect,
+#site .gfeat__browser {
 	display: flex;
 	align-items: baseline;
 	gap: .6ch;
-	margin: 0 0 .7rem;
+	margin: 0 0 .3rem;
 	/* the address and its hint stay on one line; a long host scrolls nothing
 	   and wraps nothing, it just runs out of room like a terminal would */
 	min-width: 0;
 	white-space: nowrap;
 	overflow: hidden;
 }
+#site .gfeat__browser { margin-bottom: .7rem; }
 #site .gfeat__tags {
 	display: flex;
 	gap: .35rem;

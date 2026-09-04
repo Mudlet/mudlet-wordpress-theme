@@ -91,6 +91,21 @@ while ( have_posts() ) :
 						<?php if ( $mudlet_game['own_ui'] ) : ?>
 							<span class="sep">&middot;</span><?php mudlet_icon( mudlet_game_tag_icon( 'own-ui' ), 'specs__i' ); ?><?php esc_html_e( 'ships its own Mudlet interface', 'mudlet' ); ?>
 						<?php endif; ?>
+						<?php
+						// The other half of that link, on the same rule rather than one of
+						// its own: connecting is one subject, and the two rows differ only in
+						// which client answers. Mudlet Web opens this same bundled profile in
+						// a tab, which is the useful answer for somebody who has not yet
+						// decided whether they like MUDs enough to install anything. Returns
+						// '' for the same games the telnet:// line does. See mudlet_game_web_url().
+						$mudlet_web = mudlet_game_web_url( $mudlet_game );
+						?>
+						<?php if ( $mudlet_web ) : ?>
+							<br>
+							<span class="mk">&gt;</span><b><?php esc_html_e( 'browser', 'mudlet' ); ?></b>
+							<a class="gplay" href="<?php echo esc_url( $mudlet_web ); ?>" target="_blank" rel="noopener"><span class="gplay__addr"><?php esc_html_e( 'play it in Mudlet Web', 'mudlet' ); ?></span></a>
+							<span class="gplay__hint"><?php esc_html_e( 'nothing to install', 'mudlet' ); ?></span>
+						<?php endif; ?>
 					</p>
 
 					<?php if ( ! empty( $mudlet_game['links'] ) ) : ?>

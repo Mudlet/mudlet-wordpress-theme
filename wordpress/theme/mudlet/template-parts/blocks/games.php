@@ -68,6 +68,10 @@ if ( ! $mudlet_games ) {
 				// (mudlet_game_telnet_url() returns '' for those) the link falls back
 				// to the game's own page, which is what it always was.
 				$mudlet_telnet = function_exists( 'mudlet_game_telnet_url' ) ? mudlet_game_telnet_url( $mudlet_game ) : '';
+				// And its other half: the same profile in a browser tab, for a reader
+				// who does not have Mudlet yet. Announcement posts are where people
+				// meet a new world first, so "try it" wanting no download is the point.
+				$mudlet_web = function_exists( 'mudlet_game_web_url' ) ? mudlet_game_web_url( $mudlet_game ) : '';
 				?>
 				<?php if ( $mudlet_telnet ) : ?>
 					<a class="rgame__play" href="<?php echo esc_url( $mudlet_telnet, mudlet_telnet_protocols() ); ?>"><?php esc_html_e( 'Play in Mudlet', 'mudlet' ); ?></a>
@@ -75,6 +79,10 @@ if ( ! $mudlet_games ) {
 					<a href="<?php echo esc_url( (string) $mudlet_game['url'] ); ?>"><?php esc_html_e( 'About', 'mudlet' ); ?></a>
 				<?php else : ?>
 					<a href="<?php echo esc_url( (string) $mudlet_game['url'] ); ?>"><?php esc_html_e( 'Play in Mudlet', 'mudlet' ); ?></a>
+				<?php endif; ?>
+				<?php if ( $mudlet_web ) : ?>
+					<span class="dot" aria-hidden="true">·</span>
+					<a href="<?php echo esc_url( $mudlet_web ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Play in a browser', 'mudlet' ); ?></a>
 				<?php endif; ?>
 				<?php if ( ! empty( $mudlet_game['site'] ) ) : ?>
 					<span class="dot" aria-hidden="true">·</span>

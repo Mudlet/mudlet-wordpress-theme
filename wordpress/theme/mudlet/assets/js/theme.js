@@ -1365,6 +1365,9 @@
 			var addr = feat.querySelector('.gplay__addr');
 			var tags = feat.querySelector('.gfeat__tags');
 			var telnet = card.getAttribute('data-telnet') || '';
+			var browse = feat.querySelector('.gfeat__browser');
+			var gweb = feat.querySelector('.gweb');
+			var web = card.getAttribute('data-web') || '';
 
 			// Trimmed because the template's own indentation is in there.
 			if (name && link) {
@@ -1401,6 +1404,16 @@
 				if (telnet) play.setAttribute('href', telnet);
 				else play.removeAttribute('href');
 			}
+
+			// The browser row is a link or it is nothing: unlike the address above,
+			// which still reads as a fact with no client to hand it to, "play it in
+			// Mudlet Web" with nowhere to go says nothing. Every synced game has
+			// one, so this hides no row in practice and the panel keeps its height.
+			if (gweb) {
+				if (web) gweb.setAttribute('href', web);
+				else gweb.removeAttribute('href');
+			}
+			if (browse) browse.hidden = !web;
 
 			if (tags) {
 				tags.innerHTML = '';

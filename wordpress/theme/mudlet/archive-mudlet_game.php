@@ -75,6 +75,7 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 				$mudlet_hero_lede   = mudlet_game_lede( $mudlet_hero );
 				$mudlet_hero_tags   = mudlet_game_tags( $mudlet_hero );
 				$mudlet_hero_telnet = mudlet_game_telnet_url( $mudlet_hero );
+				$mudlet_hero_web    = mudlet_game_web_url( $mudlet_hero );
 				?>
 				<div class="gfeat" id="gfeat">
 					<span class="plogo gfeat__logo">
@@ -109,6 +110,22 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 								?></span>
 							</a>
 							<span class="gplay__hint"><?php esc_html_e( 'opens Mudlet', 'mudlet' ); ?></span>
+						</p>
+
+						<?php
+						// The same profile in a tab, for the reader who has not installed
+						// anything. Drawn only when there is one - unlike the connect row
+						// above, which stays as text because a host and a port are still worth
+						// reading with no client to hand them to, a browser row with nothing to
+						// open says nothing at all. Every synced game has one, so the panel
+						// keeps its height across a shuffle; the shuffle hides the row rather
+						// than leaving a dead link if it ever meets a card without.
+						?>
+						<p class="gfeat__browser"<?php echo $mudlet_hero_web ? '' : ' hidden'; ?>>
+							<a class="gplay gweb"<?php echo $mudlet_hero_web ? ' href="' . esc_url( $mudlet_hero_web ) . '"' : ''; ?> target="_blank" rel="noopener">
+								<span class="mk">&gt;</span><b><?php esc_html_e( 'browser', 'mudlet' ); ?></b><span class="gplay__addr"><?php esc_html_e( 'play it in Mudlet Web', 'mudlet' ); ?></span>
+							</a>
+							<span class="gplay__hint"><?php esc_html_e( 'nothing to install', 'mudlet' ); ?></span>
 						</p>
 						<p class="gfeat__tags">
 							<?php foreach ( $mudlet_hero_tags as $mudlet_tag ) : ?>
@@ -175,6 +192,7 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 								);
 							?>"
 							data-telnet="<?php echo esc_url( mudlet_game_telnet_url( $mudlet_game ), mudlet_telnet_protocols() ); ?>"
+							data-web="<?php echo esc_url( mudlet_game_web_url( $mudlet_game ) ); ?>"
 							data-tags="<?php echo esc_attr( implode( ' ', wp_list_pluck( $mudlet_tags, 'key' ) ) ); ?>">
 							<span class="plogo gcard__logo">
 								<?php if ( has_post_thumbnail() ) : ?>
