@@ -446,7 +446,7 @@ Both lists it answers out of are counted rather than written:
   name and the signature the editor completes your typing from, arriving with the
   seed. 671 of them.
 - **the shelves** — `_G`, counted in the client the visitor is standing in.
-  1,105 functions against mudlet-web 0.4.5, of which 667 are the catalogue's and
+  1,105 functions against mudlet-web 0.5.0, of which 667 are the catalogue's and
   the rest are Lua's own.
 
 So all four answers the imp can give are derived: on both lists, on neither, in
