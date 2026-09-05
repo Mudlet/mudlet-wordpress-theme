@@ -56,7 +56,11 @@ local INSET = 14
 -- one buries the other.
 local MAX_W, SHARE, TALLEST = 480, 0.45, 0.55
 
-local hung, showing, pending = nil, nil, nil
+-- `showing` is what is on the hook, which is the visitor's business and
+-- survives them walking out; `up` is whether the label is on the screen, which
+-- is the room's. The two are not the same fact, and conflating them is what
+-- carried a screenshot of somebody's session into the cellar.
+local hung, showing, pending, up = nil, nil, nil, false
 -- What has been fetched already, keyed by url. A profile is a real directory
 -- and it survives a reload, so the second hanging of the same picture usually
 -- costs nothing — which is worth saying out loud when it happens, because it
@@ -109,13 +113,41 @@ local function draw(shot, path)
         border: 1px solid #6f9cb8;
     ]], path))
     hung:show()
-    showing = shot
+    showing, up = shot, true
 
     say(C.text, 'It hangs over everything, because that is what a Geyser label does — ',
         w, ' by ', h, ', and no part of this console knows it is there. ',
         cmd('Take it down', 'take down the picture', 'or just click the picture', C.text),
         C.text, ' when you have looked at it.')
 end
+
+-- The picture hangs in the Gallery, not on the visitor. A Geyser label is
+-- drawn over the whole console and has never heard of a room, so a picture
+-- left up would follow whoever hung it into the Stacks and the cellar and hang
+-- there over prose that has nothing to do with it. Walking out hides it;
+-- walking back in puts it up again, on the same hook, because taking it down
+-- is something the visitor does and not something a doorway does for them.
+--
+-- Rooms are announced rather than asked after: D.look() raises core.ROOM_EVENT
+-- after it has set D.here, which is the same line map.lua redraws the bar from.
+-- The guard on `up` is because that event fires for a bare `look` in the room
+-- you are already standing in, and a room that re-announced the picture every
+-- time you looked around would be a room nagging you.
+local function follow()
+    if not hung or not showing then return end
+    local here = D.here == 'gallery'
+    if here == up then return end
+    up = here
+    if not here then hung:hide() return end
+    -- The window may well have changed size while the picture was down — the
+    -- hero expands to fill the screen — so the frame is cut again on the way
+    -- back up rather than trusting the box it had when it was hidden.
+    place(showing)
+    hung:show()
+    say(C.dim, 'The picture is where you left it, still on the hook.')
+end
+
+registerAnonymousEventHandler(core.ROOM_EVENT, follow)
 
 -- The frame is cut to the window, so it has to be cut again when the window
 -- changes size. The hero this world usually runs in is a box the visitor can
@@ -124,7 +156,7 @@ end
 -- and no stylesheet is rewritten — the picture on the wall is the same
 -- picture, and only its frame moved.
 registerAnonymousEventHandler('sysWindowResizeEvent', function()
-    if hung and showing then place(showing) end
+    if hung and showing and up then place(showing) end
 end)
 
 -- One handler pair for the whole room, registered as the package loads. Both
@@ -216,9 +248,14 @@ function D.unhang(quiet)
         return
     end
     hung:hide()
-    showing = nil
+    showing, up = nil, false
     if quiet then return end
-    say(C.text, 'You take it down and lean it against the wall with the others.')
+    -- `unhang` is answered anywhere, because a picture the visitor knows is
+    -- still on the hook two rooms away is a thing they are allowed to deal
+    -- with from here. It is just not a thing they can do with their hands.
+    say(C.text, D.here == 'gallery'
+        and 'You take it down and lean it against the wall with the others.'
+        or 'Back in the Gallery, the picture comes off its hook and leans against the wall.')
 end
 
 return { hang = D.hang, unhang = D.unhang }

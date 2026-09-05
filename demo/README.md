@@ -155,6 +155,13 @@ anything else over this console:
   frame; sixty `:move()` calls a frame delivered 1.4fps out of a requested 50.
   An animation here is one widget whose contents change, never several that
   move — the opposite of how it would be written against desktop Qt.
+- **A label has never heard of a room.** It is drawn over the whole console, so
+  a picture left up follows the visitor out of the Gallery and hangs over the
+  cellar. `frame.lua` listens for `core.ROOM_EVENT` — the same announcement the
+  bar redraws from — and hides the label on the way out and shows it again on
+  the way back, without refetching: what is on the hook is the visitor's and
+  survives them leaving, whether it is on the screen is the room's, and only
+  `unhang` (or a click on the picture) takes it down.
 
 The Gallery prints no source, and neither does the kettle. Only the two rooms
 whose subject *is* the Lua do that — the imp handing over a box with an alias on
