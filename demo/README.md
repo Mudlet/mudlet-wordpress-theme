@@ -8,12 +8,23 @@ open, so the whole thing is a static site — no telnet proxy, nothing to run.
 ```
 npm install
 npm run build          # -> dist/  (also rebuilds the .mpackage)
+npm run package        # edited the Lua? this, and reload the page
 node scripts/serve.mjs # the client on its own at :8765
                        # the site serves it from the theme - see ../README.md
 ```
 
-`npm run dev` for the Vite dev server; `npm run package` rebuilds only the
-`.mpackage`.
+`npm run dev` for the Vite dev server.
+
+**`npm run package` reaches the page.** The theme frames `dist/`, so a world
+rebuilt only into `src/assets/` used to be invisible until somebody remembered
+to run the full build as well — fifteen seconds of rebuilding Monaco to ship
+two lines of Lua, and a stale page if they forgot. It now patches `dist/` in
+place: the `.mpackage` under the hashed name Vite gave it, and the version
+string, which lives in the bundle rather than in the package and is what makes
+a returning visitor reinstall the world. Nothing else — a change under `src/`,
+a new dependency, an upgraded `mudlet-web` — is covered, and the script says so
+instead of half-updating the page. `npm run build` does the honest thing and is
+what a release runs.
 
 ## How the three "make it an embed" bits work
 

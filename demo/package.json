@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "package": "node scripts/build-package.mjs",
-    "dev": "npm run package && vite",
-    "build": "npm run package && vite build",
+    "package": "node scripts/build-package.mjs --sync-dist",
+    "dev": "node scripts/build-package.mjs && vite",
+    "build": "node scripts/build-package.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -23,7 +23,8 @@ There is no test suite and no linter. The only static check is
 # the demo client
 cd demo && npm ci
 npm run build            # -> demo/dist/ ; also rebuilds src/assets/*.mpackage
-npm run package          # rebuild only the .mpackage (fast, for Lua edits)
+npm run package          # rebuild the .mpackage and patch it into demo/dist/
+                         # (fast, for Lua edits - reload the page and it is there)
 npm run dev              # Vite dev server, client alone
 
 # the site
