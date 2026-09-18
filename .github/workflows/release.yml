@@ -74,8 +74,11 @@ jobs:
 
       # The only static check this repository has. It covers demo/src, which is
       # what was just built.
+      # From demo/, where `npm ci` put TypeScript: at the root, npx finds no
+      # tsc and installs the unrelated `tsc` package instead.
       - name: Type-check the demo client
-        run: npx tsc --noEmit -p demo/tsconfig.json
+        working-directory: demo
+        run: npx tsc --noEmit -p tsconfig.json
 
       - name: Build the archives
         run: node wordpress/tools/build-dist.mjs --with-demo --version '${{ steps.version.outputs.version }}'
