@@ -515,10 +515,10 @@ v0.1.0` runs `.github/workflows/release.yml` and fixes that.
     the two block styles in `inc/blocks.php` — 7 screencasts and 13 screenshots
     that are already in the media library, so a body rewrite rather than an
     upload.
-  - **`/terms-of-service/`, `/privacy-policy/` and five posts** go through
+  - **`/terms-of-service/`, `/privacy-policy/` and four posts** go through
     `page.php` and `single.php`, where `inc/divi-cleanup.php` strips the tags
-    and keeps the text. They read acceptably unattended; the 56KB
-    `/2026/08/5-0/` release announcement is the one worth looking at.
+    and keeps the text. They read acceptably unattended, so they are not a
+    switch-day job — they are on the list in **Manual rewrites** below.
 
   **The front page needs nothing at all**: `front-page.php` never calls
   `the_content()`, so its 20KB of `et_pb_section` is simply never read again.
@@ -554,6 +554,44 @@ v0.1.0` runs `.github/workflows/release.yml` and fixes that.
   correctly and this is not a blocker. It is only worth opening Pages -> Home
   early if the six cards or the spec line are already known to be wrong.
 
+### Manual rewrites
+
+Old bodies worth rewriting by hand in the block editor. None of them blocks the
+switch — `inc/divi-cleanup.php` keeps every one readable meanwhile — but each is
+a page that renders as leftovers rather than as a page, and rewriting is what
+takes it off the cleanup's hands. Measured over every published English post
+and page in the 2026-08-31 export; `node wordpress/tools/probe-divi.js`
+re-derives the Divi half from a newer one.
+
+Divi bodies, after the switch (the block editor is the new theme's, and a
+rewrite done under Divi would be drawn by Divi until then):
+
+- [ ] `/2026/08/5-0/` — 56KB, the current release announcement and the most-read
+      of these. First.
+- [ ] `/terms-of-service/`
+- [ ] `/privacy-policy/`
+- [ ] `/2018/07/mudlet-3-11-quality-improvements-all-around/`
+- [ ] `/2019/06/translation_summary_after_one_year/`
+- [ ] `/2024/12/mudlet-as-a-portable-app/`
+
+Dead plugin shortcodes, any time — neither depends on the theme:
+
+- [ ] `/2009/12/quick-poll-which-kind-of-text-in-mudlet-do-you-prefer/` — the
+      whole body is `[polldaddy poll="2401281"]`, from a plugin long gone, so
+      the live page already shows the bare tag. Unpublish it; there is no poll
+      left to link to.
+- [ ] `/2008/11/mudlet-pre-alpha-is-out/` — `[page_download]` drops
+      WP-DownloadManager's whole current download list into a 2008 announcement.
+      Replace it with a link to `/download/`. (It renders while the plugin
+      stays; it is wrong rather than broken.)
+
+Not on the list, and checked: `[caption]`, `[gallery]` and `[video]` are
+core's own and render as they always did; `[MudletRelease]` is answered by
+`mudlet-releases`; and `[CodeFactor]`, `[the setup]`, `saveMap([location])`
+and `rel="lightbox[…]"` are prose and markup that happen to hold brackets,
+which WordPress leaves alone. `/download/`, `/contact/` and `/media/` are the
+switch's job, above.
+
 ## Order of operations
 
 0. Everything in **Before the switch** above that can be done now — the
@@ -584,9 +622,12 @@ v0.1.0` runs `.github/workflows/release.yml` and fixes that.
    `Mudlet → Sync` and one URL of each post type.
 9. Deploy the 301s, then deactivate Polylang. Watch 404s for a week. Shortcoder can go at the same time: its three live uses are all on the download pages being emptied or redirected, and `[sc]` is stripped from anything left.
 10. Deactivate wp-lightbox-bank (needs theme 0.1.1 or later); check `/media/` and a release post with screenshots.
-11. Add the stable aliases for Windows and macOS in CI, and point the QR/email
+11. Work through **Manual rewrites** — `/2026/08/5-0/` first. The two
+    shortcode fixes on that list can be done at any point, before the switch
+    included.
+12. Add the stable aliases for Windows and macOS in CI, and point the QR/email
     drawer at them.
-12. *Later, and only as a coordinated change:* retire WP-DownloadManager and
+13. *Later, and only as a coordinated change:* retire WP-DownloadManager and
     `download-add.php` together.
 
 Steps 5 and 6 need no CI change and disturb no pipeline, so they can land before
