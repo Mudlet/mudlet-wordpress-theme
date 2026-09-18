@@ -166,6 +166,35 @@ for (const row of rows) {
   }
 }
 
+// ── picked by hand ────────────────────────────────────────────────────
+//
+// What neither pass can find, decided by a person looking at the posts
+// (2026-09-18) and written here rather than into the CSV, so the answer
+// survives the next run against a fresher export. Marked `picked`.
+const PICKED = [
+  // All four "translations" are the English text, posted minutes after it.
+  // Not the PR-payout post three weeks later, which is a different post.
+  {
+    from: /^\/(de|it|ru|zh)\/2022\/02\/4-15-gifs-music-and-editable-shortcuts-\1\/$/,
+    to: '/2022/02/4-15-gifs-music-shortcuts-n-more/',
+  },
+  // Webhook stubs of release 4.19 ([MudletRelease]192356251). The hand-written
+  // announcement, not /4-19-mudlet-is-now-portable-2/, which is another stub.
+  {
+    from: /^\/(de|it|ru|zh)\/2024\/12\/4-19-\d+\/$/,
+    to: '/2024/12/4-19-mudlet-is-now-portable/',
+  },
+];
+
+for (const row of rows) {
+  if (row.to) continue;
+  const pick = PICKED.find((p) => p.from.test(row.from));
+  if (pick) {
+    row.to = pick.to;
+    row.status = 'picked';
+  }
+}
+
 // ── categories and tags ───────────────────────────────────────────────
 
 const terms = new Map();
