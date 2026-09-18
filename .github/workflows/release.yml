@@ -13,9 +13,14 @@
 # and a `v` prefix that exists only in git — a WordPress header is `0.2.0`.
 #
 # mudlet.zip is the whole site: the theme, the demo client under assets/demo/,
-# and the three plugins under plugins/. The plugin zips are published beside it
+# and the four plugins under plugins/. The plugin zips are published beside it
 # for a site that would rather install them the old way, and for a site that has
 # changed theme and wants to keep its games — nothing needs them otherwise.
+#
+# mudlet-installer.zip is the odd one out, and is not a plugin of the site's:
+# 4 KB whose only job is to pull mudlet.zip off this release and install it,
+# for a site whose upload limit is smaller than 14 MB. Published here, and
+# deliberately not carried inside mudlet.zip.
 
 name: release
 
@@ -86,7 +91,7 @@ jobs:
           unzip -l mudlet.zip | head -5
           unzip -p mudlet.zip mudlet/style.css | grep -q "^Version: $VERSION"
           unzip -p mudlet.zip mudlet/assets/demo/index.html > /dev/null
-          for slug in mudlet-games mudlet-makers mudlet-releases; do
+          for slug in mudlet-games mudlet-makers mudlet-releases mudlet-shots; do
             unzip -p mudlet.zip "mudlet/plugins/$slug/$slug.php" | grep -q "Version: *$VERSION"
             unzip -p mudlet.zip "mudlet/plugins/$slug/shared/mudlet-sync.php" > /dev/null
             unzip -p mudlet.zip "mudlet/plugins/$slug/shared/mudlet-bundle.php" > /dev/null
@@ -121,4 +126,6 @@ jobs:
             wordpress/dist/mudlet.zip \
             wordpress/dist/mudlet-games.zip \
             wordpress/dist/mudlet-makers.zip \
-            wordpress/dist/mudlet-releases.zip
+            wordpress/dist/mudlet-releases.zip \
+            wordpress/dist/mudlet-shots.zip \
+            wordpress/dist/mudlet-installer.zip

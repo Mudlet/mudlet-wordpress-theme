@@ -189,17 +189,35 @@ function mudlet_update_release( string $repo ): ?array {
 
 add_filter( 'auto_update_theme', 'mudlet_theme_auto_update', 10, 2 );
 /**
- * Keep this theme up to date on its own.
+ * Let the site decide whether to update itself, and default to not.
  *
- * WordPress leaves theme auto-updates off until somebody turns them on per
- * theme, which for a site that is one theme and three plugins in one archive
- * is a switch nobody would ever want the other way — a site running a release
- * behind is running a release behind on all four.
+ * This used to answer `true` unless told otherwise, on the reasoning that a
+ * site one release behind is behind on the theme, the four plugins and the
+ * hero's client at once, so nobody would want the switch the other way.
+ *
+ * That was the wrong trade for a live site, for two reasons. `mudlet.zip` is
+ * not a design, it is a **deploy** — pushing a tag would put the whole site on
+ * mudlet.org within a day with nobody pressing anything, and a bad release
+ * would ship itself. And forcing `true` here overrode the admin's own
+ * **Enable auto-updates** link in Appearance → Themes, so the one person who
+ * might have wanted it off could not turn it off from the screen that exists
+ * for exactly that.
+ *
+ * So this now passes core's answer through, which means WordPress behaves the
+ * way it does for a theme from the directory: the update is **offered** —
+ * Dashboard → Updates, and an "Update now" button on the theme — and installing
+ * it is somebody's decision. Nothing about the offer changed; the update still
+ * comes from the GitHub release and still carries the plugins and the client,
+ * and it still costs no upload. Only the unattended part is gone.
+ *
+ * `MUDLET_AUTO_UPDATE` is now an override rather than an off switch, and works
+ * in both directions: define it `true` and this theme updates itself on a site
+ * where that is wanted, `false` to hold it off where the admin UI is not to be
+ * trusted to stay as it was. Undefined - the normal case - is core's answer and
+ * the admin's link.
  *
  * Only ever an opinion about *this* theme: another theme's answer is passed
- * through untouched. A site that disagrees can say so with the
- * `MUDLET_AUTO_UPDATE` constant in wp-config.php, which is the one place a
- * host can reach without editing files that the next update overwrites.
+ * through untouched either way.
  *
  * @param bool|null $enabled Whatever core or an earlier filter decided.
  * @param object    $theme   The update object; `->theme` is the stylesheet.
@@ -210,7 +228,7 @@ function mudlet_theme_auto_update( $enabled, $theme ) {
 		return $enabled;
 	}
 
-	return defined( 'MUDLET_AUTO_UPDATE' ) ? (bool) MUDLET_AUTO_UPDATE : true;
+	return defined( 'MUDLET_AUTO_UPDATE' ) ? (bool) MUDLET_AUTO_UPDATE : $enabled;
 }
 
 add_action( 'upgrader_process_complete', 'mudlet_update_forget', 10, 2 );

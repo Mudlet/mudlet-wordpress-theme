@@ -57,6 +57,9 @@ const PACKAGES = [
 	{ slug: 'mudlet-makers', kind: 'plugin', from: 'plugin/mudlet-makers', version: readPlugin },
 	{ slug: 'mudlet-releases', kind: 'plugin', from: 'plugin/mudlet-releases', version: readPlugin },
 	{ slug: 'mudlet-shots', kind: 'plugin', from: 'plugin/mudlet-shots', version: readPlugin },
+	// Not kind 'plugin': it is not carried inside the theme, because a tool for
+	// installing the theme is of no use to a site that already has it.
+	{ slug: 'mudlet-installer', kind: 'tool', from: 'plugin/mudlet-installer', version: readPlugin },
 ];
 
 // Never shipped, from anywhere.

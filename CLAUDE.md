@@ -89,9 +89,13 @@ The other half is `theme/mudlet/inc/updates.php`: `style.css` carries an
 wordpress.org about a theme it does not host and fires
 `update_themes_github.com`. That filter answers with the release's `mudlet.zip`
 asset — never `zipball_url`, which has the wrong folder inside it — cached
-twelve hours, and the theme opts itself into automatic updates
-(`MUDLET_AUTO_UPDATE` in `wp-config.php` turns that off). Since the asset is the
-whole site, one update carries the plugins and the hero's client too. The
+twelve hours. The update is **offered**, not taken: WordPress shows it on
+Dashboard → Updates with an "Update now" button, exactly as it would for a theme
+from the directory, and `MUDLET_AUTO_UPDATE` in `wp-config.php` overrides that
+in either direction. It deliberately does not force auto-updates on — since the
+asset is the whole site, one update carries the plugins and the hero's client
+too, which makes it a deploy rather than a design change and not something to
+install itself unattended. The
 repository is read back out of the header rather than hardcoded, so a fork gets
 its own updates.
 

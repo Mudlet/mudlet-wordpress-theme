@@ -824,6 +824,7 @@ Theme** is the entire install and there is nothing to activate.
 | `mudlet-makers.zip` | same |
 | `mudlet-releases.zip` | same |
 | `mudlet-shots.zip` | same |
+| `mudlet-installer.zip` | Plugins → Add New → **Upload Plugin** — only if `mudlet.zip` is too big to upload; see below |
 
 The plugin zips are still built, and still published on every release,
 for two cases: a site that would rather run them as plugins, and a site that
@@ -832,6 +833,15 @@ always wins** — WordPress loads plugins before it reaches a theme, so the
 plugin defines its version constant first and `inc/bundled-plugins.php` stands
 down. If that installed copy is older than the one in the theme, an admin
 notice says so rather than letting it be a surprise.
+
+**If `mudlet.zip` is larger than the upload limit**, which at 14 MB with the
+demo in it usually is, `mudlet-installer.zip` is the way in: a 4 KB plugin whose
+only job is to ask GitHub for the latest release and install the theme from it
+server-side, where no upload limit applies. Upload it, press the button under
+Appearance → Install Mudlet theme, delete it. It deliberately does not activate
+the theme, and it is not carried inside `mudlet.zip` — a tool for installing the
+theme is no use to a site that has it. After that first install the theme's own
+updater takes over and nothing is ever uploaded again.
 
 Worth knowing before it bites:
 
@@ -882,10 +892,18 @@ answers it: one unauthenticated `releases/latest` call, cached twelve hours,
 and the release's own `mudlet.zip` asset as the package. Because that asset is
 the whole site, the update carries the plugins and the hero's client with it.
 
-The theme also opts itself into WordPress's automatic theme updates — a site
-running a release behind would be a release behind on all four things at once.
-`define( 'MUDLET_AUTO_UPDATE', false );` in `wp-config.php` turns that off and
-leaves the manual "Update now" button.
+**The update is offered, not taken.** It appears on Dashboard → Updates and as
+an "Update now" button on the theme, the same as a theme from the directory,
+and somebody presses it. That is deliberate: because the asset is the whole
+site, installing one is a deploy of the theme, the four plugins and the hero's
+client together, and a release that turned out badly would otherwise ship
+itself to every site inside a day.
+
+A site that does want it unattended can turn on **Enable auto-updates** on the
+theme in Appearance → Themes, like any other theme. `MUDLET_AUTO_UPDATE` in
+`wp-config.php` overrides that link in either direction — `true` to update on
+its own whatever the screen says, `false` to hold it off — for a host that
+would rather the setting were not a click away.
 
 Cutting a release is one push:
 
