@@ -633,6 +633,23 @@ switch's job, above.
    updates carry them. Only after step 7, never before. Then check
    `Mudlet → Sync` and one URL of each post type.
 9. Deploy the 301s, then deactivate Polylang. Watch 404s for a week. Shortcoder can go at the same time: its three live uses are all on the download pages being emptied or redirected, and `[sc]` is stripped from anything left.
+
+   **With the Redirection plugin, which mudlet.org already runs** — no shell
+   needed:
+
+   1. Tools → Export → All content, the fresh WXR, into `wordpress/seed/export/`.
+   2. `node wordpress/tools/translation-map.js` → it must end with **0 needing a
+      decision**. Anything else is a new case to pick in `PICKED`.
+   3. Tools → Redirection → Import/Export → import
+      `wordpress/seed/out/redirection-import.csv` (source, target, regex 0,
+      301; 170 rows on the 2026-08-31 export) into its own group, so the lot
+      can be found and disabled together.
+   4. Spot-check a post, a page, a tag and one `/zh/` URL with an encoded
+      slug. Redirection acts on every request, not only on 404s, so the
+      redirects are live **while Polylang is still active** — which is the
+      order wanted: redirects first, plugin off second.
+   5. Unpublish the two duplicate release posts (Manual rewrites), deactivate
+      Polylang, and watch Redirection's own 404 log for the week.
 10. Deactivate wp-lightbox-bank (needs theme 0.1.1 or later); check `/media/` and a release post with screenshots.
 11. Work through **Manual rewrites** — `/2026/08/5-0/` first. The two
     shortcode fixes on that list can be done at any point, before the switch

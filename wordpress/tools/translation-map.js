@@ -1,7 +1,8 @@
 // Every translated URL on mudlet.org, and the English one it should 301 to.
 //
 //   node wordpress/tools/translation-map.js [seed/export/*.xml]
-//   -> wordpress/seed/out/redirects.csv
+//   -> wordpress/seed/out/redirects.csv            (the table, with reasons)
+//   -> wordpress/seed/out/redirection-import.csv  (Tools -> Redirection -> Import)
 //
 // MIGRATION.md decision 4 calls the translation map "the one step that cannot
 // be done afterwards", because Polylang answers `pll_get_post()` only while it
@@ -99,12 +100,19 @@ const seen = new Set();
 for (const block of blocks(xml, 'wp:term')) {
   if (field(block, 'wp:term_taxonomy') !== 'post_translations') continue;
   const members = group(field(block, 'wp:term_description'));
-  const english = members.en ? byId.get(members.en) : null;
+  // A trashed English post is no destination - its link is a bare ?p= that
+  // resolves to nothing. That is how the 5.0 copies came out: the webhook's
+  // English stub went to the trash when the announcement was written by hand,
+  // and its translations stayed live pointing at it. Left empty here, so a
+  // case like it surfaces as needing a pick rather than a redirect to a 404.
+  const found = members.en ? byId.get(members.en) : null;
+  const english = found && found.status !== 'trash' ? found : null;
 
   for (const lang of LANGS) {
     if (!members[lang]) continue;
     const post = byId.get(members[lang]);
-    if (!post || !post.path) continue;
+    // A trashed translation has no public URL to redirect from.
+    if (!post || !post.path || post.status === 'trash') continue;
     seen.add(post.id);
     rows.push({
       kind: post.type,
@@ -120,7 +128,7 @@ for (const block of blocks(xml, 'wp:term')) {
 // A translated post in no group at all - Polylang knows its language and
 // nothing else. It still has an indexed URL, so it still needs a destination.
 for (const post of byId.values()) {
-  if (seen.has(post.id) || !LANGS.includes(post.lang) || !post.path) continue;
+  if (seen.has(post.id) || !LANGS.includes(post.lang) || !post.path || post.status === 'trash') continue;
   rows.push({ kind: post.type, lang: post.lang, from: post.path, to: '', status: post.status, title: post.title });
 }
 
@@ -183,6 +191,12 @@ const PICKED = [
   {
     from: /^\/(de|it|ru|zh)\/2024\/12\/4-19-\d+\/$/,
     to: '/2024/12/4-19-mudlet-is-now-portable/',
+  },
+  // Translations of the webhook's 5.0 stub, which is in the trash; the
+  // announcement is the hand-written post that replaced it.
+  {
+    from: /^\/(de|it|ru|zh)\/2026\/08\/mudlet-5-0-\d+\/$/,
+    to: '/2026/08/5-0/',
   },
 ];
 
@@ -277,6 +291,16 @@ const csv = ['from,to,lang,kind,status,title']
   .join('\n');
 fs.writeFileSync(path.join(outDir, 'redirects.csv'), csv + '\n');
 
+// The same table in the shape the Redirection plugin imports (Tools ->
+// Redirection -> Import/Export): source, target, regex, code - no header, since
+// its importer would take one for a redirect. Only rows with a target, and
+// never one pointing at itself, which Redirection would loop on.
+const importable = all.filter((r) => r.to && r.to !== r.from);
+fs.writeFileSync(
+  path.join(outDir, 'redirection-import.csv'),
+  importable.map((r) => [r.from, r.to, 0, 301].join(',')).join('\n') + '\n'
+);
+
 const count = (f) => all.filter(f).length;
 console.log(path.relative(process.cwd(), file));
 console.log('  ' + all.length + ' translated URLs\n');
@@ -290,6 +314,7 @@ for (const lang of LANGS) {
 }
 console.log('\n  ' + count((r) => !r.to) + ' of ' + all.length + ' have no English equivalent and need a decision.');
 console.log('  wrote ' + path.relative(process.cwd(), path.join(outDir, 'redirects.csv')));
+console.log('  wrote ' + path.relative(process.cwd(), path.join(outDir, 'redirection-import.csv')) + ' (' + importable.length + ' rows, for the Redirection plugin)');
 
 // What is left is a URL whose English post exists under a name nothing can
 // derive - "4.19" in four languages against /2024/12/4-19-mudlet-is-now-
