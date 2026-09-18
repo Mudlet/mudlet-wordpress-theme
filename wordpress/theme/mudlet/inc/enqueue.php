@@ -126,6 +126,8 @@ function mudlet_script_data(): array {
 			'galClose'   => __( 'Close', 'mudlet' ),
 			'galCasts'   => __( 'Screencasts', 'mudlet' ),
 			'galWatch'   => __( 'Watch on YouTube', 'mudlet' ),
+			// The same lightbox over the pictures linked from a post.
+			'galImages'  => __( 'Images', 'mudlet' ),
 			/* translators: 1: position of the screenshot shown, 2: how many there are */
 			'galCount'   => __( '%1$s / %2$s', 'mudlet' ),
 		),

@@ -8,7 +8,7 @@
  *
  * Eight imported bodies still carry Divi shortcodes, and this is what keeps
  * them off the page until they are dealt with properly. It covers the other
- * plugins too - Bloom, Shortcoder, WP-DownloadManager, the reCAPTCHA tags
+ * plugins too - Bloom, Shortcoder (`[sc]`), WP-DownloadManager, the reCAPTCHA tags
  * inside Contact Form 7 bodies.
  *
  * Unregistered shortcodes are stripped tag-by-tag rather than with
@@ -41,9 +41,32 @@ function mudlet_dead_shortcodes(): array {
 		array(
 			'et_pb_',      // Divi's page builder
 			'et_bloom',    // Bloom, Elegant Themes' opt-in plugin
-			'shortcoder',  // the Shortcoder plugin
+			'shortcoder',  // the Shortcoder plugin's own [shortcoder] form
 			'dlm_',        // WP-DownloadManager
 			'recaptcha',   // left inside Contact Form 7 bodies
+		)
+	);
+}
+
+/**
+ * Whole shortcode names left behind, for the ones too short to be a prefix.
+ *
+ * Shortcoder's everyday tag is `[sc name="..."]`, and `sc` as a prefix would
+ * also take `[screenshot]`, `[scroll]` or anything else a later plugin names
+ * that way. So these match the name exactly and nothing that starts with it.
+ *
+ * @return string[]
+ */
+function mudlet_dead_shortcode_names(): array {
+	/**
+	 * Filter the exact shortcode names stripped from post content.
+	 *
+	 * @param string[] $names Shortcode names.
+	 */
+	return apply_filters(
+		'mudlet_dead_shortcode_names',
+		array(
+			'sc', // Shortcoder: [sc name="download_link_by_email"] on the old download pages
 		)
 	);
 }
@@ -69,15 +92,29 @@ function mudlet_strip_dead_shortcodes( $content ): string {
 	}
 
 	$prefixes = mudlet_dead_shortcodes();
-	if ( ! $prefixes ) {
+	$names    = mudlet_dead_shortcode_names();
+	if ( ! $prefixes && ! $names ) {
 		return $content;
 	}
 
-	$alternation = implode( '|', array_map( 'preg_quote', $prefixes ) );
+	$quote = static function ( string $s ): string {
+		return preg_quote( $s, '/' );
+	};
+
+	$alternation = array();
+	if ( $prefixes ) {
+		$alternation[] = '(?:' . implode( '|', array_map( $quote, $prefixes ) ) . ')[a-z0-9_]*';
+	}
+	if ( $names ) {
+		$alternation[] = '(?:' . implode( '|', array_map( $quote, $names ) ) . ')';
+	}
 
 	// Opening tags with any attributes, closing tags, and self-closing ones.
-	// [^\]]* rather than . so a stray bracket cannot swallow the article.
-	$pattern = '/\[\/?(?:' . $alternation . ')[a-z0-9_]*(?:\s[^\]]*)?\/?\]/i';
+	// [^\]]* rather than . so a stray bracket cannot swallow the article. The
+	// lookahead is what makes a name exact: after it comes the end of the tag
+	// or its attributes, never more name - and a prefix has already eaten the
+	// rest of its name by then, so it asks nothing new of those.
+	$pattern = '/\[\/?(?:' . implode( '|', $alternation ) . ')(?=[\s\/\]])(?:\s[^\]]*)?\/?\]/i';
 
 	$stripped = preg_replace( $pattern, '', $content );
 

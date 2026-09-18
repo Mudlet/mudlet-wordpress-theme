@@ -25,7 +25,7 @@ Read off the front end; confirm the full list in wp-admin.
 | Contact Form 7 | The contact form | **Keep** — the new `/contact/` has a shortcode slot for it |
 | Cookie Notice | The consent banner | **Keep**; see `ANALYTICS.md` |
 | Polylang | `/de/`, `/it/`, `/ru/`, `/zh/` | **Drop** — see decision 4 |
-| wp-lightbox-bank | Image lightbox | **Drop** — the new `/media/` carousel has its own |
+| wp-lightbox-bank | Image lightbox — site-wide, on 551 linked images across 133 posts | **Drop** — the theme's lightbox covers `/media/`, the front page and, since 0.1.1, every picture linked from a post |
 | mudlet-release (upstream) | Release announcement posts | **Drop** — both its jobs are now in `mudlet-releases`; see decision 2 |
 | Divi + mudlet-divi | The design | Replaced by `theme/mudlet` |
 
@@ -582,8 +582,8 @@ v0.1.0` runs `.github/workflows/release.yml` and fixes that.
    `mudlet-makers`**, so the theme's bundled copies take over and future theme
    updates carry them. Only after step 7, never before. Then check
    `Mudlet → Sync` and one URL of each post type.
-9. Deploy the 301s, then deactivate Polylang. Watch 404s for a week.
-10. Deactivate wp-lightbox-bank; check `/media/`.
+9. Deploy the 301s, then deactivate Polylang. Watch 404s for a week. Shortcoder can go at the same time: its three live uses are all on the download pages being emptied or redirected, and `[sc]` is stripped from anything left.
+10. Deactivate wp-lightbox-bank (needs theme 0.1.1 or later); check `/media/` and a release post with screenshots.
 11. Add the stable aliases for Windows and macOS in CI, and point the QR/email
     drawer at them.
 12. *Later, and only as a coordinated change:* retire WP-DownloadManager and

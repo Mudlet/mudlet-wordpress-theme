@@ -1475,7 +1475,9 @@
 		// The front page's row of thumbnails wants the same lightbox, so it has to
 		// count towards this guard or the whole block never runs there.
 		var shots = document.querySelectorAll('#site .shots');
-		if (!gals.length && !casts.length && !shots.length) return;
+		// And so does every body of prose, for the pictures linked inside it.
+		var bodies = document.querySelectorAll('#site .prose');
+		if (!gals.length && !casts.length && !shots.length && !bodies.length) return;
 
 		var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 		var DWELL = 5000;
@@ -1933,6 +1935,63 @@
 				if (i < 0) return;   // a link in the list that is not a video
 				e.preventDefault();
 				lightbox().open(items, i, S.galCasts || 'Screencasts');
+			});
+		});
+
+		// ── pictures linked from a post ──────────────────────────────────
+		// The live site ran wp-lightbox-bank, which opened every linked image in
+		// a post as an overlay - 551 of them across 133 posts, nearly all a
+		// release announcement's thumbnail linking to the full screenshot. This
+		// is what lets that plugin go without those clicks turning into a bare
+		// image file in the tab.
+		//
+		// A link counts when it wraps an <img> and points at an image file on
+		// this site. Same origin because the oldest posts link imageshack and
+		// the like, long dead: a dead link that navigates says so in the address
+		// bar, a dead one in a lightbox is an empty box. The carousel and the
+		// screencasts are skipped - they already open this, their own way.
+		//
+		// One set per body of prose, in document order, so the arrows walk the
+		// pictures of the post being read and nothing else.
+		var IMAGE_FILE = /\.(png|jpe?g|gif|webp|avif)$/i;
+
+		function picture(a) {
+			if (!a.querySelector('img')) return false;
+			if (a.closest('.is-style-mudlet-carousel, .is-style-mudlet-screencasts')) return false;
+			var u;
+			try { u = new URL(a.href, location.href); } catch (e) { return false; }
+			return u.origin === location.origin && IMAGE_FILE.test(u.pathname);
+		}
+
+		// The figure's caption if it has one, then the picture's alt, then the
+		// link's title - which is where the plugin's era of posts kept it.
+		function described(a) {
+			var fig = a.closest('figure');
+			var cap = fig ? fig.querySelector('figcaption') : null;
+			var img = a.querySelector('img');
+			return (cap && (cap.textContent || '').trim())
+				|| (img && (img.alt || '').trim())
+				|| (a.title || '').trim();
+		}
+
+		Array.prototype.forEach.call(bodies, function (body) {
+			var links = Array.prototype.filter.call(body.querySelectorAll('a[href]'), picture);
+			if (!links.length) return;
+
+			body.addEventListener('click', function (e) {
+				if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+				var a = e.target.closest ? e.target.closest('a[href]') : null;
+				var i = a ? links.indexOf(a) : -1;
+				if (i < 0) return;
+
+				e.preventDefault();
+				// Read at the click, not up front: a caption is cheap to find and
+				// most of these pages are read without ever opening one.
+				lightbox().open(links.map(function (l) {
+					var img = l.querySelector('img');
+					var d = described(l);
+					return { src: l.href, alt: (img && img.alt) || d, cap: d };
+				}), i, S.galImages || 'Images');
 			});
 		});
 	})();
