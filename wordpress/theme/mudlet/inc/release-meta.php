@@ -26,10 +26,11 @@ defined( 'ABSPATH' ) || exit;
  */
 function mudlet_release_fields(): array {
 	return array(
-		'_mudlet_version'  => __( 'Version (e.g. 4.22.0)', 'mudlet' ),
-		'_mudlet_added'    => __( 'New features', 'mudlet' ),
-		'_mudlet_improved' => __( 'Improvements', 'mudlet' ),
-		'_mudlet_fixed'    => __( 'Fixes', 'mudlet' ),
+		'_mudlet_version'        => __( 'Version (e.g. 4.22.0)', 'mudlet' ),
+		'_mudlet_added'          => __( 'New features', 'mudlet' ),
+		'_mudlet_improved'       => __( 'Improvements', 'mudlet' ),
+		'_mudlet_fixed'          => __( 'Fixes', 'mudlet' ),
+		'_mudlet_infrastructure' => __( 'Infrastructure updates', 'mudlet' ),
 	);
 }
 
@@ -160,10 +161,12 @@ function mudlet_post_release( $post = null ): ?array {
 		return null;
 	}
 
+	// Same four, in the same order, as the plugin's counted() - see there.
 	$counts = array(
-		'_mudlet_added'    => array( __( 'new feature', 'mudlet' ), __( 'new features', 'mudlet' ) ),
-		'_mudlet_improved' => array( __( 'improvement', 'mudlet' ), __( 'improvements', 'mudlet' ) ),
-		'_mudlet_fixed'    => array( __( 'fix', 'mudlet' ), __( 'fixes', 'mudlet' ) ),
+		'_mudlet_added'          => array( __( 'new feature', 'mudlet' ), __( 'new features', 'mudlet' ) ),
+		'_mudlet_improved'       => array( __( 'improvement', 'mudlet' ), __( 'improvements', 'mudlet' ) ),
+		'_mudlet_fixed'          => array( __( 'fix', 'mudlet' ), __( 'fixes', 'mudlet' ) ),
+		'_mudlet_infrastructure' => array( __( 'infrastructure update', 'mudlet' ), __( 'infrastructure updates', 'mudlet' ) ),
 	);
 
 	$rows = array();

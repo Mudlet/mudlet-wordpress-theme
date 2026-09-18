@@ -64,6 +64,8 @@ require_once __DIR__ . '/includes/class-markdown.php';
 require_once __DIR__ . '/includes/class-markdown-export.php';
 require_once __DIR__ . '/includes/class-post-tag.php';
 require_once __DIR__ . '/includes/class-content.php';
+require_once __DIR__ . '/includes/class-webhook.php';
+require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-admin.php';
 require_once __DIR__ . '/includes/class-post-export.php';
 require_once __DIR__ . '/includes/api.php';
@@ -84,6 +86,8 @@ function mudlet_releases_boot(): void {
 	Mudlet_Releases_Sync::init();
 	Mudlet_Releases_Post_Tag::init();
 	Mudlet_Releases_Content::init();
+	Mudlet_Releases_Webhook::init();
+	Mudlet_Releases_Settings::init();
 	// Not behind is_admin(): the read-only guard has to hold on REST too.
 	Mudlet_Releases_Admin::init();
 	Mudlet_Releases_Post_Export::init();
@@ -101,4 +105,10 @@ function mudlet_releases_deactivate(): void {
 	wp_clear_scheduled_hook( 'mudlet_releases_refresh' );
 	wp_clear_scheduled_hook( Mudlet_Releases_Sync::INDEX );
 	wp_clear_scheduled_hook( Mudlet_Releases_Sync::DETAIL );
+
+	// wp_unschedule_hook() and not wp_clear_scheduled_hook(): the webhook's
+	// follow-up carries the tag and the rung as arguments, and args are part of
+	// a scheduled event's identity - clear_scheduled_hook() with none would
+	// match only an event booked with none, and leave every real one behind.
+	wp_unschedule_hook( Mudlet_Releases_Webhook::FOLLOWUP );
 }

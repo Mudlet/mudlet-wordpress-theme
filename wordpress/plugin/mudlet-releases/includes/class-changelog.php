@@ -84,16 +84,30 @@ class Mudlet_Releases_Changelog {
 	/**
 	 * Categories shown as counts in a release panel, in order.
 	 *
-	 * Infrastructure is deliberately not among them: it is the largest bucket
-	 * and the least interesting to a player.
+	 * Infrastructure used to be left out of this on the grounds that it is the
+	 * largest bucket and the least interesting to a player. Mudlet's own
+	 * announcements do not agree - 5.0 was published as "24 New Features, 25
+	 * Improvements, 214 Bug Fixes, 156 Infrastructure Updates" - and a panel
+	 * that quietly drops the largest group is describing a smaller release than
+	 * the one that shipped. It is counted like the rest now.
+	 *
+	 * Last, because the order here is the order the panel draws and the reading
+	 * still goes features first. `other` stays out: it is the bucket for a title
+	 * whose leading word matched no pattern, so a number against it would be a
+	 * measure of this parser rather than of the release.
+	 *
+	 * One list, read by `counts_from_groups()` and so by the sidebar panel on a
+	 * release post and the box on the news summary alike - neither template
+	 * knows which categories exist.
 	 *
 	 * @return array<string, array{0:string,1:string}> category => [singular, plural]
 	 */
 	public static function counted(): array {
 		return array(
-			'added'    => array( __( 'new feature', 'mudlet-releases' ), __( 'new features', 'mudlet-releases' ) ),
-			'improved' => array( __( 'improvement', 'mudlet-releases' ), __( 'improvements', 'mudlet-releases' ) ),
-			'fixed'    => array( __( 'fix', 'mudlet-releases' ), __( 'fixes', 'mudlet-releases' ) ),
+			'added'          => array( __( 'new feature', 'mudlet-releases' ), __( 'new features', 'mudlet-releases' ) ),
+			'improved'       => array( __( 'improvement', 'mudlet-releases' ), __( 'improvements', 'mudlet-releases' ) ),
+			'fixed'          => array( __( 'fix', 'mudlet-releases' ), __( 'fixes', 'mudlet-releases' ) ),
+			'infrastructure' => array( __( 'infrastructure update', 'mudlet-releases' ), __( 'infrastructure updates', 'mudlet-releases' ) ),
 		);
 	}
 

@@ -118,10 +118,16 @@ class Mudlet_Releases_Release {
 	public static function counts( string $body ): array {
 		$body = str_replace( "\r", '', $body );
 
+		// The same four categories Mudlet_Releases_Changelog::counted() counts,
+		// spelled as the headings a release body writes them under. The two have
+		// to agree: which of them answers depends only on whether the changelog
+		// has been fetched yet, and a panel that gains a row when it has would be
+		// a panel nobody could explain.
 		$wanted = array(
-			'added'    => array( __( 'new feature', 'mudlet-releases' ), __( 'new features', 'mudlet-releases' ) ),
-			'improved' => array( __( 'improvement', 'mudlet-releases' ), __( 'improvements', 'mudlet-releases' ) ),
-			'fixed'    => array( __( 'fix', 'mudlet-releases' ), __( 'fixes', 'mudlet-releases' ) ),
+			'added'          => array( __( 'new feature', 'mudlet-releases' ), __( 'new features', 'mudlet-releases' ) ),
+			'improved'       => array( __( 'improvement', 'mudlet-releases' ), __( 'improvements', 'mudlet-releases' ) ),
+			'fixed'          => array( __( 'fix', 'mudlet-releases' ), __( 'fixes', 'mudlet-releases' ) ),
+			'infrastructure' => array( __( 'infrastructure update', 'mudlet-releases' ), __( 'infrastructure updates', 'mudlet-releases' ) ),
 		);
 
 		if ( ! preg_match_all( '/^#+[ \t]*([A-Za-z][A-Za-z ]*?):?[ \t]*$/m', $body, $heads, PREG_OFFSET_CAPTURE ) ) {
@@ -154,8 +160,8 @@ class Mudlet_Releases_Release {
 			}
 		}
 
-		// Added, Improved, Fixed - in that order, whatever order the changelog
-		// happens to use.
+		// Added, Improved, Fixed, Infrastructure - in that order, whatever order
+		// the changelog happens to use.
 		$ordered = array();
 		foreach ( array_keys( $wanted ) as $name ) {
 			if ( isset( $found[ $name ] ) ) {

@@ -92,10 +92,27 @@ up there instead of vanishing, and someone notices and adds a rule. A changelog
 that silently swallows what it cannot classify is worse than one with an untidy
 last section.
 
-The release panel still shows three figures — added, improved, fixed — because
-that is what the design draws and what a player cares about. Infrastructure and
-other appear in the changelog block, infrastructure as a single counted line
-since it is the largest and least interesting group.
+The release panel shows four figures — added, improved, fixed, infrastructure —
+which is what Mudlet's own announcements show: 5.0 was published as *"24 New
+Features, 25 Improvements, 214 Bug Fixes, 156 Infrastructure Updates"*. It used
+to show three, on the reasoning that infrastructure is the largest bucket and
+the least interesting to a player; the trouble with that is a panel which drops
+the largest group describes a smaller release than the one that shipped.
+
+`other` stays out of the counts and stays visible in the changelog block, for
+the reason above: a number against it measures the parser, not the release.
+
+The list is `Mudlet_Releases_Changelog::counted()` and nothing else — the
+sidebar panel on a release post and the box on the news summary both draw
+whatever rows come back, so neither template knows which categories exist.
+`Mudlet_Releases_Release::counts()`, the fallback that reads the release body's
+own headings, carries the same four so the panel cannot change shape depending
+on whether the changelog has been fetched yet.
+
+**Records stored before this change hold three counts**, since the numbers are
+written into `_mudlet_counts` when a release is detailed. Re-run the detail pass
+— *Check GitHub for releases*, or `wp mudlet-releases sync` — to pick up the
+fourth.
 
 ## Releases are stored, not just fetched
 
@@ -354,20 +371,145 @@ Anything Markdown cannot express - two columns, an image beside prose - is
 flattened rather than dropped. It is a converter for the subset of HTML a post
 is made of and, like the renderer above, **should not grow into a general one**.
 
+## The webhook
+
+`includes/class-webhook.php` receives GitHub's `release` event and turns it into
+an announcement post. It is the second of the two jobs
+[`Mudlet/mudlet-release-plugin`](https://github.com/Mudlet/mudlet-release-plugin)
+did, and it exists here so that plugin can be retired.
+
+**The same endpoint, on purpose:** `admin-ajax.php?action=post_newest_release`,
+which is where the old plugin listened — so the webhook already configured on
+`Mudlet/Mudlet` keeps working with nothing changed at the GitHub end. It
+registers only when the old plugin is absent (`class_exists( 'MudletRelease' )`),
+the same arbitration `[MudletRelease]` uses, so both can be installed during a
+migration without both answering.
+
+**The payload is not trusted.** The old plugin had no authentication at all:
+anyone who knew the URL could publish to mudlet.org. Set
+`MUDLET_RELEASES_WEBHOOK_SECRET` in `wp-config.php` to match the webhook's
+secret and every delivery is verified against `X-Hub-Signature-256`. Without one
+the endpoint still answers — otherwise this could not replace the old plugin
+without a flag day — but it reads **only the tag** out of the request and
+re-fetches the release from `api.github.com` itself, so nothing a forger sends
+can reach the page. The worst a forged POST achieves is an announcement post for
+a major Mudlet release that really exists, and it is idempotent.
+
+**What it writes is a post with a tag in it and nothing else.** Not
+`[MudletRelease]<id>[/MudletRelease]`, and not the rendered changelog: an empty
+body plus `_mudlet_release_tag`, which is the shape the rest of this plugin is
+built around. The changelog renders through
+`Mudlet_Releases_Content::maybe_append_changelog()`, an editor who writes an
+opening paragraph keeps it and gets the changelog underneath, and
+`wp mudlet-releases markdown` can still hand that paragraph back to GitHub
+without the changelog coming with it. `post_excerpt` is left empty for the same
+reason — `wp_trim_excerpt()` applies `the_content`, so the news listing gets an
+excerpt without one being stored.
+
+Rules kept from the old plugin: **prereleases skipped**, a **draft release makes
+a draft post**, and `created` / `edited` are the actions acted on. Two of its
+details were not: the category is resolved by slug (`release-en`, then
+`release`) rather than the hardcoded term id `173`, and the author is the site's
+oldest administrator rather than user `2` — both of those numbers are facts
+about one database rather than about Mudlet.
+
+**Point releases get a post too**, which is the one rule deliberately reversed —
+and the one that is a **setting** rather than a filter, because it is a real
+editorial choice rather than a bug. The old plugin skipped any tag not ending in
+`.0`, and that reads like policy until you count the site: of 92 posts on
+mudlet.org whose title carries a version, **16 are point releases** — and
+4.17.1, 4.19.1 and 4.20.1 are written in `[MudletRelease]` shortcode style,
+which is what a post made by hand from a copy of the previous one looks like.
+The rule was never the policy; it was a limitation somebody had been working
+around by hand for years.
+
+So it defaults to on and there is a checkbox — **Mudlet → Releases**, *Announce
+bugfix releases too* — for a site that would rather have four announcements a
+year than twelve. `mudlet_releases_webhook_major_only` still has the last word
+over the checkbox, the way a filter should: code beats a setting.
+
+Everything else is a filter: `…_actions`, `…_author`, `…_category`, `…_post`,
+`…_secret`.
+
+### The Releases screen
+
+`includes/class-settings.php`, under the Mudlet menu. Three things, and two of
+them are not settings at all:
+
+- **The payload URL**, to paste into the webhook form on github.com. It is
+  `admin-ajax.php?action=post_newest_release` and it is printed here because
+  the one moment anybody wants it is while filling in a form on another site.
+- **Whether a secret is set** — never its value. Green if
+  `MUDLET_RELEASES_WEBHOOK_SECRET` is defined and deliveries are verified, red
+  if not, with what to do about it.
+- **The point-releases checkbox** above.
+
+It also says so, in place, when the older `mudlet-release` plugin is still
+active and answering the endpoint instead — which is the one state where this
+screen would otherwise describe something that is not happening.
+
+A skip answers `200` with a line saying which rule skipped it, so a red delivery
+in GitHub's log means something is actually wrong.
+
+### Going back for the assets
+
+A delivery arrives at the one moment the release has **no installers on it**.
+That is not a race, it is how `Mudlet/Mudlet` publishes:
+
+```sh
+gh release create "${ARGS[@]}" assets/SHA256SUMS.txt \
+  || gh release upload "${RELEASE_TAG}" assets/SHA256SUMS.txt --clobber
+gh release upload "${RELEASE_TAG}" "${BINARIES[@]}" --clobber
+```
+
+The release is created carrying only `SHA256SUMS.txt`; the binaries go up in a
+separate call, deliberately, so a half-finished upload never leaves a checksum
+file covering a binary that is not there. And uploading an asset fires **no**
+webhook at all — the `release` event's actions are `published`, `created`,
+`edited`, `deleted`, `prereleased`, `released`, and none of them covers an asset
+appearing.
+
+So the webhook books a short chain of single events — **5, 15 and 45 minutes** —
+that reads the release again and re-stores it. It **stops the moment the record
+has download rows**, so a release that was already complete costs nothing, the
+ordinary case costs one or two requests, and there is no idle work of any kind
+in between. The event carries the tag as an argument, so a re-delivery finds the
+booked event rather than stacking a second one.
+
+`deleted` is handled too: the **record** goes, because a record is an
+observation of a release and there is no longer one to observe. The announcement
+post is left alone — it is somebody's writing with a public URL people have
+linked, and deleting a release on GitHub is not an instruction to unpublish an
+article. A `deleted` for a prerelease finds nothing and says so, which is the
+answer for every one of the public test builds Mudlet deletes by the dozen.
+
+### What this means for the scheduled syncs
+
+Both are on the `Mudlet → Sync` screen and both can be set to **Never**. What
+each is actually worth once the webhook is running:
+
+| job | still worth running? |
+| --- | --- |
+| detail, hourly | **No.** The webhook details a release on arrival and the chain retries it. With nothing pending this pass makes zero HTTP requests — `pending()` is one indexed `get_posts` — so it costs almost nothing either way, but it no longer has a job. |
+| index, weekly | **Yes, as insurance.** One request a week, and it is the only thing that would ever notice a release the webhook *missed* — a delivery that failed while the site was down, mid-deploy, or behind a 5xx. **GitHub does not retry a failed delivery on its own.** |
+
+The argument for keeping the index pass is not that it does work — it will find
+nothing, most weeks, for ever. It is that a release happens every few months, so
+a missed one is invisible for a long time and costs an announcement post and a
+download table. One request a week is a cheap alarm.
+
 ## Relationship to the upstream plugin
 
-[`Mudlet/mudlet-release-plugin`](https://github.com/Mudlet/mudlet-release-plugin)
-does a different job and the two are meant to run together:
-
-- **it** receives the GitHub `release` webhook and creates the announcement post
-  in every Polylang language, stamping each with a `release-post` meta key;
-- **this** turns a tag into data, and renders changelogs.
-
-Where they touch:
+With the webhook above in place, this plugin does both of
+[`Mudlet/mudlet-release-plugin`](https://github.com/Mudlet/mudlet-release-plugin)'s
+jobs and that one can be deactivated. While both are installed, this stands
+down from both seams:
 
 - **`[MudletRelease]` is only registered here when that plugin is not active**,
   so the two never fight over the same content — and a site that drops it does
   not lose the body of every release post it ever published.
+- **the webhook is only answered here when that plugin is not active**, for the
+  same reason and by the same check.
 - **Legacy ids are upgraded automatically.** Posts created by that plugin store
   a release *id*, not a tag. The first time such a post is read, the id is
   resolved and the tag written back, so it costs one lookup per post ever.

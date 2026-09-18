@@ -86,7 +86,7 @@ function mudlet_bundled_plugins(): array {
 			'const' => 'MUDLET_RELEASES_VERSION',
 			'name'  => 'Mudlet Releases',
 			'store' => 'Mudlet_Releases_Store',
-			'hooks' => array( 'mudlet_releases_refresh', 'mudlet_releases_sync_index', 'mudlet_releases_sync_detail' ),
+			'hooks' => array( 'mudlet_releases_refresh', 'mudlet_releases_sync_index', 'mudlet_releases_sync_detail', 'mudlet_releases_webhook_followup' ),
 		),
 		'mudlet-shots'    => array(
 			'const' => 'MUDLET_SHOTS_VERSION',
@@ -167,7 +167,13 @@ add_action( 'switch_theme', 'mudlet_bundled_unschedule' );
 function mudlet_bundled_unschedule(): void {
 	foreach ( mudlet_bundled_loaded() as $plugin ) {
 		foreach ( $plugin['hooks'] as $hook ) {
-			wp_clear_scheduled_hook( $hook );
+			// wp_unschedule_hook() rather than wp_clear_scheduled_hook(): a
+			// scheduled event's arguments are part of its identity, so clearing
+			// by hook name alone matches only the events booked with none - and
+			// the releases webhook's follow-up carries a tag. This clears the
+			// hook whatever it was booked with, which is what "the callback is
+			// going away" means.
+			wp_unschedule_hook( $hook );
 		}
 	}
 }
