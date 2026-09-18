@@ -72,12 +72,16 @@ $WP option update date_format "j F Y"
 $WP option update start_of_week 1
 # The permalink shape the post links assume: /2026/07/slug/.
 $WP rewrite structure '/%year%/%monthnum%/%postname%/'
-# mudlet.org takes comments, so the baseline does too - 155 approved ones come
+# mudlet.org takes comments, so the baseline does too - 157 approved ones come
 # in with the import and its posts carry comment_status=open individually
 # anyway, which this option would not have reached. The theme draws them:
-# comments.php and inc/comments.php, added once it turned out the threads had
-# been live and unrendered the whole time. Whether the new site keeps taking
-# new ones is still a migration question; see MIGRATION.md.
+# comments.php and inc/comments.php.
+#
+# Note for anyone checking this against the live site: mudlet.org *does* render
+# its comments, on the 55 posts that have an approved one. It looks like it does
+# not, because 488 of the 645 comments in the export are trashed and a post whose
+# comments are all trashed renders nothing at all. Whether the new site keeps
+# taking new ones is still a migration question; see MIGRATION.md.
 $WP option update default_comment_status open
 $WP option update default_ping_status open
 # mudlet.org offers no "save my details for next time" checkbox, so neither does

@@ -26,7 +26,7 @@ Read off the front end; confirm the full list in wp-admin.
 | Cookie Notice | The consent banner | **Keep**; see `ANALYTICS.md` |
 | Polylang | `/de/`, `/it/`, `/ru/`, `/zh/` | **Drop** — see decision 4 |
 | wp-lightbox-bank | Image lightbox | **Drop** — the new `/media/` carousel has its own |
-| mudlet-release (upstream) | Release announcement posts | **Keep, and fix** — see below |
+| mudlet-release (upstream) | Release announcement posts | **Drop** — both its jobs are now in `mudlet-releases`; see decision 2 |
 | Divi + mudlet-divi | The design | Replaced by `theme/mudlet` |
 
 ## The release pipeline: do not break this
@@ -149,9 +149,13 @@ that path.** Do not reorganise the directory.
 
 Two things worth fixing regardless of the migration:
 
-- **`download-add.php` is in no repository.** It exists only on the server. It
-  is an unauthenticated-by-default endpoint holding a static token and it is the
-  hinge of the whole release pipeline. It should be in version control.
+- **`download-add.php` is in no repository.** It exists only on the server,
+  nobody working on this has access to it, and **that is fine for the
+  migration**: it POSTs to WP-DownloadManager, which is being kept, so a theme
+  change cannot disturb it and there is nothing to do here. It is worth writing
+  down only because an unauthenticated-by-default endpoint holding a static
+  token, in no version control, is the hinge of the whole release pipeline. A
+  someday item for whoever has the server, not a step.
 - The Linux script uploads an unversioned `Mudlet.AppImage` alongside the
   versioned tar, commented "for appimage.github.io". That is a stable-alias
   pattern that already works and is not used anywhere else. See decision 3.
@@ -168,7 +172,7 @@ being created.
 Retiring it later is therefore a coordinated change across two repositories:
 this one, plus the three CI scripts. It is not a step in this migration.
 
-### 2. The old release plugin stays, and gets a one-line fix
+### 2. The old release plugin goes, and both its jobs are covered here
 
 `Mudlet/mudlet-release-plugin` does two jobs, and only one of them is the
 webhook:
@@ -200,10 +204,40 @@ fallback is never reached. Any fresh install — a staging copy of the new theme
 for instance — has no transients, and every imported release post renders
 "Can't get releases post for &lt;id&gt;". Dropping `tags/` fixes it.
 
-**Open decision:** whether to keep job 2 or write announcement posts by hand.
-Keeping it is cheaper and already works in four languages. Writing them by hand
-gains editorial control over the opening paragraphs, which is the part the
-webhook cannot write anyway. Either way job 1 stays.
+**Both jobs are now covered by `mudlet-releases`, so the plugin can be
+deactivated.**
+
+- Job 1 was already covered: `Mudlet_Releases_Content::legacy_shortcode()`
+  registers `[MudletRelease]` when that plugin is not active, and resolves the
+  id it carries the way it should have been resolved — which is also why the
+  `tags/` bug above stops mattering the moment this takes over.
+- Job 2 is `includes/class-webhook.php`. It answers on the **same**
+  `admin-ajax.php?action=post_newest_release` the old plugin used, so nothing
+  changes in the webhook's settings on `Mudlet/Mudlet` — a migration step in
+  somebody else's repository, at a particular moment, is a migration step that
+  gets forgotten. It registers only when the old plugin is absent, so both can
+  be installed while the switch happens.
+
+Two things are better rather than merely the same, and both were free:
+
+- **The endpoint can be authenticated.** The old one could not: it read
+  `$_POST['payload']` and published it, so anyone who knew the URL could post
+  to mudlet.org. Setting `MUDLET_RELEASES_WEBHOOK_SECRET` in `wp-config.php`
+  turns on `X-Hub-Signature-256` verification. Do that when the webhook is
+  re-pointed; until then the endpoint reads only the *tag* out of the request
+  and re-fetches the release from GitHub itself, so a forged POST cannot put a
+  character on the page.
+- **The post is a tag, not a body.** The old plugin wrote
+  `[MudletRelease]<id>[/MudletRelease]` into `post_content`; this writes an
+  empty body and `_mudlet_release_tag`, which renders the same changelog and
+  leaves the body free for the opening paragraph a webhook cannot write —
+  the exact editorial control this decision used to be weighing against
+  keeping the automation. It is no longer a trade.
+
+The one thing to check before deactivating: **Polylang.** Job 2 created the post
+in four languages, and the replacement creates one. That is decision 4 either
+way, but it means the two cannot run in parallel for long without producing
+different things.
 
 ### 3. Download links point at mudlet.org, not GitHub
 
@@ -376,18 +410,171 @@ and 404s. If the plugin is ever dropped, the redirect map belongs in the
 `mudlet-releases` **plugin**, not the theme: legacy URLs are a fact about the
 site, and by this repo's own rule that means it must survive a theme rewrite.
 
+## Before the switch
+
+Everything here can be done while Divi is still drawing the site. Sorted by
+whether it can be done afterwards, because only one of these cannot.
+
+### The structure is already there
+
+Read off the live sitemap, 2026-09-08: `about`, `about/vision`, `contribute`,
+`the-makers`, `contact`, `download`, `news`, `terms-of-service`,
+`privacy-policy`, `media`, and the front page. That is every page the theme
+has a template or a menu entry for, and the slugs match — so
+`page-download.php`, `page-contact.php` and `page-the-makers.php` attach
+themselves through the ordinary template hierarchy the moment the theme is
+active. **Nothing needs creating, and no `_wp_page_template` meta needs
+writing**; the seed sets it because a site whose slugs had drifted would need
+it, and this one's have not.
+
+### Getting the theme onto the site at all
+
+`mudlet.zip` is the whole site — theme, four plugins, and the hero's client —
+and with the demo in it that is **about 14 MB**. PHP's default
+`upload_max_filesize` is 2 MB, plenty of hosts leave it at 8 MB, and on many of
+them it is not something an admin can raise. So the one archive that was meant
+to make this a single Upload Theme is the one thing that cannot be uploaded.
+
+Nothing is wrong with the archive: the server can fetch 14 MB from GitHub
+without noticing, and only the browser → PHP leg is limited. Three ways round
+it, cheapest first.
+
+1. **`plugin/mudlet-installer/`** — a 4 KB plugin that does nothing but ask
+   GitHub for the latest release and install `mudlet.zip` from it, server-side.
+   Upload that (it fits anywhere), press the button under Appearance → Install
+   Mudlet theme, delete it. It never activates the theme — installing and
+   switching are separate decisions.
+2. **`wp theme install <release url> --activate`**, if there is shell access.
+3. **Upload the no-demo build.** `build-dist.mjs` without `--with-demo` is
+   5.1 MB, which fits an 8 MB limit. The hero stays on its scripted session
+   until a later update brings the client.
+
+**After the first install none of this matters again.** The theme carries its
+own updater — `inc/updates.php`, over the `Update URI` header and
+`update_themes_github.com` — so every later version is offered on Dashboard →
+Updates at any size, plugins and demo client included, with nothing to upload.
+
+The one thing missing today: **no release has been published yet**, so there is
+nothing for either the installer or the updater to find. `git push origin
+v0.1.0` runs `.github/workflows/release.yml` and fixes that.
+
+### Do it now
+
+- **Export the Polylang translation map.** The reason decision 4 gives is that
+  `pll_get_post()` answers only while the plugin is active. That is true of the
+  live database and not of an export: a WXR carries Polylang's
+  `post_translations` terms whole, so **`wp export` before deactivating
+  preserves the answer permanently**, and
+  `node wordpress/tools/translation-map.js` rebuilds the redirect table from it
+  — 169 URLs, of which 161 resolve to an English post and 8 need somebody to
+  pick. `seed/php/migrate-polylang.php` remains the live-site path; where both
+  exist they should agree. Take the export first and the rest of the migration
+  stops being time-critical.
+- **Build the two menus and pre-assign them.** A menu is an ordinary taxonomy
+  object and belongs to no theme; only the *assignment* is theme state, and it
+  lives in `theme_mods_mudlet`, which nothing Divi reads ever touches. So the
+  header menu the site already has, plus a **Footer - Project** menu over
+  `about`, `vision`, `the-makers`, `contribute`, `contact`, can both be pointed
+  at the theme's two locations before it is active:
+
+  ```sh
+  wp option update theme_mods_mudlet --format=json \
+    '{"nav_menu_locations":{"primary":<id>,"footer-project":<id>}}'
+  ```
+
+  Worth doing first among the reversible steps: an unassigned header is the
+  most alarming thing about a fresh activation and it is the least real. The
+  theme falls back to the hardcoded links in `mudlet_nav_links()` rather than
+  drawing nothing, which is exactly why it is easy to miss that no menu is
+  attached.
+- **Let the releases sync run.** It schedules itself on `init` in any request
+  where the theme is loaded, so previewing a few pages is enough to arm it; the
+  hourly detail pass fills in the changelogs from there. Nothing needs setting
+  for the mirror. Check `Mudlet -> Sync` shows a next run and a record count
+  before the switch, so the download page is populated on its first public
+  render rather than falling back to hardcoded figures.
+- **Set `mudlet_contact_email`.** An option the theme reads and nothing else
+  does; `admin_email` only backstops it.
+- **The Matomo fixes in `ANALYTICS.md`.** Independent of the theme, and the
+  sooner they land the sooner the downloads are countable.
+
+### Do it at the switch, not before
+
+- **Six Divi bodies that still reach a reader.** `node
+  wordpress/tools/probe-divi.js` lists them out of the export, with what each
+  template does with the body. Only three shapes matter:
+
+  - **`/download/` and `/contact/` must be emptied.** Both templates render the
+    page body — under the build table and over the Discord panel respectively —
+    so the old Divi page arrives *underneath the new one* if the body is left
+    in place. `/download/` is 27KB of tabs, `[download category]` shortcodes
+    and the four language links. This is the one that looks like a bug rather
+    than an unfinished page, and it is the easiest to miss because both
+    templates draw correctly above it.
+  - **`/media/`** wants rewriting as a `core/gallery` and a `core/list` under
+    the two block styles in `inc/blocks.php` — 7 screencasts and 13 screenshots
+    that are already in the media library, so a body rewrite rather than an
+    upload.
+  - **`/terms-of-service/`, `/privacy-policy/` and five posts** go through
+    `page.php` and `single.php`, where `inc/divi-cleanup.php` strips the tags
+    and keeps the text. They read acceptably unattended; the 56KB
+    `/2026/08/5-0/` release announcement is the one worth looking at.
+
+  **The front page needs nothing at all**: `front-page.php` never calls
+  `the_content()`, so its 20KB of `et_pb_section` is simply never read again.
+- **`[mudlet_screenshot_submit]`.** Not until the theme is active. Nothing
+  registers it before then, and WordPress prints an unregistered shortcode
+  verbatim — the submission form would read as literal brackets on a live page.
+- **`posts_per_page` 18.** It changes the length of the news listing Divi is
+  drawing right now.
+- **The contact form shortcode**, into the page's **Contact form** box. The box
+  is the theme's meta box, so it needs either the theme active in wp-admin or
+  `wp post meta update`.
+
+### Decide before, apply after
+
+- **Comments — and they are already visible.** An earlier draft of this page
+  said the threads had been live and unrendered for years, and that the theme
+  would surface 155 of them on the day of the switch. That is wrong, and it was
+  wrong because the posts it was checked against happened to be ones whose
+  comments are all in the trash. Measured properly: the export holds **645
+  comments, of which 157 are approved and 488 are trashed**, and the 157 sit on
+  **55 posts** — every one of which renders its thread on mudlet.org today.
+  `/2021/09/mapper-commandlines-colors/` has 24 comments of which exactly one is
+  approved, and that one is on the page right now. A post whose comments are all
+  trashed renders nothing, which is what made the whole thread look hidden.
+
+  So **the switch surfaces nothing**, and this is not a migration risk. What is
+  left is an ordinary editorial question — whether the new site keeps *taking*
+  comments — plus one thing worth a look: 488 trashed against 157 approved is a
+  spam ratio, and it says the moderation queue has been carrying the site for
+  years.
+- **The front page's three editable regions.** They default to the copy the
+  templates ship with (`inc/front-content.php`), so an untouched site renders
+  correctly and this is not a blocker. It is only worth opening Pages -> Home
+  early if the six cards or the spec line are already known to be wrong.
+
 ## Order of operations
 
+0. Everything in **Before the switch** above that can be done now — the
+   Polylang export above all.
 1. Confirm the plugin list in wp-admin, and whether category 6 is really empty.
    **Unverified.**
 2. Put `download-add.php` in a repository.
-3. Fix `releases/tags/$content` upstream in `mudlet-release-plugin`; drop the
-   local patch from `seed/setup.sh` once that is released.
+3. Deactivate the upstream `mudlet-release` plugin once `mudlet-releases` is
+   loaded — it answers the same webhook URL and the same shortcode, and stands
+   down until that one is gone. Then set `MUDLET_RELEASES_WEBHOOK_SECRET` and
+   put the same secret on the webhook in `Mudlet/Mudlet`. The
+   `releases/tags/$content` bug and its local patch in `seed/setup.sh` become
+   moot at that point rather than needing an upstream release.
 4. **Export the Polylang translation map while Polylang still works**, and build
    the 301 table from it. This is the one step that cannot be done afterwards.
-5. ~~Land the mirror-URL change in `mudlet-releases`.~~ **Done** — set
-   `mudlet_releases_mirror` on production to switch the links over. No CI change
-   needed, no pipeline disturbed, and Matomo starts recording downloads.
+5. ~~Land the mirror-URL change in `mudlet-releases`.~~ **Done**, and nothing
+   to configure: `Links::mirror()` defaults to `content_url( 'files' )` and a
+   `file_exists()` answers per asset, so mudlet.org takes the mirror branch the
+   moment the plugin loads. The `mudlet_releases_mirror` filter is for a site
+   serving builds from somewhere else. No CI change needed, no pipeline
+   disturbed, and Matomo starts recording downloads.
 6. Apply the Matomo fixes in `ANALYTICS.md` — they are independent of the theme
    and can go in before it.
 7. Switch the theme.
@@ -440,6 +627,4 @@ one `/games/<slug>/` and one `/the-makers/<name>/` URL.
 - Is category 6 (Source) really empty on the live site, and if so, since when?
 - Category 1 is asked for by the Windows tab but holds nothing. Safe to drop
   from the page copy?
-- Job 2 of the old release plugin: keep the webhook, or write announcement posts
-  by hand? Decision 4 pushes this towards "by hand".
 - Do the translated posts get deleted or kept unpublished after the 301s?
