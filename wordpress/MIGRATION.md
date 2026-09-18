@@ -169,8 +169,8 @@ release, and if the plugin is gone those writes go nowhere **without failing** �
 CI would keep reporting success while the download entries silently stopped
 being created.
 
-Retiring it later is therefore a coordinated change across two repositories:
-this one, plus the three CI scripts. It is not a step in this migration.
+Retiring it is possible but optional, and is not part of this migration — see
+**Optional, after the migration** at the end.
 
 ### 2. The old release plugin goes, and both its jobs are covered here
 
@@ -307,7 +307,8 @@ keeping WP-DownloadManager keeps them working at no cost. They are not deprecate
 so much as superseded — nothing needs to chase them down.
 
 If WP-DownloadManager is ever retired, map them to their `/latest/` equivalents
-in the same plugin that owns the rewrite rule above. Until then, track them with
+in the same plugin that owns the rewrite rule above (see **Optional, after the
+migration**). Until then, track them with
 `trackLink` so they stop being invisible — see `ANALYTICS.md`.
 
 #### Implemented
@@ -398,7 +399,7 @@ argument for retiring job 2 and writing announcement posts by hand.
 | `/wp-content/files/<file>` | Unaffected | None. Files on disk, not WordPress routes |
 | `/wp-content/files/appcast/*.xml` | Unaffected | None — **macOS auto-update depends on it** |
 | `/download/71/` `/72/` `/73/` `/74/` — Windows, macOS x86_64, macOS arm64, Linux | Stable per-platform "latest build" links, overwritten in place each release. Work while WP-DownloadManager is active | Keep the plugin. These are the site's most valuable links; map them explicitly if it is ever dropped |
-| `/downloads?dl_cat=2..5` | Category listings | 301 to `/download/` when the plugin goes |
+| `/downloads?dl_cat=2..5` | Category listings | None while the plugin stays |
 | `/download/` | Becomes the new download page | Watch for the collision below |
 | `/de/…`, `/it/…`, `/ru/…`, `/zh/…` (~162 URLs) | **All 404 the moment Polylang is deactivated** | Export the translation map first, then 301 each to its English equivalent. See decision 4 |
 
@@ -406,9 +407,8 @@ argument for retiring job 2 and writing announcement posts by hand.
 `/download/`, and WP-DownloadManager's entries are at `/download/<id>/`. They
 coexist only while the plugin is active — its rewrite rule is what resolves the
 numeric child. Deactivate it and WordPress reads `71` as a missing child page
-and 404s. If the plugin is ever dropped, the redirect map belongs in the
-`mudlet-releases` **plugin**, not the theme: legacy URLs are a fact about the
-site, and by this repo's own rule that means it must survive a theme rewrite.
+and 404s. The plugin stays, so this is a note for **Optional, after the
+migration** rather than something to act on.
 
 ## Before the switch
 
@@ -627,8 +627,6 @@ switch's job, above.
     included.
 12. Add the stable aliases for Windows and macOS in CI, and point the QR/email
     drawer at them.
-13. *Later, and only as a coordinated change:* retire WP-DownloadManager and
-    `download-add.php` together.
 
 Steps 5 and 6 need no CI change and disturb no pipeline, so they can land before
 the theme switch and start producing real download numbers immediately.
@@ -662,6 +660,44 @@ Removal itself is safe, and was checked rather than assumed:
 
 Afterwards, check `Mudlet → Sync` shows a next run for each job, and spot-check
 one `/games/<slug>/` and one `/the-makers/<name>/` URL.
+
+## Optional, after the migration
+
+Not part of the migration and not needed for it. Listed so the reasoning is not
+lost.
+
+### Retiring WP-DownloadManager
+
+**Status: optional. The plugin stays; see decision 1.**
+
+After the switch nothing on the site reads it — the download page is drawn from
+`mudlet-releases` and the mirror in `wp-content/files/`. What it still does:
+
+1. Keeps `/download/71/`…`/74/` resolving to the current build per platform —
+   the stable links in forum posts and on the wiki.
+2. Receives the CI's POSTs through `download-add.php`, which exist only to keep
+   (1) pointing at the newest build.
+
+So the case for retiring it is that a plugin, plus an unversioned server script
+holding a static token, is carrying four redirects. It also owns the
+`/download/<id>/` collision above, hides those downloads from Matomo, and has
+the empty Source category (open question below). None of that is urgent.
+
+If it is done, it is **one coordinated change across two repositories**, and
+the halves must land together — with the plugin gone first, `download-add.php`
+writes go nowhere and CI keeps reporting success:
+
+- **This repo:** `mudlet-releases` answers `/download/71/`…`/74/` with a 302 to
+  the matching `/latest/<name>` (the same `parse_request` route as
+  `class-links.php`), and `/downloads?dl_cat=2..5` with a 301 to `/download/`.
+  In the plugin, not the theme: legacy URLs are a fact about the site and must
+  survive a theme rewrite.
+- **`Mudlet/Mudlet`:** drop the `download-add.php` POST from
+  `CI/linux.after_success.sh`, `CI/osx.after_success.sh` and
+  `CI/deploy-mudlet-for-windows.sh`. The `scp` to `wp-content/files/` stays —
+  that is the mirror, and macOS auto-update reads the appcast beside it.
+- **The server:** delete `download-add.php`, then deactivate the plugin, then
+  check all four numeric URLs and one `?dl_cat=` listing.
 
 ## Open questions
 
