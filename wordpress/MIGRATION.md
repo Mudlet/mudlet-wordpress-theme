@@ -585,6 +585,18 @@ Dead plugin shortcodes, any time — neither depends on the theme:
       Replace it with a link to `/download/`. (It renders while the plugin
       stays; it is wrong rather than broken.)
 
+Duplicate release posts, **together with the 301s in step 9 and not before**.
+Both are live and in the sitemap, so unpublishing one ahead of its redirect is a
+404 on an indexed URL. The release webhook re-created two announcements that
+already existed on 2024-12-26, each a one-line `[MudletRelease]` body. The 301s
+are already in `translation-map.js` (`RETIRED`), which also sends their eight
+translations straight to the real posts:
+
+- [ ] `/2024/12/4-17-now-more-screenreader-friendly/` → unpublish; 301 to
+      `/2023/03/mudlet-4-17-now-more-screenreader-friendly/`
+- [ ] `/2024/12/4-19-mudlet-is-now-portable-2/` → unpublish; 301 to
+      `/2024/12/4-19-mudlet-is-now-portable/`
+
 Not on the list, and checked: `[caption]`, `[gallery]` and `[video]` are
 core's own and render as they always did; `[MudletRelease]` is answered by
 `mudlet-releases`; and `[CodeFactor]`, `[the setup]`, `saveMap([location])`

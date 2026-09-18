@@ -195,6 +195,27 @@ for (const row of rows) {
   }
 }
 
+// ── English duplicates being retired ──────────────────────────────────
+//
+// On 2024-12-26 the release webhook re-created two announcements that already
+// existed, each a one-line [MudletRelease] body. Both are live and in the
+// sitemap, so they are unpublished with a 301 to the real post (MIGRATION.md,
+// Manual rewrites) - and a translation that pointed at one goes straight to
+// the real post rather than through two redirects. The stubs themselves are
+// written out as `en` rows, marked `retired`, so this file is the whole table.
+const RETIRED = {
+  '/2024/12/4-17-now-more-screenreader-friendly/': '/2023/03/mudlet-4-17-now-more-screenreader-friendly/',
+  '/2024/12/4-19-mudlet-is-now-portable-2/': '/2024/12/4-19-mudlet-is-now-portable/',
+};
+
+for (const row of rows) {
+  if (RETIRED[row.to]) row.to = RETIRED[row.to];
+}
+for (const [from, to] of Object.entries(RETIRED)) {
+  const post = [...byId.values()].find((p) => p.path === from);
+  rows.push({ kind: 'post', lang: 'en', from, to, status: 'retired', title: post ? post.title : '' });
+}
+
 // ── categories and tags ───────────────────────────────────────────────
 
 const terms = new Map();
