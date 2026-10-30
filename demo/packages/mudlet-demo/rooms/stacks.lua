@@ -24,6 +24,7 @@ return {
             .. 'lectern holds the book they were all written from.'
     end,
     exits = { north = 'commons' },
+    symbol = '≡',
     -- The greeting lands two seconds after the room, for the same reason the
     -- sage's does: said in the same breath as the description it reads as
     -- furniture, and said late it reads as somebody noticing you came in.

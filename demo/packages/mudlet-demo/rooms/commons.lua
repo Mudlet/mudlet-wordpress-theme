@@ -20,6 +20,7 @@ return {
         .. 'None of the doors are locked. Two stand ajar, and you can hear the arguing '
         .. 'from here — amiably, about tabs. The cabinet is enormous and alphabetical.',
     exits = { east = 'home', north = 'workshop', west = 'makers', south = 'stacks' },
+    symbol = '◎',
     things = {
         {
             name = 'the forum door',

@@ -15,6 +15,7 @@ return {
             .. 'in a second pen to ' .. SITE.news.count .. ' AND RISING.'
     end,
     exits = { south = 'home' },
+    symbol = '¶',
     things = {
         {
             name = 'the notice board',

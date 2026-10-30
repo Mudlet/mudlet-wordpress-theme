@@ -162,5 +162,6 @@ return {
             .. 'left open.'
     end,
     exits = { up = 'vault' },
+    symbol = '▦',
     things = things,
 }

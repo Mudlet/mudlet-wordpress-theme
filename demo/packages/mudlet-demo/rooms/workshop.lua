@@ -21,6 +21,7 @@ return {
         .. 'deal longer. By the window stands a slanted desk with this week\'s date on '
         .. 'it, and a clerk keeping the book open at that page.',
     exits = { south = 'commons' },
+    symbol = '⚒',
     things = {
         {
             name = 'the clerk',

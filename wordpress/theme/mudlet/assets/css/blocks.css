@@ -282,6 +282,18 @@
 	line-height: 1.5;
 	text-align: center;
 	color: var(--dim);
+	/* core's halo for white text over a photo, and a layer promotion that
+	   rasterises the text soft; neither has a photo under it any more */
+	text-shadow: none;
+	will-change: auto;
+}
+/* And the other half of core's overlay, which is not on the caption at all: a
+   ::before on every captioned figure, blur(3px) masked to fade up the bottom
+   40% of it, so that white text stays legible over a busy tile. With the
+   caption moved under the picture it was blurring the bottom of somebody's
+   interface for no caption at all. */
+.is-style-mudlet-carousel[data-carousel] .mgal__track figure.wp-block-image::before {
+	content: none;
 }
 
 /* Over the picture rather than beside it: at 74rem the frame is already the

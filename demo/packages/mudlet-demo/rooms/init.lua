@@ -7,6 +7,11 @@
 -- One file per room, and the room is the only place its exits are written down:
 -- map.lua walks them to work out where it is drawn and what id it gets. Adding a
 -- connected room is a file here and a line below, and nothing else anywhere.
+-- A room's `symbol` is the one character drawn in its square on the map: a
+-- plain glyph with a text form, not an emoji, which every font would draw
+-- differently and some in colour. The front page and the vault have none: the
+-- mapper draws stair triangles in those two squares, and a glyph under them
+-- came out as a smudge. Look at the map before giving one to a room with stairs.
 
 local D = demo
 

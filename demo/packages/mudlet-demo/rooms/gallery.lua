@@ -24,6 +24,7 @@ return {
             .. 'is a bare hook in the middle of the room at about eye height.'
     end,
     exits = { west = 'home' },
+    symbol = '▣',
     things = {
         {
             name = 'the wall of frames',

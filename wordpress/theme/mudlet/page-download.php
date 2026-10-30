@@ -354,7 +354,7 @@ $icons  = array(
 						printf(
 							/* translators: %s: link reading "detailed setup instructions" */
 							esc_html__( 'We keep %s for screen-reader software and Mudlet’s other accessibility options.', 'mudlet' ),
-							'<a href="https://wiki.mudlet.org/">' . esc_html__( 'detailed setup instructions', 'mudlet' ) . '</a>'
+							'<a href="https://wiki.mudlet.org/index.php?title=Manual:Screen_Readers">' . esc_html__( 'detailed setup instructions', 'mudlet' ) . '</a>'
 						);
 						?>
 					</p>

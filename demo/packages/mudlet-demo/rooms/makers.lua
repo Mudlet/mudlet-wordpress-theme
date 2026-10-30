@@ -16,6 +16,7 @@ return {
         .. 'for a decade, and nobody has moved them out. At the head of the table a sage '
         .. 'keeps the ledger of everyone who ever built anything here.',
     exits = { east = 'commons' },
+    symbol = '@',
     -- The sage greets you a beat after you arrive rather than in the same
     -- breath as the room description: a greeting printed with the room
     -- reads as part of the furniture, and one that lands two seconds later

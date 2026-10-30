@@ -139,6 +139,14 @@ function D.buildMap()
             setRoomCoordinates(id, PLACE[key].x, PLACE[key].y, 0)
             setRoomName(id, rooms[key].title)
             setRoomEnv(id, ENV)
+            -- Each room picks its own mark, beside its exits, for the same
+            -- reason it declares those: one place to say what a room is. Drawn
+            -- in the map's own ground colour, so it reads as cut out of the
+            -- orange square rather than printed on it.
+            if rooms[key].symbol then
+                setRoomChar(id, rooms[key].symbol)
+                setRoomCharColor(id, 30, 24, 19)
+            end
         end
     end
 
