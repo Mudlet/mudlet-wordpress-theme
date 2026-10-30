@@ -29,7 +29,7 @@ whatever else happens, and **what to track**, which is a proposal.
 
 ### 1. Downloads are not being recorded at all
 
-The download buttons link to `/download/71/`…`/74/` — WP-DownloadManager
+The download buttons link to `/download/<id>/` (75–78 for 5.0.2) — WP-DownloadManager
 permalinks with **no file extension**. Matomo classifies a link as a download by
 its extension, so it never sees them, and the goal (which anchors on an
 extension at end-of-string) never fires.
@@ -48,9 +48,10 @@ the current build exist only in WP-DownloadManager's own counter.
 `MIGRATION.md` decision 3 — the goal's second branch,
 `wp-content\/files\/mudlet.*`, is already written and starts matching on its own.
 
-Then, for the links that keep no extension by design — `/download/71/`…`/74/`
-are stable per-platform aliases and worth keeping — track them explicitly rather
-than restructuring them:
+Then, for the links that keep no extension — `/download/<id>/`, which are not
+stable (each release hides the previous four; `mudlet-releases` now redirects the
+hidden ones, see `MIGRATION.md`) but are out there in forum posts — track them
+explicitly rather than restructuring them:
 
 ```js
 _paq.push(['trackLink', url, 'download']);

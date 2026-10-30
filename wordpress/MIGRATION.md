@@ -20,7 +20,7 @@ Read off the front end; confirm the full list in wp-admin.
 
 | Plugin | Job | Plan |
 | --- | --- | --- |
-| WP-DownloadManager | Download entries, `/download/<id>/` links | **Keep** |
+| WP-DownloadManager | Download entries, `/download/<id>/` links | **Keep** — `mudlet-releases` answers the IDs it hides; see **The entry IDs are not stable** |
 | Connect Matomo | The tracking snippet | **Keep** — it is a plugin, so it survives the theme change untouched |
 | Contact Form 7 | The contact form | **Keep** — the new `/contact/` has a shortcode slot for it |
 | Cookie Notice | The consent banner | **Keep**; see `ANALYTICS.md` |
@@ -80,42 +80,61 @@ plugin's ordering within a category. That is why the download page never needed
 touching for a release — and it is also why the whole thing is invisible to
 Matomo, since what the plugin renders is a `/download/<id>/` link.
 
-Two anomalies fell out of checking this:
+Two anomalies fell out of checking this, both since confirmed against the
+database (dump of 2026-10-30):
 
-- **Category 1 is empty** and the Windows tab asks for it anyway. Almost
-  certainly a leftover — 32-bit Windows, at a guess.
-- **Category 6 (Source) is empty too**, although `linux.after_success.sh` posts
-  a `Mudlet <version> (Source Code)` entry to it and `Mudlet-5.0.1.tar.xz` is
-  mirrored correctly. So the file arrives and the WordPress entry does not.
-  **Unverified** — confirm in the Downloads list; if it is real, the source
-  tarball has been unreachable from the download page for some time.
+- **Category 1 is empty** and the Windows tab asks for it anyway. It was 32-bit
+  Windows: its last entries are the `windows-32-installer.exe` builds of 4.19.1.
+- **Category 6 (Source) has had nothing since 4.19.1** (entry 43, January 2026),
+  although `linux.after_success.sh` posts a `Mudlet <version> (Source Code)`
+  entry to it and the tarballs are mirrored correctly — `Mudlet-5.0.2.tar.xz` is
+  in `wp-content/files/`. So the file arrives and the WordPress entry does not,
+  and the source tarball has been unreachable from the download page since 4.20.
 
-### The entry IDs are stable, and that matters
+### The entry IDs are not stable, and that was a live bug
 
-The rendered listing resolves to:
+This section used to say the opposite. It was read off the rendered listing at
+one release, and the database says otherwise:
 
 | | | |
 | --- | --- | --- |
-| `/download/71/` | Mudlet 5.0.1 (Windows) | category 2 |
-| `/download/72/` | Mudlet 5.0.1 (macOS - x86_64) | category 3 |
-| `/download/73/` | Mudlet 5.0.1 (macOS - arm64) | category 4 |
-| `/download/74/` | Mudlet 5.0.1 (Linux) | category 5 |
+| `/download/75/` | Mudlet 5.0.2 (Windows) | category 2 |
+| `/download/76/` | Mudlet 5.0.2 (macOS - x86_64) | category 3 |
+| `/download/77/` | Mudlet 5.0.2 (macOS - arm64) | category 4 |
+| `/download/78/` | Mudlet 5.0.2 (Linux) | category 5 |
 
-Low IDs, current version. So `download-add.php` **overwrites the entry in
-place** rather than appending one per release — one live entry per platform,
-and the ID has been stable for years.
+Every release **appends** four entries and sets the four before it to
+*Hidden* (`file_permission = -2`), and WP-DownloadManager answers a hidden
+entry with a 404. On 2026-10-28 5.0.2 went out, and `/download/71/`…`/74/` —
+which this document called the site's most valuable links — have 404'd since,
+along with every ID before them. Whatever was pasted into a forum post or the
+wiki from the download page stopped working at the next release, and always
+has.
 
-Three consequences:
+Who creates and hides them is not settled. For 5.0.2, all on 2026-10-28 UTC:
+the GitHub release was published at 12:59, the mirror files landed 13:27–14:31
+(after the release this time, not before it as for 5.0.1), and the four entries
+were written at 15:51, within four seconds of each other, with the hiding 26
+seconds later — scripted, but neither by the build nor on the release event.
+See `download-add.php` below.
 
-- **`/download/71/` is already the stable "latest Windows build" link** this
-  migration was about to invent. It is presumably linked from the forums, the
-  wiki and elsewhere, and it has always resolved to the current build.
-- **No release older than the current one has a WordPress entry at all.** The
-  only route to an old version is the archive index at
-  `/wp-content/files/?C=M;O=D`, which the page links as "all previous installers
-  for Mudlet". See below — it is not WordPress.
-- Those four URLs are therefore **the most valuable links on the site to keep
-  working**, and the cheapest, since keeping WP-DownloadManager keeps them.
+**Fixed in `mudlet-releases`** rather than with a table of redirects, because a
+table is out of date at the next release: `Links::legacy()` answers a
+`/download/<id>/` (or `?dl_id=`) whose entry is hidden or gone, takes the file
+the entry names, strips its version the way `/latest/` does, and sends a 302 to
+the current build of the same name — so `Mudlet-4.22.0-windows-64-installer.exe`
+gets today's Windows installer. A build with no current namesake (the single
+pre-arm64 `.dmg`, 32-bit Windows, the source tarball, which is mirrored but not a
+release asset) goes to `/download/` instead of to a guess. A visible entry is
+left to WP-DownloadManager, so its hit count keeps counting. Live once the
+bundled `mudlet-releases` is the one loaded — after step 8 below, not before:
+the installed 0.1.0 copy predates `class-links.php`, which is why `/latest/`
+404s on mudlet.org today as well.
+
+- **No release older than the current one is reachable through WordPress** —
+  the entries exist, hidden. The only route to an old version is the archive
+  index at `/wp-content/files/?C=M;O=D`, which the page links as "all previous
+  installers for Mudlet". See below — it is not WordPress.
 
 ### The archive index is not WordPress
 
@@ -149,13 +168,19 @@ that path.** Do not reorganise the directory.
 
 Two things worth fixing regardless of the migration:
 
-- **`download-add.php` is in no repository.** It exists only on the server,
-  nobody working on this has access to it, and **that is fine for the
-  migration**: it POSTs to WP-DownloadManager, which is being kept, so a theme
-  change cannot disturb it and there is nothing to do here. It is worth writing
-  down only because an unauthenticated-by-default endpoint holding a static
-  token, in no version control, is the hinge of the whole release pipeline. A
-  someday item for whoever has the server, not a step.
+- **`download-add.php` is in no repository**, and it is not where CI sends its
+  POST. It is in the WordPress root, `/var/www/mudlet.org/wordpress/` (dated
+  2024-01-05), so it answers at `www.mudlet.org/download-add.php` — but all
+  three CI scripts POST to `make.mudlet.org/download-add.php`, and that host's
+  `.htaccess` sends any path that is not a file to its own `index.html`. A GET
+  there returns the make.mudlet.org page; whether a POST fares differently
+  needs the Apache logs, which need sudo. Either way `curl` exits 0 on a 200,
+  so CI would report success while registering nothing — which fits the
+  entries being written 80 minutes late by something else. The script itself
+  checks a token from the `download_api_token` option and then builds its
+  `INSERT` from `addslashes()`ed POST fields. It is a theme change away from
+  nothing, so not a migration step; it is the hinge of the release pipeline,
+  and it is unversioned, misaddressed and string-built.
 - The Linux script uploads an unversioned `Mudlet.AppImage` alongside the
   versioned tar, commented "for appimage.github.io". That is a stable-alias
   pattern that already works and is not used anywhere else. See decision 3.
@@ -270,8 +295,8 @@ by version for free.
 
 #### b. Stable descriptive URLs — what we publish everywhere else
 
-`/download/71/` works but says nothing: nobody can tell what it is, and nobody
-can guess it. The replacement should be readable, guessable, permanent, and
+`/download/75/` says nothing: nobody can tell what it is, nobody can guess it,
+and it 404s at the next release. The replacement should be readable, guessable, permanent, and
 carry a file extension:
 
 ```
@@ -299,16 +324,15 @@ one `add_rewrite_rule`, resolving through the existing `builds()` platform keys
 These are what go on the wiki, in forum posts, in the QR code and in the
 email-a-link message.
 
-#### c. The legacy numeric URLs — kept, unchanged
+#### c. The legacy numeric URLs — answered by the plugin
 
-`/download/71/`…`/74/` stay exactly as they are. They are linked from places
-nobody can enumerate and they have resolved to the current build for years;
-keeping WP-DownloadManager keeps them working at no cost. They are not deprecated
-so much as superseded — nothing needs to chase them down.
-
-If WP-DownloadManager is ever retired, map them to their `/latest/` equivalents
-in the same plugin that owns the rewrite rule above (see **Optional, after the
-migration**). Until then, track them with
+`/download/<id>/` is linked from places nobody can enumerate, and every ID but
+the newest four is hidden and 404s (see **The entry IDs are not stable**).
+`Links::legacy()` in `mudlet-releases`, beside the `/latest/` route, sends each
+hidden one to the current build its file was an earlier version of, and leaves
+the four visible ones to WP-DownloadManager. It reads the plugin's table rather
+than relying on the plugin, so retiring WP-DownloadManager later sends *every*
+ID through the same rule and needs nothing more here. Track them with
 `trackLink` so they stop being invisible — see `ANALYTICS.md`.
 
 #### Implemented
@@ -398,7 +422,7 @@ argument for retiring job 2 and writing announcement posts by hand.
 | --- | --- | --- |
 | `/wp-content/files/<file>` | Unaffected | None. Files on disk, not WordPress routes |
 | `/wp-content/files/appcast/*.xml` | Unaffected | None — **macOS auto-update depends on it** |
-| `/download/71/` `/72/` `/73/` `/74/` — Windows, macOS x86_64, macOS arm64, Linux | Stable per-platform "latest build" links, overwritten in place each release. Work while WP-DownloadManager is active | Keep the plugin. These are the site's most valuable links; map them explicitly if it is ever dropped |
+| `/download/<id>/`, `/?dl_id=<id>` | The newest four (75–78 for 5.0.2) are served by WP-DownloadManager; every older ID is hidden and **404s today** | `Links::legacy()` 302s a hidden ID to the current build of the same name, or to `/download/`. Live after step 8 |
 | `/downloads?dl_cat=2..5` | Category listings | None while the plugin stays |
 | `/download/` | Becomes the new download page | Watch for the collision below |
 | `/de/…`, `/it/…`, `/ru/…`, `/zh/…` (~162 URLs) | **All 404 the moment Polylang is deactivated** | Export the translation map first, then 301 each to its English equivalent. See decision 4 |
@@ -608,9 +632,10 @@ switch's job, above.
 
 0. Everything in **Before the switch** above that can be done now — the
    Polylang export above all.
-1. Confirm the plugin list in wp-admin, and whether category 6 is really empty.
-   **Unverified.**
-2. Put `download-add.php` in a repository.
+1. Confirm the plugin list in wp-admin. (Category 6: confirmed empty since
+   4.19.1 — see **How the live page resolves a download link**.)
+2. Put `download-add.php` in a repository, and point CI at the host it is
+   actually on.
 3. Deactivate the upstream `mudlet-release` plugin once `mudlet-releases` is
    loaded — it answers the same webhook URL and the same shortcode, and stands
    down until that one is gone. Then set `MUDLET_RELEASES_WEBHOOK_SECRET` and
@@ -630,8 +655,11 @@ switch's job, above.
 7. Switch the theme.
 8. **Deactivate and delete the pre-installed `mudlet-games` and
    `mudlet-makers`**, so the theme's bundled copies take over and future theme
-   updates carry them. Only after step 7, never before. Then check
-   `Mudlet → Sync` and one URL of each post type.
+   updates carry them. Only after step 7, never before. `mudlet-releases` goes
+   the same way: the installed 0.1.0 predates `/latest/` and the
+   `/download/<id>/` fallback, and wins over the theme's copy while it is there.
+   Then check `Mudlet → Sync`, one URL of each post type, `/latest/Mudlet-arm64.dmg`,
+   and that `/download/71/` now lands on the current Windows installer.
 9. Deploy the 301s, then deactivate Polylang. Watch 404s for a week. Shortcoder can go at the same time: its three live uses are all on the download pages being emptied or redirected, and `[sc]` is stripped from anything left.
 
    **With the Redirection plugin, which mudlet.org already runs** — no shell
@@ -702,25 +730,26 @@ lost.
 After the switch nothing on the site reads it — the download page is drawn from
 `mudlet-releases` and the mirror in `wp-content/files/`. What it still does:
 
-1. Keeps `/download/71/`…`/74/` resolving to the current build per platform —
-   the stable links in forum posts and on the wiki.
-2. Receives the CI's POSTs through `download-add.php`, which exist only to keep
-   (1) pointing at the newest build.
+1. Serves the newest four `/download/<id>/` entries, and counts their hits.
+   Every older ID already goes through `mudlet-releases`.
+2. Receives whatever registers each release's entries — `download-add.php`, or
+   whatever is really doing it (see **The archive index is not WordPress**).
 
 So the case for retiring it is that a plugin, plus an unversioned server script
-holding a static token, is carrying four redirects. It also owns the
+holding a static token, is carrying four links. It also owns the
 `/download/<id>/` collision above, hides those downloads from Matomo, and has
-the empty Source category (open question below). None of that is urgent.
+the empty Source category. None of that is urgent.
 
 If it is done, it is **one coordinated change across two repositories**, and
 the halves must land together — with the plugin gone first, `download-add.php`
 writes go nowhere and CI keeps reporting success:
 
-- **This repo:** `mudlet-releases` answers `/download/71/`…`/74/` with a 302 to
-  the matching `/latest/<name>` (the same `parse_request` route as
-  `class-links.php`), and `/downloads?dl_cat=2..5` with a 301 to `/download/`.
+- **This repo:** `/download/<id>/` is done — `Links::legacy()` takes every ID
+  once the plugin is gone, because it reads the table and not the plugin. What
+  remains is `/downloads?dl_cat=2..5`, a 301 to `/download/`, in the same place.
   In the plugin, not the theme: legacy URLs are a fact about the site and must
-  survive a theme rewrite.
+  survive a theme rewrite. The `downloads` table stays — dropping it would turn
+  every old ID into a plain trip to `/download/`.
 - **`Mudlet/Mudlet`:** drop the `download-add.php` POST from
   `CI/linux.after_success.sh`, `CI/osx.after_success.sh` and
   `CI/deploy-mudlet-for-windows.sh`. The `scp` to `wp-content/files/` stays —
@@ -730,7 +759,7 @@ writes go nowhere and CI keeps reporting success:
 
 ## Open questions
 
-- Is category 6 (Source) really empty on the live site, and if so, since when?
-- Category 1 is asked for by the Windows tab but holds nothing. Safe to drop
-  from the page copy?
+- What writes each release's download entries and hides the previous four, if
+  CI's POST to `make.mudlet.org` does not arrive? Needs the Apache logs (sudo),
+  around 2026-10-28 15:51 UTC.
 - Do the translated posts get deleted or kept unpublished after the 301s?

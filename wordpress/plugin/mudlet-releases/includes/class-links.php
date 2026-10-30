@@ -57,6 +57,7 @@ class Mudlet_Releases_Links {
 	 */
 	public static function init(): void {
 		add_action( 'parse_request', array( __CLASS__, 'route' ) );
+		add_action( 'parse_request', array( __CLASS__, 'legacy' ) );
 	}
 
 	/**
@@ -196,25 +197,94 @@ class Mudlet_Releases_Links {
 			return;
 		}
 
+		$url = self::current( $want );
+		if ( '' === $url ) {
+			return;
+		}
+
+		// Not wp_safe_redirect(): the mirror and GitHub are both off this
+		// host as far as WordPress is concerned, and the target is one this
+		// plugin built rather than anything a request supplied.
+		wp_redirect( $url, 302 );
+		exit;
+	}
+
+	/**
+	 * Where the current release's build with this alias is downloaded from.
+	 *
+	 * @param string $alias A version-less asset name.
+	 * @return string Empty when the current release has no such build.
+	 */
+	private static function current( string $alias ): string {
 		$release = mudlet_releases_get( 'latest' );
 		$builds  = is_array( $release ) ? (array) ( $release['builds'] ?? array() ) : array();
 
 		foreach ( $builds as $build ) {
 			$file = (string) ( $build['file'] ?? '' );
-			if ( '' === $file || self::alias( $file ) !== $want ) {
-				continue;
+			if ( '' !== $file && self::alias( $file ) === $alias && '' !== (string) ( $build['url'] ?? '' ) ) {
+				return (string) $build['url'];
 			}
-
-			$url = (string) ( $build['url'] ?? '' );
-			if ( '' === $url ) {
-				continue;
-			}
-
-			// Not wp_safe_redirect(): the mirror and GitHub are both off this
-			// host as far as WordPress is concerned, and the target is one this
-			// plugin built rather than anything a request supplied.
-			wp_redirect( $url, 302 );
-			exit;
 		}
+
+		return '';
+	}
+
+	/**
+	 * Answer a WP-DownloadManager `/download/<id>/` link the plugin no longer
+	 * serves, with the current build of the same thing.
+	 *
+	 * Those links are not stable. Each release adds four new entries and hides
+	 * the four before it, and a hidden entry 404s - so every `/download/<id>/`
+	 * ever pasted into a forum post stopped working the day the next release
+	 * went out, and the one in yesterday's post will stop at the next.
+	 *
+	 * The entry still says which file it was, and that file's alias is the same
+	 * derivation `/latest/` answers on, so `Mudlet-5.0.1-windows-64-installer.exe`
+	 * goes to today's Windows installer with no table of IDs typed anywhere. A
+	 * build that no longer exists under that name - the single pre-arm64 `.dmg`,
+	 * 32-bit Windows, the source tarball, which is mirrored but never on the
+	 * release - goes to the download page rather than to a guess.
+	 *
+	 * An entry the plugin still serves is left to it, so its hit count keeps
+	 * counting. With WP-DownloadManager gone every entry lands here, which is
+	 * what retiring it needs and nothing more: its table is read, not owned.
+	 *
+	 * @param WP $wp Current request.
+	 */
+	public static function legacy( $wp ): void {
+		// Both shapes the plugin answers: the pretty one, and ?dl_id= - which is
+		// a query var only while the plugin is there to register it.
+		$path = isset( $wp->request ) ? (string) $wp->request : '';
+		if ( preg_match( '#^download/(\d+)$#', $path, $m ) ) {
+			$id = (int) $m[1];
+		} else {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a public link, read as an integer.
+			$id = (int) ( $wp->query_vars['dl_id'] ?? ( $_GET['dl_id'] ?? 0 ) );
+		}
+		if ( $id <= 0 ) {
+			return;
+		}
+
+		global $wpdb;
+		$served = isset( $wpdb->downloads );
+		$quiet  = $wpdb->suppress_errors();
+		$entry  = $wpdb->get_row(
+			$wpdb->prepare( "SELECT file, file_permission FROM {$wpdb->prefix}downloads WHERE file_id = %d", $id )
+		);
+		$wpdb->suppress_errors( $quiet );
+
+		// A visible entry is the plugin's to serve; a missing one has nothing
+		// to say it was ever a build, while the plugin is still around to own
+		// its own 404.
+		if ( $served && ( ! $entry || -2 !== (int) $entry->file_permission ) ) {
+			return;
+		}
+
+		$alias = $entry ? self::alias( basename( (string) $entry->file ) ) : '';
+		$url   = '' === $alias ? '' : self::current( $alias );
+
+		// 302 either way: both targets move, the first at every release.
+		wp_redirect( '' !== $url ? $url : home_url( '/download/' ), 302 );
+		exit;
 	}
 }
