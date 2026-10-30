@@ -145,9 +145,25 @@ function mudlet_script_data(): array {
  * Returns '' when the build has not been copied in, which leaves the hero on
  * its scripted session rather than pointing an iframe at a 404.
  *
+ * The URL carries a hash of index.html, because mudlet.org's Cloudflare caches
+ * everything under wp-content for four hours, HTML included. Every build names
+ * its scripts afresh, so the index.html of the build before asks for scripts
+ * that are gone, the 404s for them are cached too, and the hero stays scripted
+ * until both expire. A query string is a different cache entry, and hashing the
+ * file rather than reading the theme version means it moves exactly when the
+ * build does - a rebuild in place included. Not filemtime(): build-dist pins
+ * every file in the archive to 2020-01-01.
+ *
  * @return string
  */
 function mudlet_demo_src(): string {
 	$path = get_template_directory() . '/assets/demo/index.html';
-	return file_exists( $path ) ? get_template_directory_uri() . '/assets/demo/index.html' : '';
+	if ( ! file_exists( $path ) ) {
+		return '';
+	}
+
+	$hash = md5_file( $path );
+	$url  = get_template_directory_uri() . '/assets/demo/index.html';
+
+	return $hash ? add_query_arg( 'v', substr( $hash, 0, 10 ), $url ) : $url;
 }
