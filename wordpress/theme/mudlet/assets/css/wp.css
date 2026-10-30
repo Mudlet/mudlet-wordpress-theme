@@ -123,6 +123,9 @@
 }
 #site .prose .wp-block-embed__wrapper,
 #site .prose .wp-block-embed iframe { max-width: 100%; }
+/* A classic [caption] prints its image's width inline -- 1024px, 1513px --
+   which is wider than the measure, so it overflows on every screen. */
+#site .prose .wp-caption { max-width: 100%; margin-inline: auto; }
 
 /* A release body carries its demo video as plain <video> markup with the
    recording's own width on it -- 880px, wider than the measure -- so nothing
