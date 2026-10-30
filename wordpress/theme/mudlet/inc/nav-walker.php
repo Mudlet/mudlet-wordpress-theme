@@ -135,6 +135,43 @@ function mudlet_nav_group_open( string $title, string $class = '' ): string {
 	);
 }
 
+add_filter( 'wp_nav_menu_objects', 'mudlet_nav_drop_language_switcher', 10, 2 );
+/**
+ * Leave Polylang's language switcher out of the theme's menus.
+ *
+ * mudlet.org's header menu carries one: a `#pll_switcher` item Polylang
+ * expands into a parent and a child per language, each title holding a flag
+ * as an `<img>`. The walker prints titles through esc_html(), so the flags
+ * arrived as their own markup, written out across the bar. The header already
+ * has a language switcher of its own drawn from the same languages, so the
+ * item is dropped rather than drawn twice - and it would outlive Polylang
+ * otherwise, as a "Languages" link to `#pll_switcher`.
+ *
+ * @param array<int, WP_Post> $items Menu items.
+ * @param stdClass            $args  wp_nav_menu() arguments.
+ * @return array<int, WP_Post>
+ */
+function mudlet_nav_drop_language_switcher( $items, $args ) {
+	if ( ! isset( $args->walker ) || ! $args->walker instanceof Mudlet_Link_Walker ) {
+		return $items;
+	}
+
+	$dropped = array();
+	foreach ( $items as $key => $item ) {
+		$classes = (array) ( $item->classes ?? array() );
+		if (
+			'#pll_switcher' === (string) $item->url
+			|| array_intersect( array( 'lang-item', 'pll-parent-menu-item' ), $classes )
+			|| isset( $dropped[ (int) $item->menu_item_parent ] )
+		) {
+			$dropped[ (int) $item->ID ] = true;
+			unset( $items[ $key ] );
+		}
+	}
+
+	return $items;
+}
+
 /**
  * Print a menu as bare anchors, or the theme's defaults if none is assigned.
  *
