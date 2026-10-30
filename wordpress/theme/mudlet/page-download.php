@@ -248,18 +248,26 @@ $icons  = array(
 					</p>
 				</div>
 
+				<?php
+				// The old Divi page's Ubuntu and Linux tabs both carried this:
+				// one command that adds the repository and installs, for the
+				// distributions it builds for. Update the list here when that
+				// list changes.
+				?>
 				<div class="way">
 					<?php mudlet_icon( 'cube' ); ?>
-					<h3><?php esc_html_e( 'Ubuntu &amp; Debian', 'mudlet' ); ?></h3>
-					<p>
-						<?php
-						printf(
-							/* translators: %s: link reading "your help" */
-							esc_html__( 'Use the AppImage above. The Mudlet in Debian’s repositories is out of date — if you maintain it, we’d love %s.', 'mudlet' ),
-							'<a href="https://github.com/Mudlet/Mudlet">' . esc_html__( 'your help', 'mudlet' ) . '</a>'
-						);
-						?>
-					</p>
+					<h3><?php esc_html_e( 'Linux packages', 'mudlet' ); ?></h3>
+					<p><?php esc_html_e( 'On Debian 13, Ubuntu 26.04 and Fedora 43 and 44 you can install Mudlet from our package repository instead, so it updates along with the rest of your system:', 'mudlet' ); ?></p>
+					<div class="clone">
+						<code>curl -fsSL https://packages.mudlet.net/install.sh | sudo sh</code>
+						<button class="clone__cp" type="button" hidden>
+							<?php
+							mudlet_icon( 'copy', 'cp' );
+							mudlet_icon( 'check', 'ok' );
+							?>
+							<span class="screen-reader-text"><?php esc_html_e( 'Copy the install command', 'mudlet' ); ?></span>
+						</button>
+					</div>
 				</div>
 
 				<div class="way">

@@ -1160,16 +1160,15 @@
 		});
 	})();
 
-	// ── the clone line, under "Build it yourself" ────────────────────────
+	// ── the command lines: the clone, and the package repository ─────────
 	// The command is read out of the <code> beside the button rather than
 	// carried a second time in an attribute, so the page has one copy of it
 	// and the button cannot go stale against what the visitor is looking at.
 	// The tick is the only feedback there is room for, so the label under it
 	// changes too - it is all a screen reader has.
-	(function () {
-		var box = document.querySelector('#site .clone');
-		var btn = box && box.querySelector('.clone__cp');
-		var code = box && box.querySelector('code');
+	Array.prototype.forEach.call(document.querySelectorAll('#site .clone'), function (box) {
+		var btn = box.querySelector('.clone__cp');
+		var code = box.querySelector('code');
 		if (!btn || !code) return;
 
 		var label = btn.querySelector('.screen-reader-text');
@@ -1200,7 +1199,7 @@
 				sel.addRange(range);
 			}
 		);
-	})();
+	});
 
 	// ── post outline ─────────────────────────────────────────────────────
 	// The jump itself is a plain anchor and works without this; scroll-margin on
