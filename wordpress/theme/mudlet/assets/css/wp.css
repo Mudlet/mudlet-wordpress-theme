@@ -1600,3 +1600,91 @@
 #site .cmts__list #respond {
 	margin-bottom: 1.1rem;
 }
+
+/* ── Cookie Notice ────────────────────────────────────────────────────
+   The plugin prints its bar after #site has closed, so none of #site's custom
+   properties reach it: the colours below are the dark theme's footer surfaces
+   typed out, in both themes - a bar over the bottom of the page reads as part
+   of the footer. It writes its background inline, hence the !important.
+
+   After consent it keeps a "revoke" strip on every page. The old Divi theme
+   shrank that to a tab peeking in at the right edge, with the sentence hidden
+   and the button sliding out on hover - custom CSS kept in Divi's own options,
+   which went with Divi. This is that tab again, in this theme's clothes. */
+#cookie-notice {
+	background-color: transparent !important;
+	font-family: 'Figtree', system-ui, sans-serif;
+	font-size: .9rem;
+	line-height: 1.5;
+	color: #ece0c9;
+}
+#cookie-notice .cookie-notice-container {
+	padding: .9rem 1.25rem;
+	background: #221b13;
+	border-top: 1px solid #3a2f22;
+}
+#cookie-notice a,
+#cookie-notice a:visited { color: #f56c27; }
+#cookie-notice a:hover { color: #ff8a4d; }
+#cookie-notice .cn-button.cn-button-custom {
+	display: inline-flex;
+	align-items: center;
+	gap: .45rem;
+	margin: 0 0 0 .75rem;
+	padding: .45rem 1rem;
+	font: 600 .85rem/1.2 'Figtree', system-ui, sans-serif;
+	color: #17130e;
+	background: #f56c27;
+	border: 0;
+	border-radius: 999px;
+	cursor: pointer;
+}
+#cookie-notice .cn-button.cn-button-custom:hover { background: #ff8a4d; }
+#cookie-notice .cn-button.cn-button-custom:focus-visible {
+	outline: 2px solid #f56c27;
+	outline-offset: 2px;
+}
+
+/* The tab. The strip under it is still full width, so it lets clicks through
+   and only the button takes them. */
+#cookie-notice.cookie-revoke-visible { pointer-events: none; }
+#cookie-notice .cookie-revoke-container {
+	padding: 0 0 .75rem;
+	text-align: right;
+}
+#cookie-notice .cookie-revoke-container .cn-text-container { display: none; }
+#cookie-notice .cookie-revoke-container .cn-revoke-cookie.cn-button-custom {
+	pointer-events: auto;
+	margin: 0;
+	padding: .4rem .9rem .4rem .7rem;
+	font-weight: 500;
+	font-size: .8rem;
+	color: #ece0c9;
+	background: #221b13;
+	border: 1px solid #3a2f22;
+	border-right: 0;
+	border-radius: 999px 0 0 999px;
+	box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .5);
+	/* everything but the cookie tucked off the edge */
+	transform: translateX(calc(100% - 2.05rem));
+	transition: transform .25s ease;
+}
+#cookie-notice .cookie-revoke-container .cn-revoke-cookie.cn-button-custom:hover,
+#cookie-notice .cookie-revoke-container .cn-revoke-cookie.cn-button-custom:focus-visible {
+	transform: none;
+	background: #2b2318;
+}
+/* the cookie: a disc with a bite out of it and three chips, as a mask so it
+   takes the button's colour */
+#cookie-notice .cookie-revoke-container .cn-revoke-cookie::before {
+	content: "";
+	flex: none;
+	width: 1rem;
+	height: 1rem;
+	background: #f56c27;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1a7 7 0 1 0 7 7 2.5 2.5 0 0 1-3-2.6A2.6 2.6 0 0 1 9.4 3 2 2 0 0 1 8 1zM5 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm1.5 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3.5-1a1 1 0 1 1 0 2 1 1 0 0 1 0-2z' fill='%23000' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
+	        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1a7 7 0 1 0 7 7 2.5 2.5 0 0 1-3-2.6A2.6 2.6 0 0 1 9.4 3 2 2 0 0 1 8 1zM5 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm1.5 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3.5-1a1 1 0 1 1 0 2 1 1 0 0 1 0-2z' fill='%23000' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+@media (prefers-reduced-motion: reduce) {
+	#cookie-notice .cookie-revoke-container .cn-revoke-cookie.cn-button-custom { transition: none; }
+}
