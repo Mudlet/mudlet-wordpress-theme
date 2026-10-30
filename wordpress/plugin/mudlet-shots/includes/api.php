@@ -196,8 +196,9 @@ function mudlet_shots_register_script(): void {
 		// helper answers for wp-content/plugins only. See shared/mudlet-bundle.php.
 		Mudlet_Bundle::url( MUDLET_SHOTS_FILE, 'assets/shots-form.js' ),
 		array(),
-		// mtime rather than the plugin version, which moves once a release.
-		file_exists( $file ) ? (string) filemtime( $file ) : MUDLET_SHOTS_VERSION,
+		// A hash of the file rather than the plugin version, which moves once a
+		// release - and not its mtime, which build-dist pins to 2020-01-01.
+		file_exists( $file ) ? substr( (string) md5_file( $file ), 0, 10 ) : MUDLET_SHOTS_VERSION,
 		true
 	);
 }

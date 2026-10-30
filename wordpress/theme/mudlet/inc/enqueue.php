@@ -58,17 +58,23 @@ function mudlet_fonts_url(): string {
 }
 
 /**
- * Cache-bust on file mtime rather than the theme version.
+ * Cache-bust on the file's contents rather than the theme version.
  *
  * The theme version moves once a release; these files move every time somebody
- * re-runs the sync tool, and a stale stylesheet is the kind of bug that eats an
+ * edits one locally, and a stale stylesheet is the kind of bug that eats an
  * afternoon before anyone thinks to hard-refresh.
+ *
+ * A hash and not filemtime(), which this used to be: build-dist pins every file
+ * in the archive to 2020-01-01, so on a site installed from a release the mtime
+ * never moved and every release kept the URL - which mudlet.org's Cloudflare,
+ * caching wp-content for four hours, answered with the previous release's CSS.
  *
  * @param string $path Absolute path to the asset.
  * @return string
  */
 function mudlet_asset_version( string $path ): string {
-	return file_exists( $path ) ? (string) filemtime( $path ) : MUDLET_VERSION;
+	$hash = file_exists( $path ) ? md5_file( $path ) : false;
+	return $hash ? substr( $hash, 0, 10 ) : MUDLET_VERSION;
 }
 
 /**

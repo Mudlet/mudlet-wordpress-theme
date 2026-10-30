@@ -73,9 +73,10 @@ class Mudlet_Games_Block {
 			// that helper answers for wp-content/plugins only. See shared/mudlet-bundle.php.
 			Mudlet_Bundle::url( MUDLET_GAMES_FILE, 'assets/block-games.js' ),
 			array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n', 'wp-server-side-render' ),
-			// mtime rather than the plugin version: the version moves once a
-			// release, this file moves whenever somebody edits it.
-			file_exists( $file ) ? (string) filemtime( $file ) : MUDLET_GAMES_VERSION,
+			// A hash of the file rather than the plugin version: the version
+			// moves once a release, this file whenever somebody edits it. Not
+			// its mtime, which build-dist pins to 2020-01-01.
+			file_exists( $file ) ? substr( (string) md5_file( $file ), 0, 10 ) : MUDLET_GAMES_VERSION,
 			true
 		);
 		wp_set_script_translations( self::HANDLE, 'mudlet-games' );
