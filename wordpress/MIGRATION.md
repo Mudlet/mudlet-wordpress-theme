@@ -620,6 +620,12 @@ translations straight to the real posts:
       `/2023/03/mudlet-4-17-now-more-screenreader-friendly/`
 - [ ] `/2024/12/4-19-mudlet-is-now-portable-2/` → unpublish; 301 to
       `/2024/12/4-19-mudlet-is-now-portable/`
+- [ ] `/2026/03/mudlet-4-20-0/` → unpublish; 301 to
+      `/2026/02/4-20-a-mudlet-release-for-2026/` (a webhook stub five weeks
+      after the announcement, rendering GitHub's whole "What's Changed")
+- [x] `/2026/07/mudlet-4-22-0/` → unpublish; 301 to
+      `/2026/07/4-22-mapping-made-friendlier/` (the webhook's stub went up
+      first this time, and the hand-written post after it)
 
 Not on the list, and checked: `[caption]`, `[gallery]` and `[video]` are
 core's own and render as they always did; `[MudletRelease]` is answered by

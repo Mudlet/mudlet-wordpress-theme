@@ -217,9 +217,14 @@ for (const row of rows) {
 // Manual rewrites) - and a translation that pointed at one goes straight to
 // the real post rather than through two redirects. The stubs themselves are
 // written out as `en` rows, marked `retired`, so this file is the whole table.
+// 4.22.0 is the same stub the other way round: the webhook posted it
+// ([MudletRelease]349392806) and the hand-written announcement followed.
+// 4.20.0's stub came five weeks after the announcement it duplicates.
 const RETIRED = {
   '/2024/12/4-17-now-more-screenreader-friendly/': '/2023/03/mudlet-4-17-now-more-screenreader-friendly/',
   '/2024/12/4-19-mudlet-is-now-portable-2/': '/2024/12/4-19-mudlet-is-now-portable/',
+  '/2026/03/mudlet-4-20-0/': '/2026/02/4-20-a-mudlet-release-for-2026/',
+  '/2026/07/mudlet-4-22-0/': '/2026/07/4-22-mapping-made-friendlier/',
 };
 
 for (const row of rows) {
