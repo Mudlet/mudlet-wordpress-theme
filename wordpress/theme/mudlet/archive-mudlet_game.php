@@ -204,7 +204,8 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 								<?php // The whole card is clickable through .gcard__name a::after — see wp.css. ?>
 								<a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
 							</h3>
-							<p class="gcard__domain"><?php echo esc_html( $mudlet_game['domain'] ); ?></p>
+							<?php $mudlet_players = mudlet_game_players_line( mudlet_game_live( $mudlet_game ) ); ?>
+							<p class="gcard__domain"><span class="gcard__host"><?php echo esc_html( $mudlet_game['domain'] ); ?></span><?php if ( '' !== $mudlet_players ) : ?><span class="glive"><span class="glive__dot" aria-hidden="true"></span><?php echo esc_html( $mudlet_players ); ?></span><?php endif; ?></p>
 
 							<p class="gcard__lede<?php echo '' === $mudlet_lede ? ' gcard__lede--connect' : ''; ?>">
 								<?php echo esc_html( '' !== $mudlet_lede ? $mudlet_lede : mudlet_game_connect( $mudlet_game ) ); ?>

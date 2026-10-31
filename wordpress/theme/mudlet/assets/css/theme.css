@@ -704,7 +704,11 @@ button{font:inherit; color:inherit}
 #site .cardart__star{color:var(--mark)}
 /* Green because green means "online" everywhere, not because the palette has a
    green - it deliberately does not, so this one is written out. */
-#site .cardart__dot{width:.5rem; height:.5rem; border-radius:50%; background:#4f8a5f; flex:none}
+#site .cardart__dot, #site .glive__dot{width:.5rem; height:.5rem; border-radius:50%; background:#4f8a5f; flex:none}
+/* A game's own player count, off MSSP: the same green dot, on the game's page
+   and after the domain on its card (that half is in wp.css, with the card). */
+#site .glive{display:inline-flex; align-items:center; gap:.4rem}
+#site .glive__when{opacity:.7; margin-left:.6ch}
 /* the size of the room, then how many are in it right now */
 #site .cardart__now{display:inline-flex; align-items:center; gap:.35rem; color:var(--dim)}
 #site .cardart__now::before{content:"·"; color:var(--mark); opacity:.55; margin-right:.15rem}

@@ -180,6 +180,36 @@ makers plugin, which has never had one, for the same argument.
 | `mudlet_game( $slug_or_post )` | one game |
 | `mudlet_games_count()` | how many are bundled |
 | `mudlet_games_url()` | the `/games/` archive |
+| `mudlet_game_status( $game )` | what the server last said over MSSP, or nothing |
+
+## Who is playing: MSSP
+
+A game record is facts about a profile. Whether the server is up and how many
+are on it is an observation, and `includes/class-status.php` keeps it apart:
+one option (`mudlet_games_status`), rewritten wholesale every run, never on a
+record screen.
+
+The probe opens a telnet connection to every game **at once** — one
+`stream_select()` loop, so the run is bounded at 15 seconds however many games
+there are — sends `IAC DO MSSP`, and if the server says nothing for four seconds
+tries the plain-text `MSSP-REQUEST` as well. It keeps seven fields (players,
+uptime, codebase, created, genre, gameplay, language) and hangs up. Hourly by
+default on **Mudlet → Sync**, with a button there; `wp mudlet-games mssp` runs it
+now and prints a table. From the server and on a schedule, never per page view
+and never from a browser: a browser has no raw sockets, and a page that
+connected on every view would hand each MUD's admin one connection per reader.
+
+Measured on 31 October 2026: 43 of 44 games accepted a connection and 33
+answered MSSP. The rest — Achaea, Aardwolf, BatMUD and a handful more — accept
+the connection and never send the subnegotiation, even with TTYPE answered and
+every other option refused; that was tried and is not worth trying again.
+
+**It never says a game is down.** A refused connection is as likely to be this
+host's outbound firewall as the game, and "offline" on forty cards because a
+provider blocks port 23 is worse than silence. `mudlet_game_status()` returns
+nothing unless the game answered within the last two cadences (three hours at
+least), and drops values that cannot be true: a negative player count, a boot
+time in the future, a year a MUD could not have opened in.
 
 ## Putting games in a post
 

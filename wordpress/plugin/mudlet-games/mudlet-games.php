@@ -59,6 +59,7 @@ require_once __DIR__ . '/shared/mudlet-sync.php';
 require_once __DIR__ . '/includes/class-store.php';
 require_once __DIR__ . '/includes/class-source.php';
 require_once __DIR__ . '/includes/class-sync.php';
+require_once __DIR__ . '/includes/class-status.php';
 require_once __DIR__ . '/includes/class-cli.php';
 require_once __DIR__ . '/includes/class-admin.php';
 require_once __DIR__ . '/includes/class-block.php';
@@ -77,6 +78,7 @@ function mudlet_games_boot(): void {
 
 	Mudlet_Games_Store::init();
 	Mudlet_Games_Sync::init();
+	Mudlet_Games_Status::init();
 	// Not behind is_admin(): the read-only guard has to hold on REST too.
 	Mudlet_Games_Admin::init();
 	Mudlet_Games_Block::init();
@@ -105,5 +107,6 @@ register_deactivation_hook( __FILE__, 'mudlet_games_deactivate' );
  */
 function mudlet_games_deactivate(): void {
 	wp_clear_scheduled_hook( Mudlet_Games_Sync::HOOK );
+	wp_clear_scheduled_hook( Mudlet_Games_Status::HOOK );
 	flush_rewrite_rules();
 }

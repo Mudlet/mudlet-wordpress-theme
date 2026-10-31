@@ -537,3 +537,38 @@ function mudlet_game_web_url( array $game ): string {
 
 	return add_query_arg( 'play', $slug, $base );
 }
+
+/**
+ * What a game's server last said about itself, or nothing.
+ *
+ * The MSSP probe in the games plugin asks every game hourly; this is the
+ * theme's one way in, behind the same function_exists() guard as the rest.
+ * Empty whenever there is nothing fresh to say - see mudlet_game_status() for
+ * why "did not answer" is never drawn as "offline".
+ *
+ * @param array<string, mixed> $game A row from mudlet_games().
+ * @return array<string, mixed>
+ */
+function mudlet_game_live( array $game ): array {
+	return function_exists( 'mudlet_game_status' ) ? mudlet_game_status( $game ) : array();
+}
+
+/**
+ * "127 playing now", or '' when the game did not say.
+ *
+ * Zero is printed: a game that answered and has nobody on is a fact about the
+ * hour, and the visitor deciding whether to log in can use it.
+ *
+ * @param array<string, mixed> $live From mudlet_game_live().
+ * @return string
+ */
+function mudlet_game_players_line( array $live ): string {
+	if ( ! isset( $live['players'] ) ) {
+		return '';
+	}
+	return sprintf(
+		/* translators: %s: number of players connected to a game right now */
+		_n( '%s playing now', '%s playing now', (int) $live['players'], 'mudlet' ),
+		number_format_i18n( (int) $live['players'] )
+	);
+}

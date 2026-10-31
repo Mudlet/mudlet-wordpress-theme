@@ -32,6 +32,8 @@ class Mudlet_Games_Admin {
 
 	const SYNC_ACTION = 'mudlet_games_sync_now';
 
+	const STATUS_ACTION = 'mudlet_games_status_now';
+
 	/**
 	 * Set while the plugin itself is writing, so the guard below can tell a
 	 * sync apart from a person with a form.
@@ -60,6 +62,7 @@ class Mudlet_Games_Admin {
 		add_filter( 'mudlet_sync_jobs', array( __CLASS__, 'sync_job' ) );
 
 		add_action( 'admin_post_' . self::SYNC_ACTION, array( __CLASS__, 'handle_sync' ) );
+		add_action( 'admin_post_' . self::STATUS_ACTION, array( __CLASS__, 'handle_status' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
 	}
 
@@ -453,7 +456,42 @@ class Mudlet_Games_Admin {
 			'sync_url' => self::sync_url(),
 		);
 
+		$heard = Mudlet_Games_Status::counts();
+
+		$jobs[ Mudlet_Games_Status::HOOK ] = array(
+			'label'    => __( 'Game status', 'mudlet-games' ),
+			'note'     => __( 'One short telnet connection to every game at once, asking for MSSP (players, uptime, codebase) and hanging up. A game that does not answer is shown as nothing, never as offline.', 'mudlet-games' ),
+			'default'  => Mudlet_Games_Status::EVERY,
+			'synced'   => (int) get_option( Mudlet_Games_Status::SYNCED ),
+			'summary'  => $heard['checked']
+				? sprintf(
+					/* translators: 1: games that accepted a connection, 2: games that answered MSSP, 3: games asked */
+					__( '%1$d up, %2$d answered MSSP, of %3$d', 'mudlet-games' ),
+					$heard['up'],
+					$heard['mssp'],
+					$heard['checked']
+				)
+				: '',
+			'sync_url' => wp_nonce_url( admin_url( 'admin-post.php?action=' . self::STATUS_ACTION ), self::STATUS_ACTION ),
+		);
+
 		return $jobs;
+	}
+
+	/**
+	 * Probe every game now and go back to the Sync screen, which is the one
+	 * place this job has a button. Fifteen seconds at most, by construction.
+	 */
+	public static function handle_status(): void {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'mudlet-games' ) );
+		}
+		check_admin_referer( self::STATUS_ACTION );
+
+		Mudlet_Games_Status::run();
+
+		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url( 'admin.php?page=' . Mudlet_Sync::MENU ) );
+		exit;
 	}
 
 	/**

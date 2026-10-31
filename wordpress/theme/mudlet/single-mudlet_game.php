@@ -108,6 +108,41 @@ while ( have_posts() ) :
 						<?php endif; ?>
 					</p>
 
+					<?php
+					// What the server said about itself in the last hour or so, over
+					// MSSP - only what it said, and nothing at all if it said nothing.
+					// See mudlet_game_status() in the games plugin.
+					$mudlet_live    = mudlet_game_live( $mudlet_game );
+					$mudlet_now     = array();
+					$mudlet_players = mudlet_game_players_line( $mudlet_live );
+					if ( '' !== $mudlet_players ) {
+						$mudlet_now[] = '<span class="glive"><span class="glive__dot" aria-hidden="true"></span>' . esc_html( $mudlet_players ) . '</span>';
+					}
+					if ( ! empty( $mudlet_live['since'] ) ) {
+						/* translators: %s: how long the server has been running, e.g. "3 days" */
+						$mudlet_now[] = esc_html( sprintf( __( 'up %s', 'mudlet' ), human_time_diff( $mudlet_live['since'] ) ) );
+					}
+					if ( ! empty( $mudlet_live['codebase'] ) ) {
+						$mudlet_now[] = esc_html( $mudlet_live['codebase'] );
+					}
+					if ( ! empty( $mudlet_live['created'] ) ) {
+						/* translators: %s: the year a game opened */
+						$mudlet_now[] = esc_html( sprintf( __( 'running since %s', 'mudlet' ), (string) $mudlet_live['created'] ) );
+					}
+					?>
+					<?php if ( $mudlet_now ) : ?>
+						<p class="specs">
+							<span class="mk">&gt;</span><b><?php esc_html_e( 'now', 'mudlet' ); ?></b>
+							<?php echo implode( '<span class="sep">&middot;</span>', $mudlet_now ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each part escaped above. ?>
+							<span class="glive__when">
+								<?php
+								/* translators: %s: how long ago the game was asked, e.g. "12 mins" */
+								echo esc_html( sprintf( __( '(the server said so %s ago)', 'mudlet' ), human_time_diff( (int) $mudlet_live['checked'] ) ) );
+								?>
+							</span>
+						</p>
+					<?php endif; ?>
+
 					<?php if ( ! empty( $mudlet_game['links'] ) ) : ?>
 						<p class="specs">
 							<span class="mk">&gt;</span><b><?php esc_html_e( 'links', 'mudlet' ); ?></b>
