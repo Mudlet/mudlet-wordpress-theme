@@ -259,7 +259,7 @@ function mudlet_page_layout( string $html, string $kind ): string {
 				break;
 
 			case 'h2':
-				// A section that is one short line - "GPL2+" - is a fact, not a
+				// A section that is one short line - "GPL 3.0" - is a fact, not a
 				// paragraph, and is drawn as a badge rather than left as a word
 				// on its own at the bottom of the page. The mark is copyleft
 				// because the only such line this site has is its licence.
