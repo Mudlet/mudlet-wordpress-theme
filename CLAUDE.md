@@ -89,7 +89,7 @@ The other half is `theme/mudlet/inc/updates.php`: `style.css` carries an
 wordpress.org about a theme it does not host and fires
 `update_themes_github.com`. That filter answers with the release's `mudlet.zip`
 asset — never `zipball_url`, which has the wrong folder inside it — cached
-twelve hours. The update is **offered**, not taken: WordPress shows it on
+an hour, and **Check again** on Dashboard → Updates skips the cache. The update is **offered**, not taken: WordPress shows it on
 Dashboard → Updates with an "Update now" button, exactly as it would for a theme
 from the directory, and `MUDLET_AUTO_UPDATE` in `wp-config.php` overrides that
 in either direction. It deliberately does not force auto-updates on — since the

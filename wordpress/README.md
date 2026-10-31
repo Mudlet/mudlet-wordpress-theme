@@ -888,7 +888,7 @@ Update URI: https://github.com/Mudlet/mudlet-wordpress-theme
 
 which since WordPress 6.1 stops core asking wordpress.org about a theme it does
 not host, and fires `update_themes_github.com` instead. `inc/updates.php`
-answers it: one unauthenticated `releases/latest` call, cached twelve hours,
+answers it: one unauthenticated `releases/latest` call, cached an hour (Check again skips it),
 and the release's own `mudlet.zip` asset as the package. Because that asset is
 the whole site, the update carries the plugins and the hero's client with it.
 

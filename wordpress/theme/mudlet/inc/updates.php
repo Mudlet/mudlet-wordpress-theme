@@ -29,9 +29,16 @@
  *
  * What it asks for, and how often.
  *
- * One unauthenticated `releases/latest` call, cached twelve hours — GitHub
- * allows sixty an hour per IP unauthenticated, and this shares that budget
- * with the star count on the front page and the clerk in the demo world.
+ * One unauthenticated `releases/latest` call, cached an hour — GitHub allows
+ * sixty an hour per IP unauthenticated, and this shares that budget with the
+ * star count on the front page and the clerk in the demo world.
+ *
+ * It was twelve hours, which was a second throttle stacked on core's own (core
+ * already re-asks at most once a minute on Dashboard → Updates, hourly on
+ * Themes, two-hourly from cron), and the one that won: three tags pushed in
+ * seven minutes left a site caching "latest is the version you run" until the
+ * afternoon, with **Check again** answering from that cache. So the cache is
+ * now no longer than the gap core keeps anyway, and Check again skips it.
  * `releases/latest` is already "the newest published, non-draft,
  * non-prerelease", so a prerelease is skipped by GitHub rather than by us.
  *
@@ -82,7 +89,7 @@ function mudlet_theme_update( $update, array $theme_data, string $stylesheet ) {
 		return $update;
 	}
 
-	$release = mudlet_update_release( $repo );
+	$release = mudlet_update_release( $repo, mudlet_update_forced() );
 	if ( ! $release ) {
 		return $update;
 	}
@@ -98,6 +105,23 @@ function mudlet_theme_update( $update, array $theme_data, string $stylesheet ) {
 		'requires'     => (string) $theme->get( 'RequiresWP' ),
 		'requires_php' => (string) $theme->get( 'RequiresPHP' ),
 	);
+}
+
+/**
+ * Whether an admin just pressed Check again on Dashboard → Updates.
+ *
+ * That link is `update-core.php?force-check=1`, and core honours it for its
+ * own checks; this lets it reach ours. Gated on the capability, so the query
+ * string alone cannot be used to spend the GitHub budget.
+ *
+ * @return bool
+ */
+function mudlet_update_forced(): bool {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a read-only flag core itself reads without a nonce.
+	return is_admin()
+		&& 'update-core.php' === ( $GLOBALS['pagenow'] ?? '' )
+		&& ! empty( $_GET['force-check'] )
+		&& current_user_can( 'update_themes' );
 }
 
 /**
@@ -134,12 +158,13 @@ function mudlet_update_repo( string $uri ): string {
  * "nothing to update to" and "could not ask" costs the same one request an
  * hour rather than one per page.
  *
- * @param string $repo owner/name.
+ * @param string $repo  owner/name.
+ * @param bool   $fresh Skip the cache and ask GitHub now.
  * @return array{version:string,url:string,package:string}|null
  */
-function mudlet_update_release( string $repo ): ?array {
+function mudlet_update_release( string $repo, bool $fresh = false ): ?array {
 	$key    = MUDLET_UPDATE_KEY . '_' . md5( $repo );
-	$cached = get_transient( $key );
+	$cached = $fresh ? false : get_transient( $key );
 
 	if ( is_array( $cached ) ) {
 		return $cached['version'] ? $cached : null;
@@ -182,7 +207,7 @@ function mudlet_update_release( string $repo ): ?array {
 		}
 	}
 
-	set_transient( $key, $release, $release['version'] ? 12 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
+	set_transient( $key, $release, HOUR_IN_SECONDS );
 
 	return $release['version'] ? $release : null;
 }
