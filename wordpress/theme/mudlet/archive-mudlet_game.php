@@ -180,7 +180,7 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 						$mudlet_rest = mudlet_game_rest( $mudlet_game );
 						$mudlet_tags = mudlet_game_tags( $mudlet_game );
 						?>
-						<article class="gcard"
+						<article class="gcard" data-id="<?php echo esc_attr( (string) (int) $mudlet_game['id'] ); ?>"
 							data-name="<?php the_title_attribute(); ?>"
 							data-host="<?php echo esc_attr( $mudlet_game['host'] ); ?>"
 							<?php // The whole localised phrase, not the number: the panel's shuffle prints it as-is rather than reassembling "port %s" in JavaScript. ?>
@@ -204,8 +204,7 @@ $mudlet_facets = mudlet_game_facets( $mudlet_all );
 								<?php // The whole card is clickable through .gcard__name a::after — see wp.css. ?>
 								<a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
 							</h3>
-							<?php $mudlet_players = mudlet_game_players_line( mudlet_game_live( $mudlet_game ) ); ?>
-							<p class="gcard__domain"><span class="gcard__host"><?php echo esc_html( $mudlet_game['domain'] ); ?></span><?php if ( '' !== $mudlet_players ) : ?><span class="glive"><span class="glive__dot" aria-hidden="true"></span><?php echo esc_html( $mudlet_players ); ?></span><?php endif; ?></p>
+							<p class="gcard__domain"><span class="gcard__host"><?php echo esc_html( $mudlet_game['domain'] ); ?></span><?php // Filled from mudlet/v1/games/live by theme.js, never here: this page is cached. ?><span class="glive" data-live-card hidden></span></p>
 
 							<p class="gcard__lede<?php echo '' === $mudlet_lede ? ' gcard__lede--connect' : ''; ?>">
 								<?php echo esc_html( '' !== $mudlet_lede ? $mudlet_lede : mudlet_game_connect( $mudlet_game ) ); ?>

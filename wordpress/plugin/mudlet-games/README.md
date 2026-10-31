@@ -204,6 +204,13 @@ answered MSSP. The rest — Achaea, Aardwolf, BatMUD and a handful more — acce
 the connection and never send the subnegotiation, even with TTYPE answered and
 every other option refused; that was tried and is not worth trying again.
 
+**The theme never prints it into a page.** `/games/` and the game pages sit
+behind WP Super Cache, and a player count in cached HTML is served for as long as
+the copy lives, under a line claiming the server said so minutes ago. So the
+templates carry empty slots, and `theme.js` fills them after load from the
+theme's `mudlet/v1/games/live` route — markup rendered and translated at the
+moment of asking, `Cache-Control: max-age=300`, one request for every game.
+
 **It never says a game is down.** A refused connection is as likely to be this
 host's outbound firewall as the game, and "offline" on forty cards because a
 provider blocks port 23 is worse than silence. `mudlet_game_status()` returns

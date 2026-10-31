@@ -708,6 +708,9 @@ button{font:inherit; color:inherit}
 /* A game's own player count, off MSSP: the same green dot, on the game's page
    and after the domain on its card (that half is in wp.css, with the card). */
 #site .glive{display:inline-flex; align-items:center; gap:.4rem}
+/* The slots arrive empty and hidden, and are filled after load; the display
+   above would otherwise outrank `hidden` and draw a dot with nothing beside it. */
+#site .glive[hidden]{display:none}
 #site .glive__when{opacity:.7; margin-left:.6ch}
 /* the size of the room, then how many are in it right now */
 #site .cardart__now{display:inline-flex; align-items:center; gap:.35rem; color:var(--dim)}

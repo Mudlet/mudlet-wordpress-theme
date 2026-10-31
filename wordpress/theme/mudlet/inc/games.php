@@ -538,37 +538,123 @@ function mudlet_game_web_url( array $game ): string {
 	return add_query_arg( 'play', $slug, $base );
 }
 
-/**
- * What a game's server last said about itself, or nothing.
- *
- * The MSSP probe in the games plugin asks every game hourly; this is the
- * theme's one way in, behind the same function_exists() guard as the rest.
- * Empty whenever there is nothing fresh to say - see mudlet_game_status() for
- * why "did not answer" is never drawn as "offline".
- *
- * @param array<string, mixed> $game A row from mudlet_games().
- * @return array<string, mixed>
- */
-function mudlet_game_live( array $game ): array {
-	return function_exists( 'mudlet_game_status' ) ? mudlet_game_status( $game ) : array();
-}
 
 /**
- * "127 playing now", or '' when the game did not say.
+ * Who is playing, asked after the page has loaded.
  *
- * Zero is printed: a game that answered and has nobody on is a fact about the
- * hour, and the visitor deciding whether to log in can use it.
+ * The games plugin asks every game's server for MSSP hourly; this hands what
+ * they said to the page. It is a route and not template code because the pages
+ * that show it sit in a page cache: a player count printed into /games/ would
+ * be served for as long as the cached copy lives, under a line still claiming
+ * the server said so minutes ago. So the templates carry empty slots and
+ * theme.js fills them from here - one request for every game, since /games/
+ * wants all of them and a game page wants one row of the same answer.
  *
- * @param array<string, mixed> $live From mudlet_game_live().
- * @return string
+ * What comes back is markup, rendered and translated here, so the script knows
+ * where to put things and nothing about what they say. The ages in it ("up 4
+ * hours", "said so 12 mins ago") are worked out at the moment of asking, which
+ * is the point. Five minutes of `Cache-Control` is the honest freshness of a
+ * number asked for hourly; a route is not something the page cache stores.
+ *
+ * Nothing at all for a game that did not answer: see mudlet_game_status() in
+ * the games plugin for why "did not answer" is never drawn as "offline".
  */
-function mudlet_game_players_line( array $live ): string {
-	if ( ! isset( $live['players'] ) ) {
-		return '';
+function mudlet_games_live_register(): void {
+	if ( ! function_exists( 'mudlet_game_status' ) ) {
+		return;
 	}
-	return sprintf(
-		/* translators: %s: number of players connected to a game right now */
-		_n( '%s playing now', '%s playing now', (int) $live['players'], 'mudlet' ),
-		number_format_i18n( (int) $live['players'] )
+	register_rest_route(
+		'mudlet/v1',
+		'/games/live',
+		array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => 'mudlet_games_live_response',
+			// Public: everything in it is what the servers tell anybody who asks.
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				// The page's own locale, so the words come back in the language
+				// the visitor is reading. A REST request is outside the
+				// language's URLs, so it travels with the question - the same
+				// bargain the search palette strikes.
+				'locale' => array(
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		)
 	);
+}
+add_action( 'rest_api_init', 'mudlet_games_live_register' );
+
+/**
+ * Every game that answered, as the two pieces of markup the pages want.
+ *
+ * @param WP_REST_Request $request The request.
+ * @return WP_REST_Response Post id => { card, line }.
+ */
+function mudlet_games_live_response( WP_REST_Request $request ): WP_REST_Response {
+	$locale   = (string) $request->get_param( 'locale' );
+	$switched = '' !== $locale
+		&& in_array( $locale, array_merge( array( 'en_US' ), get_available_languages() ), true )
+		&& switch_to_locale( $locale );
+
+	$out = array();
+	foreach ( mudlet_games() as $game ) {
+		$live = mudlet_game_status( $game );
+		if ( ! $live ) {
+			continue;
+		}
+
+		$players = '';
+		if ( isset( $live['players'] ) ) {
+			$players = '<span class="glive__dot" aria-hidden="true"></span>' . esc_html(
+				sprintf(
+					/* translators: %s: number of players connected to a game right now */
+					_n( '%s playing now', '%s playing now', (int) $live['players'], 'mudlet' ),
+					number_format_i18n( (int) $live['players'] )
+				)
+			);
+		}
+
+		$parts = array();
+		if ( '' !== $players ) {
+			$parts[] = '<span class="glive">' . $players . '</span>';
+		}
+		if ( ! empty( $live['since'] ) ) {
+			/* translators: %s: how long the server has been running, e.g. "3 days" */
+			$parts[] = esc_html( sprintf( __( 'up %s', 'mudlet' ), human_time_diff( (int) $live['since'] ) ) );
+		}
+		if ( ! empty( $live['codebase'] ) ) {
+			$parts[] = esc_html( (string) $live['codebase'] );
+		}
+		if ( ! empty( $live['created'] ) ) {
+			/* translators: %s: the year a game opened */
+			$parts[] = esc_html( sprintf( __( 'running since %s', 'mudlet' ), (string) $live['created'] ) );
+		}
+		if ( ! $parts ) {
+			continue;
+		}
+
+		$out[ (int) $game['id'] ] = array(
+			// The card has room for the count and nothing else.
+			'card' => $players,
+			'line' => implode( '<span class="sep">&middot;</span>', $parts )
+				. '<span class="glive__when">' . esc_html(
+					sprintf(
+						/* translators: %s: how long ago the game was asked, e.g. "12 mins" */
+						__( '(the server said so %s ago)', 'mudlet' ),
+						human_time_diff( (int) $live['checked'] )
+					)
+				) . '</span>',
+		);
+	}
+
+	if ( $switched ) {
+		restore_previous_locale();
+	}
+
+	$response = rest_ensure_response( (object) $out );
+	$response->header( 'Cache-Control', 'public, max-age=300' );
+	return $response;
 }

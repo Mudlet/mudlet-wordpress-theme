@@ -2034,6 +2034,39 @@
 		});
 	})();
 
+	// ── who is playing: fill the live slots ──────────────────────────────
+	// A game page and the /games/ cards carry empty, hidden slots rather than
+	// player counts, because both sit in a page cache and a count baked into
+	// one is served long after it was true. One request answers for every
+	// game, already rendered and translated (inc/games.php); a slot whose game
+	// did not answer stays hidden, which is the same as the server saying
+	// nothing. Fails to nothing, like everything else on the page.
+	(function () {
+		var url = DATA.gamesLiveUrl;
+		var lines = document.querySelectorAll('#site [data-live]');
+		var cards = document.querySelectorAll('#site .gcard[data-id] [data-live-card]');
+		if (!url || !window.fetch || (!lines.length && !cards.length)) return;
+
+		fetch(url, { headers: { Accept: 'application/json' } })
+			.then(function (r) { return r.ok ? r.json() : {}; })
+			.then(function (live) {
+				Array.prototype.forEach.call(lines, function (p) {
+					var one = live[p.getAttribute('data-live')];
+					var slot = p.querySelector('[data-live-line]');
+					if (!one || !one.line || !slot) return;
+					slot.innerHTML = one.line;
+					p.hidden = false;
+				});
+				Array.prototype.forEach.call(cards, function (span) {
+					var one = live[span.closest('.gcard').getAttribute('data-id')];
+					if (!one || !one.card) return;
+					span.innerHTML = one.card;
+					span.hidden = false;
+				});
+			})
+			.catch(function () {});
+	})();
+
 	// ── the 404: a room you can type in ──────────────────────────────────
 	// The prompt is the site's search form, so with no script a word typed at
 	// it is searched for. This answers the verbs first and offers the search
