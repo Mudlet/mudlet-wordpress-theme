@@ -954,6 +954,16 @@
 }
 #site .ctform--soon { user-select: none; }
 
+/* hCaptcha, when the form plugin carries one. What it draws is a cross-origin
+   iframe and nothing here reaches inside it: on a free sitekey the only lever
+   is light or dark, which theme.js now pulls from the toggle rather than the
+   OS. What is ours is the box around it - space above, so it is not jammed
+   against the textarea's resize grip, and the type of the message the plugin
+   prints in the stand-in box when the frame is slow or never comes. Its colour
+   stays the plugin's: red there means the captcha failed, and says so. */
+#site .ctform .h-captcha { margin-top: .35rem; }
+#site .h-captcha::after { font-family: var(--body); }
+
 /* And it has to say so in words, not only in opacity. Dashed, because a dashed
    box is the one border on this site that means "not finished". */
 #site .ctsoon {

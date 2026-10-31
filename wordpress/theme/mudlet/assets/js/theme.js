@@ -199,6 +199,45 @@
 		}
 	})();
 
+	// ── hCaptcha follows the toggle, not the OS ──────────────────────────
+	//
+	// The hCaptcha plugin resolves its "auto" theme from prefers-color-scheme,
+	// so anyone who had pressed the toggle got a form in one theme and a
+	// captcha in the other. It reads each widget's own data-theme before it
+	// gets that far, though, so the widgets left on "auto" are claimed here and
+	// given the page's theme - before the API renders them, which is later than
+	// this footer script whether the plugin delays it or not - and again on
+	// every flip, through hCaptchaBindEvents(). That re-renders every widget,
+	// and it is the plugin's own path for a theme switch: it does the same for
+	// the dark-mode plugins it knows by name. Like theirs, a flip unticks a box
+	// already ticked; the visitor who changes theme mid-form ticks it again.
+	//
+	// Only "auto" is claimed. A widget set to light or dark in the plugin's
+	// settings was set that way by somebody, and keeps it.
+	(function () {
+		var boxes = document.querySelectorAll('.h-captcha[data-theme="auto"]');
+		if (!boxes.length) return;
+
+		var root = document.documentElement;
+		function current() { return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+		function paint(t) {
+			for (var i = 0; i < boxes.length; i++) boxes[i].setAttribute('data-theme', t);
+		}
+
+		var shown = current();
+		paint(shown);
+
+		new MutationObserver(function () {
+			var t = current();
+			if (t === shown) return;
+			shown = t;
+			paint(t);
+			// Before the API has loaded there is nothing drawn to redraw, and
+			// the attribute alone is what it will read when it does.
+			if (window.hcaptcha && typeof window.hCaptchaBindEvents === 'function') window.hCaptchaBindEvents();
+		}).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+	})();
+
 	// ── search palette — "/" or ctrl/cmd-K, IDE style ────────────────────
 	//
 	// Three sources, one list. DATA.search is a flat [title, source, url] index
