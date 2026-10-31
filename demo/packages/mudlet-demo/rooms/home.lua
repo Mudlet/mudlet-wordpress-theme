@@ -5,6 +5,7 @@ local dl = require('mudlet-demo.download')
 local core = require('mudlet-demo.core')
 local URL = require('mudlet-demo.urls')
 local inventory = require('mudlet-demo.inventory')
+local season = require('mudlet-demo.season')
 local C, say, link, cmd = core.C, core.say, core.link, core.cmd
 local spell, spellCap, thousands = core.spell, core.spellCap, core.thousands
 local someGames, currentBuild, press = dl.someGames, dl.currentBuild, dl.press
@@ -79,6 +80,23 @@ return {
                 say(C.dim, 'Prove it: ',
                     cmd('lua echo("hello from Lua")', 'lua echo("hello from Lua")',
                         'run it in the demo\'s own Lua VM', C.dim))
+            end,
+        },
+        {
+            -- One night a year, and the way down to what the cellar has on it
+            -- that night. Not in the description, so the hero's scripted copy
+            -- of this room stays true on the 31st as well.
+            name = 'a pumpkin',
+            keys = { 'pumpkin', 'jack', 'lantern', 'candle', 'flame' },
+            when = season.halloween,
+            look = function()
+                say(C.text, 'Somebody has set a pumpkin on the plinth beside the terminal and ',
+                    'carved a prompt into it: a > and a cursor, which is a lot to ask of a ',
+                    'candle. The cursor blinks. The candle is doing its best.')
+                say(C.dim, 'The flame leans hard towards the stairs, as though something ',
+                    'were breathing up them from further ',
+                    cmd('down', 'down', 'go down', C.dim), C.dim,
+                    ' than the vault goes.')
             end,
         },
     },

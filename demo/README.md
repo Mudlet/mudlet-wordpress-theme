@@ -508,6 +508,19 @@ composes the Workshop's two lessons without either file arranging it: one thing
 the visitor made fires on another thing the visitor started, two rooms from where
 they set them both.
 
+**One night a year the world has visitors.** A thing in a room can carry a
+`when` — a function `verbs.lua` asks at every look and every `find` — and is
+simply not there while it answers false: not listed, not found, not present.
+`season.lua` is the one such function so far, and it reads the date off the
+*visitor's* clock, because Halloween is wherever you are standing when it
+arrives. On 31 October a pumpkin turns up on the front page's plinth, with its
+flame leaning towards the stairs, and two floors further down the ghost of
+`world.lua` drifts along the crates — the one file this package used to be, 2,111
+lines of it, set against the count of what it was split into, which came out
+longer. `boo` and `ask` both reach it. Neither is in a room's description, so the
+hero's scripted copy of the front page stays true that night too.
+`lua demo.today = '10-31'` shows them on any other day; `= nil` puts the clock back.
+
 ## Deploying it
 
 `dist/` is a static site (`base: './'`, so it can sit at any path).

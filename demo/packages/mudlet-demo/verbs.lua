@@ -10,6 +10,7 @@ local SITE = require('mudlet-demo.site')
 local dl = require('mudlet-demo.download')
 local people = require('mudlet-demo.people')
 local map = require('mudlet-demo.map')
+local season = require('mudlet-demo.season')
 local C, U, say, link, cmd = core.C, core.U, core.say, core.link, core.cmd
 local crateLabel, press = dl.crateLabel, dl.press
 local findMaker = people.findMaker
@@ -26,6 +27,7 @@ local PLACE = map.PLACE
 function D.ask(noun, raw)
     if D.here == 'workshop' then D.askClerk(noun) return end
     if D.here == 'stacks' then D.askImp(noun, raw or '') return end
+    if D.here == 'cellar' and season.halloween() then D.askGhost() return end
     if D.here ~= 'makers' then
         say(C.text, 'There is nobody here to ask. All three of them keep off the commons: ',
             'the sage in Makers Hall to the west of it, the clerk in the Workshop to the ',
@@ -51,18 +53,28 @@ D.here = D.here or 'home'
 
 local DIRS = core.DIRS
 
+-- A thing with a `when` is only in the room while it answers true: the
+-- pumpkin on the plinth and whatever haunts the cellar are there one night a
+-- year. See mudlet-demo/season.lua. Asked at every look rather than once at
+-- load, so `lua demo.today = '10-31'` shows them without a reload.
+local function present(thing)
+    return not thing.when or thing.when()
+end
+
 local function find(noun)
     if noun == '' then return nil end
     for _, thing in ipairs(D.rooms[D.here].things) do
         for _, key in ipairs(thing.keys) do
-            if key == noun then return thing end
+            if key == noun and present(thing) then return thing end
         end
     end
     -- Second pass, so 'look windows crate' finds the crate and 'look forum'
     -- finds the forum door without every phrasing being spelled out in the rooms.
     for _, thing in ipairs(D.rooms[D.here].things) do
         for _, key in ipairs(thing.keys) do
-            if noun:find(key, 1, true) or key:find(noun, 1, true) then return thing end
+            if (noun:find(key, 1, true) or key:find(noun, 1, true)) and present(thing) then
+                return thing
+            end
         end
     end
 end
@@ -103,7 +115,7 @@ function D.look(noun)
     local line = { C.text, 'Here: ' }
     local first = true
     for _, thing in ipairs(room.things) do
-        if not thing.npc and not thing.hidden then
+        if not thing.npc and not thing.hidden and present(thing) then
             if not first then line[#line + 1] = C.text .. ', ' end
             line[#line + 1] = cmd(thing.name, 'look ' .. thing.keys[1],
                 'look at ' .. thing.name)
@@ -114,7 +126,7 @@ function D.look(noun)
     if not first then say(unpack(line)) end
 
     for _, thing in ipairs(room.things) do
-        if thing.npc then thing.presence() end
+        if thing.npc and present(thing) then thing.presence() end
     end
 
     -- Not room.exits: an exit into a room the world keeps to itself is not
@@ -287,6 +299,15 @@ local REPLIES = {
     end,
     score = function()
         say(C.text, 'You have visited a website. It is going well.')
+    end,
+    boo = function()
+        if not season.halloween() then
+            say(C.text, 'Nothing here is frightened of you. Try again on the right night.')
+        elseif D.here == 'cellar' then
+            D.booGhost()
+        else
+            say(C.text, 'Somewhere a long way under your feet, something drops a crate.')
+        end
     end,
 }
 REPLIES.i = REPLIES.inventory

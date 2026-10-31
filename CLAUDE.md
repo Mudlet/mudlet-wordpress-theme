@@ -198,8 +198,9 @@ file per concern — `core.lua` (the palette, the two kinds of link, the one
 `say()`), `urls.lua`, `site.lua` and `seed.lua`, `download.lua`,
 `people.lua` (the sage's ledger), `github.lua` (the clerk),
 `trigger.lua`, `catalogue.lua` and `kettle.lua` (the three things that script
-the client), `frame.lua` (the Gallery's hook), `inventory.lua` (generated) and
-`crates.lua` (the cellar's shelf),
+the client), `frame.lua` (the Gallery's hook), `inventory.lua` (generated),
+`crates.lua` (the cellar's shelf), `season.lua` (the one night a year the
+world has visitors),
 `map.lua`, `verbs.lua`, `boot.lua`, and `rooms/<name>.lua` one per room,
 assembled by `rooms/init.lua`. The build globs `**/*.lua` and ships everything it finds,
 but a file nothing requires is dead weight — reach a new module from one that

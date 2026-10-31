@@ -41,8 +41,11 @@ local D = demo
 local core = require('mudlet-demo.core')
 local inventory = require('mudlet-demo.inventory')
 local crates = require('mudlet-demo.crates')
+local season = require('mudlet-demo.season')
 local C, say, cmd = core.C, core.say, core.cmd
 local spell, spellCap, thousands = core.spell, core.spellCap, core.thousands
+
+local GHOST_LINES = 2111
 
 local things = {
     {
@@ -121,7 +124,50 @@ local things = {
                 'any of this, and will answer to a name if you have got one.')
         end,
     },
+    {
+        -- One night a year, the file this world used to be. Until 650a95a the
+        -- whole package was world.lua, one file of 2,111 lines - `git show
+        -- 650a95a^:demo/packages/mudlet-demo/world.lua | wc -l` - and the crates
+        -- on these trestles are what it was split into. The figure is typed
+        -- because it is a fact about a commit, which no edit can change; the
+        -- crates it is set against are counted, and that comparison is the
+        -- joke, because the split came out longer than the thing it split.
+        name = 'a ghost',
+        keys = { 'ghost', 'spirit', 'spectre', 'phantom', 'world.lua' },
+        npc = true,
+        when = season.halloween,
+        presence = function()
+            say(C.text, 'A ', cmd('ghost', 'look ghost', 'look at the ghost', C.say),
+                C.text, ' drifts the length of the row, counting the crates under its ',
+                'breath and losing its place.')
+        end,
+        look = function()
+            say(C.text, 'Pale, and very long — longer than anything else down here, and ',
+                'it has to stoop. Across its chest, faded almost to nothing, a stencil: ',
+                'world.lua, ', thousands(GHOST_LINES), ' lines.')
+            say(C.text, 'It was the whole world once, every room of it in one file, until ',
+                'the night it was split into the crates in front of you. It counts them, ',
+                'gets to ', spell(#inventory.files), ', and starts again, as though one ',
+                'of them must be it.')
+            if inventory.lines > 0 then
+                say(C.dim, 'Between them the crates come to ', thousands(inventory.lines),
+                    ' lines now. It was ', thousands(GHOST_LINES), ', and it did everything.')
+            end
+        end,
+    },
 }
+
+-- What the ghost says to anything put to it, and what it does about `boo`.
+-- Both are reached from verbs.lua, which only asks on the night it is here.
+function D.askGhost()
+    say(C.say, '"Two thousand, one hundred and eleven," the ghost says, to nobody, and ',
+        'goes back to counting.')
+end
+
+function D.booGhost()
+    say(C.text, 'The ghost goes clean through a crate and comes out the far side reading ',
+        'slightly differently. It has been refactored before. It is not frightened of you.')
+end
 
 -- One hidden thing per crate, so `look core.lua` gets a lid off. Hidden rather
 -- than listed: a crate name per file in the room's `Here:` line would bury the
@@ -160,6 +206,7 @@ return {
             .. 'them they are the world you are standing in — this room included, which '
             .. 'takes a moment. The row starts at one. At the far end, a crate has been '
             .. 'left open.'
+            .. (season.halloween() and ' Tonight it is colder down here than it ought to be.' or '')
     end,
     exits = { up = 'vault' },
     symbol = '▦',
