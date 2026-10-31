@@ -23,7 +23,14 @@ while ( have_posts() ) :
 
 	// Rendered once, then split: the outline pass stamps ids onto the h2s and
 	// hands back the list to draw beside them.
-	[ $content, $headings ] = mudlet_outline( apply_filters( 'the_content', get_the_content() ) );
+	// /about/, /vision/ and /contribute/ name their shapes first, so the
+	// outline is built from what is left - see inc/page-layouts.php.
+	$content = apply_filters( 'the_content', get_the_content() );
+	$layout  = mudlet_page_layout_kind();
+	if ( $layout ) {
+		$content = mudlet_page_layout( $content, $layout );
+	}
+	[ $content, $headings ] = mudlet_outline( $content );
 
 	// Two questions, and they are not the same one. Is this page a column of
 	// prose or a canvas - which the content answers, not the heading count -
@@ -65,7 +72,7 @@ while ( have_posts() ) :
 							<?php endif; ?>
 						</div>
 
-						<div class="prose">
+						<div class="prose<?php echo $layout ? ' prose--' . esc_attr( $layout ) : ''; ?>">
 							<?php if ( $outline ) : ?>
 								<nav class="outline" aria-label="<?php esc_attr_e( 'What is on this page', 'mudlet' ); ?>">
 									<?php echo $outline; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped piece by piece in mudlet_outline_panel(). ?>

@@ -1364,6 +1364,151 @@ button{font:inherit; color:inherit}
   border-left:3px solid var(--accent2); border-radius:0 10px 10px 0; font-size:.97rem}
 #site .prose blockquote p{margin:0}
 
+/* ── /about/, /vision/, /contribute/ ─────────────────────────────
+   The live site's words, in the shapes inc/page-layouts.php names: the
+   opening as a banner, a feature list as a grid, a run of headed paragraphs
+   as cards, steps as steps, credits as a row, a thesis as a pull quote. Each
+   class is put there only when the markup already has that shape, so
+   anything an editor adds that matches none of them falls back to the prose
+   rules above. */
+#site .pl-intro{position:relative; overflow:hidden; padding:1.6rem 1.75rem 1.75rem;
+  padding-right:clamp(1.75rem,24%,10.5rem); background:var(--band);
+  border:1px solid var(--line); border-radius:16px}
+/* The mark, cut by the corner: there to say whose page this is, not to be read. */
+#site .pl-intro::after{content:''; position:absolute; right:-1.4rem; bottom:-1.6rem;
+  width:9.5rem; height:9.5rem; pointer-events:none;
+  background:url(../img/mudlet_main_512x512.png) center/contain no-repeat;
+  transform:rotate(-8deg)}
+#site .pl-intro > * + *{margin-top:.85rem}
+#site .prose .pl-claim{font-family:var(--display); font-weight:var(--dw);
+  font-size:clamp(1.25rem,2.8vw,1.6rem); line-height:1.3; letter-spacing:var(--dls);
+  scroll-margin-top:5.25rem}
+#site .pl-claim strong{color:var(--mark)}
+#site .prose .pl-lede{font-size:1.06rem; line-height:1.7}
+@media (max-width:40rem){
+  #site .pl-intro{padding:1.3rem 1.25rem 1.4rem}
+  #site .pl-intro::after{display:none}
+}
+
+#site .prose ul.pl-feats{display:grid; gap:.55rem; padding-left:0;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,14.5rem),1fr))}
+#site .prose .pl-feats li{display:flex; align-items:baseline; gap:.75ch; margin:0;
+  padding:.7rem .9rem; background:var(--card); border:1px solid var(--line);
+  border-radius:10px; font-size:.95rem; line-height:1.45}
+#site .prose .pl-feats li::before{content:'>'; position:static; flex:none;
+  font-family:var(--display); font-weight:600}
+/* Twelve rows of one short phrase each is a screen and a half of scrolling. */
+@media (max-width:40rem){
+  #site .prose ul.pl-feats{grid-template-columns:repeat(2,minmax(0,1fr)); gap:.45rem}
+  #site .prose .pl-feats li{padding:.6rem .7rem; font-size:.88rem}
+}
+
+#site .pl-cards{display:grid; gap:.9rem; counter-reset:card;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr))}
+#site .prose > .pl-cards{margin-top:2.6rem}
+#site .pl-card{counter-increment:card; padding:1.2rem 1.3rem 1.3rem; background:var(--card);
+  border:1px solid var(--line); border-radius:12px; font-size:.96rem; line-height:1.68}
+#site .pl-card > * + *{margin-top:.55rem}
+#site .prose .pl-card :is(h2,h3){display:flex; align-items:baseline; gap:.9ch; margin:0;
+  font-size:1.08rem}
+#site .pl-card :is(h2,h3)::before{content:counter(card,decimal-leading-zero); flex:none;
+  font-family:var(--display); font-size:.74rem; font-weight:600; color:var(--mark)}
+/* An odd number of cards leaves one alone on the last row; the first one
+   takes the whole row instead, and gets the accent for doing it. */
+#site .pl-card:first-child:nth-last-child(2n+1){grid-column:1/-1;
+  background:var(--band); border-left:3px solid var(--accent2)}
+
+#site .prose ol.pl-steps{padding-left:0}
+#site .prose .pl-steps > li{padding-left:2.85rem; min-height:2rem; margin-top:1rem}
+#site .prose .pl-steps > li::before{content:counter(n); left:0; top:-.05rem;
+  display:grid; place-items:center; width:2rem; height:2rem; border-radius:50%;
+  background:var(--orange); color:var(--on-accent); font-size:.82rem; font-weight:600}
+#site .prose ol.pl-substeps{margin-top:.8rem; padding:.85rem 1.1rem .95rem 2.6rem;
+  background:var(--band); border:1px solid var(--line); border-radius:10px; font-size:.96rem}
+#site .prose .pl-substeps li:first-child{margin-top:0}
+
+#site .pl-ico{width:1em; height:1em; flex:none}
+
+/* The download card stays dark in both themes, like the hero terminal: it is
+   the one thing on the page that is a way out of it. */
+#site .pl-dl{display:flex; align-items:center; justify-content:space-between; gap:1.1rem 1.5rem;
+  flex-wrap:wrap; padding:1.4rem 1.5rem; border-radius:16px; color:#e8dcc6;
+  background:radial-gradient(120% 140% at 100% 0%, rgba(245,108,39,.28), transparent 55%), #1e1813;
+  border:1px solid #3a2f24; box-shadow:0 22px 44px -30px rgba(var(--sh),.7)}
+#site .pl-dl__text{display:grid; gap:.45rem; min-width:0}
+#site .pl-dl__os{display:flex; gap:.8rem; font-size:1.3rem; color:#9c8f7c}
+#site .prose .pl-dl__say{margin:0; font-family:var(--display); font-weight:var(--dw);
+  font-size:clamp(1.1rem,2.4vw,1.3rem); letter-spacing:var(--dls); line-height:1.35}
+#site .prose .pl-dl__say a{color:#f56c27}
+#site .prose .pl-dl__say a:hover{color:#ff8a4d}
+#site .pl-dl__when{font-family:var(--display); font-size:.74rem; color:#9c8f7c}
+#site .prose .pl-dl__btn{display:inline-flex; align-items:center; gap:.6rem; flex:none;
+  padding:.85rem 1.5rem; border-radius:999px; background:#f56c27; color:#17130e;
+  font-weight:600; text-decoration:none; box-shadow:0 14px 30px -14px rgba(245,108,39,.6);
+  transition:background .13s, transform .13s}
+#site .prose .pl-dl__btn:hover{background:#ff8a4d; color:#17130e; transform:translateY(-1px)}
+
+/* A bigger sibling of the credit pills above it, not a rubber stamp. */
+#site .prose .pl-stamp{display:inline-flex; align-items:center; gap:.6rem; margin-top:.8rem;
+  padding:.5rem 1.1rem .5rem .8rem; border-radius:999px; background:var(--card);
+  border:1px solid var(--line); font-family:var(--display); font-weight:600;
+  font-size:1.1rem; letter-spacing:.02em}
+#site .pl-stamp .pl-ico{font-size:1.3rem; color:var(--mark)}
+
+/* Inline, not inline-flex: a flex link is an atom, and it took its whole
+   phrase to the next line rather than break inside it. */
+#site .pl-brand .pl-ico{display:inline-block; font-size:.95em; margin-right:.3em;
+  vertical-align:-.13em}
+#site .pl-card--logos{position:relative}
+#site .prose .pl-card--logos :is(h2,h3){padding-right:6.5rem}
+#site .pl-logos{position:absolute; top:1.05rem; right:1.2rem; display:flex; gap:.55rem;
+  font-size:1.6rem; color:var(--ink)}
+/* Each mark in its own colour - in the corner, where it is a logo. On a link
+   the icon takes the link's colour, because there it is part of the word. A
+   brand's own colour is picked for white, so dark gets a lighter shade of it. */
+#site .pl-logos .pl-ico--lua{color:#2c2d72}
+#site .pl-logos .pl-ico--cplusplus{color:#00599c}
+#site .pl-logos .pl-ico--patreon{color:#f96854}
+#site .pl-logos .pl-ico--opencollective{color:#5a8ee6}
+#site .pl-logos .pl-ico--paypal{color:#003087}
+#site .pl-logos .pl-ico--wiki{color:var(--mark)}
+:root[data-theme="dark"] #site .pl-logos .pl-ico--lua{color:#8f91e8}
+:root[data-theme="dark"] #site .pl-logos .pl-ico--cplusplus{color:#5aa9e6}
+:root[data-theme="dark"] #site .pl-logos .pl-ico--opencollective{color:#7fadf2}
+:root[data-theme="dark"] #site .pl-logos .pl-ico--paypal{color:#6c9de0}
+
+#site .prose ul.pl-chips{display:flex; flex-wrap:wrap; gap:.5rem; padding-left:0}
+#site .prose .pl-chips li{margin:0}
+#site .prose .pl-chips li::before{content:none}
+#site .prose .pl-chips a{display:inline-block; padding:.32rem .85rem; border-radius:999px;
+  background:var(--card); border:1px solid var(--line); color:var(--ink);
+  font-family:var(--display); font-size:.82rem; font-weight:500; text-decoration:none;
+  transition:border-color .13s, color .13s}
+#site .prose .pl-chips a:hover{border-color:var(--accent2); color:var(--link)}
+
+/* Vision is a letter, and has no h2 to hang a rail off, so it would be read
+   at the container's full 74rem; it is held at a measure instead, from the
+   same left edge as its parent. flow-root keeps the floated picture in. */
+#site .prose--vision{max-width:46rem; display:flow-root}
+#site .prose .pl-pull{position:relative; margin-block:2.4rem; padding:1.5rem 0 1.5rem 3.3rem;
+  border-block:1px solid var(--line); font-family:var(--display); font-weight:var(--dw);
+  font-size:clamp(1.18rem,2.6vw,1.45rem); line-height:1.42; letter-spacing:var(--dls)}
+#site .pl-pull::before{content:'\201C'; position:absolute; left:0; top:1.1rem;
+  font-size:4.2rem; line-height:1; color:var(--mark)}
+#site .prose .pl-shot{margin-block:1.9rem}
+#site .prose .pl-shot img{display:block; width:100%; height:auto; max-height:none;
+  border:1px solid var(--line); border-radius:12px; background:var(--band);
+  box-shadow:0 18px 40px -26px rgba(var(--sh),.5)}
+#site .prose .pl-shot--right{float:right; width:min(48%,22rem); margin:.4rem 0 1rem 1.6rem}
+#site .prose .pl-shot--left{float:left; width:min(48%,22rem); margin:.4rem 1.6rem 1rem 0}
+#site .prose .pl-sign{clear:both; margin-top:2.2rem; text-align:right;
+  font-family:var(--display); font-weight:600; color:var(--mark)}
+@media (max-width:40rem){
+  #site .prose .pl-pull{padding-left:2.4rem}
+  #site .pl-pull::before{font-size:3.2rem}
+  #site .prose :is(.pl-shot--right,.pl-shot--left){float:none; width:auto; margin:1.6rem 0}
+}
+
 /* ── changelog ────────────────────────────────────────────────────
    The one block on the page that stays dark in both themes, for the same
    reason the hero terminal does: this is console output, and Mudlet's own

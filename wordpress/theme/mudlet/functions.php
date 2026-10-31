@@ -25,6 +25,7 @@ require_once __DIR__ . '/inc/icons.php';
 require_once __DIR__ . '/inc/search.php';
 require_once __DIR__ . '/inc/wiki-search.php';
 require_once __DIR__ . '/inc/template-tags.php';
+require_once __DIR__ . '/inc/page-layouts.php';
 require_once __DIR__ . '/inc/front-content.php';
 require_once __DIR__ . '/inc/front-art.php';
 require_once __DIR__ . '/inc/github-releases.php';
