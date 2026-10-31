@@ -403,9 +403,11 @@ button{font:inherit; color:inherit}
 #site .heroterm, #site .heroterm__hold{display:flex; align-self:stretch;
   margin-block:calc(-1 * clamp(.75rem, 2vw, 1.75rem))}
 @media (max-width:60rem){ #site .heroterm, #site .heroterm__hold{margin-block:0} }
-#site .heroterm{--t-bg:#1e1813; --t-bar:#2b231b; --t-line:#3a2f24; --t-fg:#e8dcc6;
-  --t-dim:#9c8f7c; --t-hot:#f56c27; --t-cool:#82c0c7; --t-sys:#8a9a5b;
-  flex-direction:column; min-height:23rem;
+/* The terminal's palette, shared with the 404's room so the two are one
+   terminal rather than two that agree today. */
+#site .heroterm, #site .lostterm{--t-bg:#1e1813; --t-bar:#2b231b; --t-line:#3a2f24; --t-fg:#e8dcc6;
+  --t-dim:#9c8f7c; --t-hot:#f56c27; --t-cool:#82c0c7; --t-sys:#8a9a5b}
+#site .heroterm{flex-direction:column; min-height:23rem;
   background:var(--t-bg); border:1px solid var(--t-line); border-radius:10px; overflow:hidden;
   font-family:var(--display); font-size:.78rem; line-height:1.8; color:var(--t-fg);
   box-shadow:0 30px 60px -30px rgba(0,0,0,.7)}
@@ -575,6 +577,37 @@ button{font:inherit; color:inherit}
   font-family:system-ui,-apple-system,sans-serif;
   border:1px solid var(--t-line); border-radius:6px; color:var(--t-fg)}
 @media (prefers-reduced-motion:reduce){ #site .dots i{opacity:1; animation:none} }
+
+/* — the 404's room: the hero's terminal, with a real prompt — */
+/* The same panel and the same line classes, in flow rather than over a frame:
+   nothing boots here, so there is no cover and no stage. The output scrolls
+   inside a fixed box so the prompt never moves while the visitor types at it. */
+#site .lostterm{display:flex; flex-direction:column; max-width:46rem;
+  background:var(--t-bg); border:1px solid var(--t-line); border-radius:10px; overflow:hidden;
+  font-family:var(--display); font-size:.82rem; line-height:1.8; color:var(--t-fg);
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.7)}
+#site .lostterm__out{height:clamp(14rem, 42svh, 22rem); overflow-y:auto;
+  padding:1rem 1.15rem; overscroll-behavior:contain}
+#site .lostterm__out p{margin:0}
+#site .lostterm__out .ln--in{margin-top:.6em}
+#site .lostterm__out a{color:var(--t-cool); text-underline-offset:.2em}
+#site .lostterm__out a:hover{color:var(--t-fg)}
+#site .lostterm__out [data-search]{color:var(--t-hot)}
+#site .lostterm__out b{color:var(--t-fg); font-weight:600}
+#site .lostterm__to{color:var(--t-dim)}
+#site .lostterm__cmd{display:flex; align-items:center; gap:6px; padding:6px 8px;
+  border-top:1px solid var(--t-line)}
+#site .lostterm__mark{color:var(--t-hot); font-weight:600; padding-left:4px}
+#site .lostterm__cmd input{flex:1; min-width:0; height:30px; padding:4px 8px;
+  font:inherit; font-size:13px; color:var(--t-fg); background:#221b15;
+  border:1px solid var(--t-line); border-radius:6px}
+#site .lostterm__cmd input::placeholder{color:var(--t-dim)}
+#site .lostterm__cmd input:focus-visible{outline:2px solid var(--t-hot); outline-offset:1px}
+#site .lostterm__cmd button{height:30px; padding:0 12px; font:inherit; font-size:12px;
+  color:var(--t-fg); background:transparent; border:1px solid var(--t-line); border-radius:6px;
+  cursor:pointer}
+#site .lostterm__cmd button:hover{background:rgba(255,255,255,.06)}
+#site .lostterm__cmd button:focus-visible{outline:2px solid var(--t-hot); outline-offset:1px}
 
 /* — section heading, with the > mark — */
 #site .head{margin-bottom:2.25rem}

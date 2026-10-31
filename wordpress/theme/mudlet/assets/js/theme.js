@@ -2033,4 +2033,95 @@
 			});
 		});
 	})();
+
+	// ── the 404: a room you can type in ──────────────────────────────────
+	// The prompt is the site's search form, so with no script a word typed at
+	// it is searched for. This answers the verbs first and offers the search
+	// only for what it does not know. Every word it prints is a <template> in
+	// 404.php, translated with the theme; what is here is which verb clones
+	// which, and nothing a visitor reads.
+	(function () {
+		var room = document.querySelector('#site [data-lost]');
+		if (!room) return;
+		var out = room.querySelector('[data-out]');
+		var form = room.querySelector('form');
+		var field = form.querySelector('input');
+
+		var exits = {};
+		Array.prototype.forEach.call(room.querySelectorAll('[data-dir]'), function (a) {
+			exits[a.getAttribute('data-dir')] = a;
+		});
+		var DIRS = {
+			n: 'north', s: 'south', e: 'east', w: 'west', u: 'up', d: 'down',
+			north: 'north', south: 'south', east: 'east', west: 'west', up: 'up', down: 'down',
+			home: 'up'
+		};
+
+		function search(words) {
+			return form.action + (form.action.indexOf('?') < 0 ? '?' : '&') + 's=' + encodeURIComponent(words);
+		}
+
+		function print(node) {
+			out.appendChild(node);
+			out.scrollTop = out.scrollHeight;
+		}
+
+		function say(name, word) {
+			var t = room.querySelector('template[data-say="' + name + '"]');
+			if (!t) return;
+			var f = t.content.cloneNode(true);
+			Array.prototype.forEach.call(f.querySelectorAll('[data-word]'), function (el) { el.textContent = word || ''; });
+			Array.prototype.forEach.call(f.querySelectorAll('[data-search]'), function (a) { a.href = search(word || ''); });
+			print(f);
+		}
+
+		function echo(typed) {
+			var p = document.createElement('p');
+			p.className = 'ln ln--in';
+			p.textContent = typed;
+			print(p);
+		}
+
+		// Walking is navigating: the line is printed so the step is seen, and
+		// the exit's own link is where it goes.
+		function go(dir) {
+			var a = exits[dir];
+			if (!a) { say('noway'); return; }
+			say('walk', a.textContent);
+			location.href = a.href;
+		}
+
+		form.addEventListener('submit', function (e) {
+			var typed = field.value.replace(/^\s+|\s+$/g, '');
+			e.preventDefault();
+			if (!typed) return;
+			field.value = '';
+			echo(typed);
+
+			var m = typed.toLowerCase().match(/^(\S+)\s*(.*)$/);
+			var verb = m[1], rest = m[2].replace(/^(at|the)\s+/, '');
+
+			if (DIRS[verb] && !rest) {
+				go(DIRS[verb]);
+			} else if (verb === 'go' || verb === 'walk') {
+				if (DIRS[rest]) go(DIRS[rest]); else say('noway');
+			} else if (verb === 'look' || verb === 'l' || verb === 'x' || verb === 'examine' || verb === 'read') {
+				if (!rest) print(room.querySelector('[data-room]').cloneNode(true));
+				else if (/^(sign|signpost|post)$/.test(rest)) say('sign');
+				else say('nothing');
+			} else if (verb === 'help' || verb === '?' || verb === 'commands') {
+				say('help');
+			} else if ((verb === 'search' || verb === 'find') && rest) {
+				location.href = search(typed.replace(/^\S+\s+/, ''));
+			} else if (verb === 'back' || verb === 'flee' || verb === 'return') {
+				if (history.length > 1) history.back(); else go('up');
+			} else if (verb === 'i' || verb === 'inv' || verb === 'inventory') {
+				say('inventory');
+			} else if (verb === 'xyzzy') {
+				say('xyzzy');
+			} else {
+				say('huh', typed);
+			}
+		});
+	})();
 })();
