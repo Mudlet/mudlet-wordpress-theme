@@ -59,7 +59,6 @@ require_once __DIR__ . '/shared/mudlet-sync.php';
 require_once __DIR__ . '/includes/class-store.php';
 require_once __DIR__ . '/includes/class-source.php';
 require_once __DIR__ . '/includes/class-sync.php';
-require_once __DIR__ . '/includes/class-status.php';
 require_once __DIR__ . '/includes/class-cli.php';
 require_once __DIR__ . '/includes/class-admin.php';
 require_once __DIR__ . '/includes/class-block.php';
@@ -78,10 +77,29 @@ function mudlet_games_boot(): void {
 
 	Mudlet_Games_Store::init();
 	Mudlet_Games_Sync::init();
-	Mudlet_Games_Status::init();
 	// Not behind is_admin(): the read-only guard has to hold on REST too.
 	Mudlet_Games_Admin::init();
 	Mudlet_Games_Block::init();
+
+	add_action( 'init', 'mudlet_games_forget_status' );
+}
+
+/**
+ * Sweep up after the MSSP status probe, which shipped in 0.1.18-0.1.19 and was
+ * taken out again: mudlet.org's host refuses outbound connections to every
+ * port a game listens on, so it could never hear anything. Its cron event
+ * would otherwise come due hourly forever with no callback, and its options
+ * would sit in the table. Cheap to leave in - one wp_next_scheduled() - and
+ * safe to delete once every site has run a release with it.
+ */
+function mudlet_games_forget_status(): void {
+	if ( wp_next_scheduled( 'mudlet_games_status' ) ) {
+		wp_unschedule_hook( 'mudlet_games_status' );
+	}
+	if ( false !== get_option( 'mudlet_games_status', false ) ) {
+		delete_option( 'mudlet_games_status' );
+		delete_option( 'mudlet_games_status_synced' );
+	}
 }
 
 register_activation_hook( __FILE__, 'mudlet_games_activate' );
@@ -107,6 +125,5 @@ register_deactivation_hook( __FILE__, 'mudlet_games_deactivate' );
  */
 function mudlet_games_deactivate(): void {
 	wp_clear_scheduled_hook( Mudlet_Games_Sync::HOOK );
-	wp_clear_scheduled_hook( Mudlet_Games_Status::HOOK );
 	flush_rewrite_rules();
 }

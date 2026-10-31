@@ -108,65 +108,6 @@ function mudlet_games_count(): int {
 }
 
 /**
- * What a game's server said about itself when it was last asked.
- *
- * Read off MSSP by Mudlet_Games_Status on a schedule, never on a page view.
- * Empty unless the game answered recently: a game that did not answer, or was
- * last asked longer ago than two of its cadences, returns nothing at all
- * rather than "offline" or an old count - a refused connection is as likely to
- * be this host's firewall as the game, and an hour-old player count is a
- * number that was true once.
- *
- * Every key is optional, because every MSSP field is:
- *
- *   checked   int     unix time of the probe
- *   players   int     how many were connected
- *   since     int     unix time the server last booted
- *   codebase  string  "Rapture 1.4"
- *   created   int     the year the game opened
- *   genre     string  "Fantasy"
- *   gameplay  string  "Roleplaying, Player versus Player"
- *   language  string  "English"
- *
- * @param array<string, mixed>|int $game A game from mudlet_games(), or its post id.
- * @return array<string, mixed>
- */
-function mudlet_game_status( $game ): array {
-	$id  = is_array( $game ) ? (int) ( $game['id'] ?? 0 ) : (int) $game;
-	$one = $id ? Mudlet_Games_Status::get( $id ) : null;
-	if ( ! $one || empty( $one['up'] ) || empty( $one['at'] ) ) {
-		return array();
-	}
-
-	$every = wp_get_schedules()[ Mudlet_Sync::recurrence( Mudlet_Games_Status::HOOK, Mudlet_Games_Status::EVERY ) ]['interval'] ?? HOUR_IN_SECONDS;
-	if ( time() - (int) $one['at'] > max( 3 * HOUR_IN_SECONDS, 2 * (int) $every ) ) {
-		return array();
-	}
-
-	$m   = (array) ( $one['mssp'] ?? array() );
-	$out = array( 'checked' => (int) $one['at'] );
-
-	if ( isset( $m['PLAYERS'] ) && ctype_digit( $m['PLAYERS'] ) ) {
-		$out['players'] = (int) $m['PLAYERS'];
-	}
-	// A boot time in the future, or before anybody ran a MUD on the web, is a
-	// server with its clock wrong, not a fact.
-	if ( isset( $m['UPTIME'] ) && ctype_digit( $m['UPTIME'] ) && (int) $m['UPTIME'] > 946684800 && (int) $m['UPTIME'] <= time() ) {
-		$out['since'] = (int) $m['UPTIME'];
-	}
-	if ( isset( $m['CREATED'] ) && preg_match( '/\b(19[7-9]\d|20\d\d)\b/', $m['CREATED'], $year ) && (int) $year[1] <= (int) gmdate( 'Y' ) ) {
-		$out['created'] = (int) $year[1];
-	}
-	foreach ( array( 'codebase' => 'CODEBASE', 'genre' => 'GENRE', 'gameplay' => 'GAMEPLAY', 'language' => 'LANGUAGE' ) as $key => $field ) {
-		if ( isset( $m[ $field ] ) && '' !== $m[ $field ] ) {
-			$out[ $key ] = (string) $m[ $field ];
-		}
-	}
-
-	return $out;
-}
-
-/**
  * The archive URL for the games list.
  *
  * @return string

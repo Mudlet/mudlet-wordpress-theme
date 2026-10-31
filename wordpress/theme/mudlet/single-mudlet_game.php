@@ -108,20 +108,6 @@ while ( have_posts() ) :
 						<?php endif; ?>
 					</p>
 
-					<?php
-					// What the server said about itself in the last hour or so, over
-					// MSSP. An empty slot, never the numbers: this page sits in a
-					// page cache, and a player count baked into it would be served
-					// long after it stopped being true. theme.js fills it from
-					// mudlet/v1/games/live, which is asked fresh - see inc/games.php.
-					?>
-					<?php if ( function_exists( 'mudlet_game_status' ) ) : ?>
-						<p class="specs" data-live="<?php echo esc_attr( (string) (int) $mudlet_game['id'] ); ?>" hidden>
-							<span class="mk">&gt;</span><b><?php esc_html_e( 'now', 'mudlet' ); ?></b>
-							<span data-live-line></span>
-						</p>
-					<?php endif; ?>
-
 					<?php if ( ! empty( $mudlet_game['links'] ) ) : ?>
 						<p class="specs">
 							<span class="mk">&gt;</span><b><?php esc_html_e( 'links', 'mudlet' ); ?></b>

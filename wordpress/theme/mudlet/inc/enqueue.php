@@ -98,11 +98,6 @@ function mudlet_script_data(): array {
 		// A REST request is not inside the language's URLs, so the language
 		// travels with the question. Empty without Polylang.
 		'searchLang' => mudlet_current_language_slug(),
-		// Who is playing, asked after load because the pages that show it are
-		// cached. Empty without the games plugin. See inc/games.php.
-		'gamesLiveUrl' => function_exists( 'mudlet_game_status' )
-			? esc_url_raw( add_query_arg( 'locale', determine_locale(), rest_url( 'mudlet/v1/games/live' ) ) )
-			: '',
 		'strings'   => array(
 			'lightTheme' => __( 'Switch to light theme', 'mudlet' ),
 			'darkTheme'  => __( 'Switch to dark theme', 'mudlet' ),

@@ -74,7 +74,7 @@ function mudlet_bundled_plugins(): array {
 			'const' => 'MUDLET_GAMES_VERSION',
 			'name'  => 'Mudlet Games',
 			'store' => 'Mudlet_Games_Store',
-			'hooks' => array( 'mudlet_games_sync', 'mudlet_games_status' ),
+			'hooks' => array( 'mudlet_games_sync' ),
 		),
 		'mudlet-makers'   => array(
 			'const' => 'MUDLET_MAKERS_VERSION',
