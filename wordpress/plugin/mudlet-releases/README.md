@@ -188,7 +188,8 @@ Three things make the list worth printing rather than merely correct:
 - **Bots are excluded.** Mudlet’s history has three kinds of non-human author
   and only one is spelled the obvious way — `dependabot[bot]` wears the suffix,
   `mudlet-machine-account` does not, and translation syncs land under Weblate.
-  All three are named in `Mudlet_Releases_Changelog::bots()`, which is
+  ImgBot commits as `ImgBotApp`, which is not the name it goes by. All of them
+  are named in `Mudlet_Releases_Changelog::bots()`, which is
   filterable. A credits list with a robot at the top is worse than none.
 - **Co-authors count.** `Co-authored-by:` trailers are credited against the
   commit they appear on, which is how pair work and translation contributions
@@ -197,12 +198,20 @@ Three things make the list worth printing rather than merely correct:
 - **One person is one row.** GitHub adds a trailer for the author themselves on
   a web merge, so a naive tally doubles half the list. Trailers carrying a
   `users.noreply.github.com` address give the login back exactly; the rest are
-  matched to the login that name commits under elsewhere in the same release.
-  Before that pass 5.0.0 listed Vadim Peretokin twice, at 332 commits and 43.
+  matched to the login that address, and then that name, commits under
+  elsewhere in the same release. Before that pass 5.0.0 listed Vadim Peretokin
+  twice, at 332 commits and 43.
+- **A squash merge credits the author's other addresses.** Every address the
+  PR's commits were made from becomes a trailer, so 4.11.0 credited each of
+  Delwing's 30 commits ("Piotr") a second time to "Piotr Wilczynski" at a work
+  address no account knows. A trailer that resolves to nobody, on a commit by an
+  account whose name opens it (or is opened by it), is that author.
 
 A name that still resolves to no login is listed unlinked rather than guessed
 at — 5.0.0 has one, a second git identity whose display name differs by a
-suffix. Merging on a fuzzy name match would eventually merge two real people.
+suffix. Merging on a fuzzy name match across the whole release would
+eventually merge two real people; the squash rule above only ever compares a
+trailer with the author of the commit it is on.
 
 On the front end they render under the changelog on a release post — the
 theme’s `template-parts/post/contributors.php`, reading

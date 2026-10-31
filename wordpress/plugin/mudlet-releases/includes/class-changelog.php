@@ -442,7 +442,7 @@ class Mudlet_Releases_Changelog {
 			'strtolower',
 			(array) apply_filters(
 				'mudlet_releases_bot_accounts',
-				array( 'mudlet-machine-account', 'github-actions', 'dependabot', 'weblate', 'imgbot' )
+				array( 'mudlet-machine-account', 'github-actions', 'dependabot', 'weblate', 'imgbot', 'imgbotapp' )
 			)
 		);
 	}
@@ -544,6 +544,7 @@ class Mudlet_Releases_Changelog {
 	public static function contributors_from_rows( array $rows ): array {
 		$people = array();
 		$logins = self::logins_by_name( $rows );
+		$emails = self::logins_by_email( $rows );
 
 		foreach ( $rows as $row ) {
 			$login  = (string) ( $row['login'] ?? '' );
@@ -571,7 +572,17 @@ class Mudlet_Releases_Changelog {
 				// commits under elsewhere in this release.
 				$co_login = self::login_from_email( $co_email );
 				if ( '' === $co_login ) {
+					$co_login = $emails[ strtolower( trim( $co_email ) ) ] ?? '';
+				}
+				if ( '' === $co_login ) {
 					$co_login = $logins[ strtolower( trim( $co_name ) ) ] ?? '';
+				}
+				// Still nobody: a squash merge credits every address the PR's
+				// commits were made from, so the author's own work laptop turns
+				// up as "Piotr Wilczynski <…@employer>" on a commit by "Piotr"
+				// (Delwing). When the names agree, it is the author again.
+				if ( '' === $co_login && '' !== $login && self::same_name( $name, $co_name ) ) {
+					$co_login = $login;
 				}
 
 				$credited[] = array(
@@ -666,6 +677,52 @@ class Mudlet_Releases_Changelog {
 		}
 
 		return $map;
+	}
+
+	/**
+	 * Which login each author email commits under, from the commits GitHub
+	 * matched to an account. Exact where the name map is a guess, but only for
+	 * an address somebody also authored with in this release.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Commit rows.
+	 * @return array<string, string> lowercase email => login
+	 */
+	private static function logins_by_email( array $rows ): array {
+		$map = array();
+
+		foreach ( $rows as $row ) {
+			$login = trim( (string) ( $row['login'] ?? '' ) );
+			$email = strtolower( trim( (string) ( $row['email'] ?? '' ) ) );
+
+			if ( '' !== $login && '' !== $email && ! isset( $map[ $email ] ) ) {
+				$map[ $email ] = $login;
+			}
+		}
+
+		return $map;
+	}
+
+	/**
+	 * Whether two spellings of a name are one person's: the shorter one's words
+	 * open the longer one ("Piotr" and "Piotr Wilczynski"), case-insensitively.
+	 * Only asked about a co-author nobody could link to an account, on a commit
+	 * whose author is that same person far more often than not.
+	 *
+	 * @param string $a A name.
+	 * @param string $b Another.
+	 * @return bool
+	 */
+	private static function same_name( string $a, string $b ): bool {
+		$a = preg_split( '/\s+/u', mb_strtolower( trim( $a ) ), -1, PREG_SPLIT_NO_EMPTY );
+		$b = preg_split( '/\s+/u', mb_strtolower( trim( $b ) ), -1, PREG_SPLIT_NO_EMPTY );
+		if ( ! $a || ! $b ) {
+			return false;
+		}
+		if ( count( $a ) > count( $b ) ) {
+			[ $a, $b ] = array( $b, $a );
+		}
+
+		return array_slice( $b, 0, count( $a ) ) === $a;
 	}
 
 	/**
