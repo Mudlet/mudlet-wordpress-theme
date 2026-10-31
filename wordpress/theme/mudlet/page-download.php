@@ -218,7 +218,7 @@ $icons  = array(
 						printf(
 							/* translators: 1: link reading "Mudlet Web", 2: link reading "the source" */
 							esc_html__( '%1$s opens a profile in a browser tab with nothing to install, and Mudlet packages and Lua run in it unchanged. Read %2$s.', 'mudlet' ),
-							'<a href="https://mudlet.github.io/mudlet-web/">' . esc_html__( 'Mudlet Web', 'mudlet' ) . '</a>',
+							'<a href="https://web.mudlet.org/">' . esc_html__( 'Mudlet Web', 'mudlet' ) . '</a>',
 							'<a href="https://github.com/Mudlet/mudlet-web">' . esc_html__( 'the source', 'mudlet' ) . '</a>'
 						);
 						?>

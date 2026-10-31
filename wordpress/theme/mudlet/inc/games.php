@@ -492,7 +492,7 @@ function mudlet_telnet_protocols(): array {
  * @return string Base URL with a trailing slash, or '' to draw no link at all.
  */
 function mudlet_web_url(): string {
-	return (string) apply_filters( 'mudlet_web_url', 'https://mudlet-web.mudlet.org/' );
+	return (string) apply_filters( 'mudlet_web_url', 'https://web.mudlet.org/' );
 }
 
 /**
