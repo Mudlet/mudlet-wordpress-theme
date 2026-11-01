@@ -69,6 +69,20 @@ function mudlet_release(): array {
 	// Merged rather than swapped in so a release missing an asset for one
 	// platform still shows the other three with real data.
 	$latest = mudlet_github_release( 'latest' );
+
+	// A release is created on GitHub with no installers and they are uploaded
+	// minutes later, and the webhook stores it in between. For that window the
+	// newest release has nothing to download - so offer the newest one that
+	// does, rather than dropping all the way to the 4.22.0 floor below.
+	if ( ( ! $latest || empty( $latest['builds'] ) ) && function_exists( 'mudlet_releases_all' ) ) {
+		foreach ( mudlet_releases_all( 5 ) as $candidate ) {
+			if ( empty( $candidate['prerelease'] ) && ! empty( $candidate['builds'] ) ) {
+				$latest = $candidate;
+				break;
+			}
+		}
+	}
+
 	if ( $latest && ! empty( $latest['builds'] ) ) {
 		$release['version'] = $latest['version'];
 		$release['date']    = $latest['date'];

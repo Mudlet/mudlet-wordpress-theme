@@ -274,6 +274,32 @@ Verified against the real data: `4.22.0` gives *1 new feature, 2 improvements,
 `digest` in the releases JSON rather than out of that file — same number, no
 request — and the file is the fallback for releases too old to carry one.
 
+### The page caches empty themselves on a release
+
+The release data is read live, but WP Super Cache and Cloudflare both keep
+the HTML made from it, which is how 5.1.0's release day went on showing 5.0.2 on
+`/download/` until somebody cleared both by hand. `theme/mudlet/inc/page-cache.php`
+keeps a fingerprint of what the download page would show (version, date, and
+every build's URL, size and hash). When a release record or the
+`mudlet_release` override is written, it checks that fingerprint at the end of
+the request. If it has moved, it empties WP Super Cache and then Cloudflare,
+everything in both: the version also turns up in the download cards
+`page-layouts.php` builds, in the demo seed and in every language.
+
+Super Cache needs nothing. Cloudflare needs a token that has only
+**Zone → Cache Purge** permission, plus the zone id, in `wp-config.php`:
+
+```php
+define( 'MUDLET_CLOUDFLARE_ZONE_ID', '…' );
+define( 'MUDLET_CLOUDFLARE_API_TOKEN', '…' );
+```
+
+Without them that half is skipped. A failed purge goes to the PHP error log.
+The follow-up that finds a release's installers runs on WP-Cron, and page-cache
+hits never start WP-Cron, so a real system cron (`DISABLE_WP_CRON` plus
+`wp cron event run --due-now` every minute or five) makes the purge follow the
+upload by minutes rather than by whenever somebody next misses the cache.
+
 ### Carrying the download to another machine
 
 The live site has this as wp-downloadmanager's *Send this link via E-mail?* box,

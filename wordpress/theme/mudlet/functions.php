@@ -31,6 +31,7 @@ require_once __DIR__ . '/inc/front-art.php';
 require_once __DIR__ . '/inc/github-releases.php';
 require_once __DIR__ . '/inc/downloads.php';
 require_once __DIR__ . '/inc/download-email.php';
+require_once __DIR__ . '/inc/page-cache.php';
 require_once __DIR__ . '/inc/games.php';
 require_once __DIR__ . '/inc/makers.php';
 require_once __DIR__ . '/inc/discord.php';
