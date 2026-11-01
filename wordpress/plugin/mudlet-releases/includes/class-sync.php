@@ -5,7 +5,7 @@
  * Two paths, because they have very different budgets.
  *
  * **Backfill** is a one-off for a site that has never synced: forty releases,
- * each needing a compare of up to six pages. That is several hundred requests,
+ * each needing a compare of a page per hundred commits. That is several hundred requests,
  * which anonymous GitHub (60 an hour) would take most of a day to allow. So it
  * is done outside WordPress with the authenticated `gh` CLI - see
  * tools/fetch-releases.mjs - and imported from a file. Minutes, not a day.

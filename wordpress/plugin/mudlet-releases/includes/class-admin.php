@@ -558,8 +558,8 @@ class Mudlet_Releases_Admin {
 	 * which is how a *new* release arrives, and the only way to press anything
 	 * on a site that has no records yet.
 	 *
-	 * Index only, deliberately. The detail pass costs a compare of up to six
-	 * pages per release, and anonymous GitHub allows sixty requests an hour;
+	 * Index only, deliberately. The detail pass costs a compare page per hundred
+	 * commits - thirteen for 5.1.0 - and anonymous GitHub allows sixty an hour;
 	 * the hourly job spends that budget two records at a time.
 	 *
 	 * @param string $which Which tablenav is being drawn.

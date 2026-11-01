@@ -40,11 +40,14 @@ class Mudlet_Releases_Changelog {
 	/**
 	 * Safety stop.
 	 *
-	 * A release of 547 commits takes six requests. Ten pages is a thousand
-	 * commits - past that something is wrong with the tags being compared, and
-	 * hammering the API is not the way to find out.
+	 * How many pages to ask for comes from `total_commits` on page one, so this
+	 * only bites when that number is absurd. It used to be ten, on the theory
+	 * that a thousand commits meant the wrong tags were being compared - and
+	 * then 5.1.0 shipped 1268 commits after 5.0.2 and its changelog stopped at
+	 * exactly 1000 entries without a word. Thirty pages is three thousand
+	 * commits, more than twice the largest release so far.
 	 */
-	const MAX_PAGES = 10;
+	const MAX_PAGES = 30;
 
 	/**
 	 * Leading words that put an entry in a category.
@@ -261,10 +264,11 @@ class Mudlet_Releases_Changelog {
 	 * @return array<int, array<string, mixed>>|null
 	 */
 	private static function commits( string $base, string $head ) {
-		$repo = Mudlet_Releases_Github_Client::repo();
-		$all  = array();
+		$repo  = Mudlet_Releases_Github_Client::repo();
+		$all   = array();
+		$pages = self::MAX_PAGES;
 
-		for ( $page = 1; $page <= self::MAX_PAGES; $page++ ) {
+		for ( $page = 1; $page <= $pages; $page++ ) {
 			$url = sprintf(
 				'https://api.github.com/repos/%s/compare/%s...%s?per_page=%d&page=%d',
 				$repo,
@@ -279,6 +283,12 @@ class Mudlet_Releases_Changelog {
 				// A failure on page one is a failure; on a later page, keep what
 				// was collected rather than throwing away five good requests.
 				return 1 === $page ? null : $all;
+			}
+
+			// Every page carries the total, so page one says how many follow -
+			// no request is spent discovering that the last one was short.
+			if ( 1 === $page && isset( $data['total_commits'] ) ) {
+				$pages = min( self::MAX_PAGES, max( 1, (int) ceil( (int) $data['total_commits'] / self::PER_PAGE ) ) );
 			}
 
 			$commits = (array) $data['commits'];
