@@ -155,7 +155,6 @@
 	padding: 1.15rem 1.35rem 1.3rem;
 	background: var(--band);
 	border: 1px solid var(--line);
-	border-left: 3px solid var(--mark);
 	border-radius: 12px;
 }
 .wp-block-group.is-style-mudlet-highlights > :first-child {
