@@ -34,10 +34,10 @@ profile, no picker), so the config pins a MUD it never dials —
 login screen's "Open offline" path. Nothing connects; every command typed is
 answered by Lua.
 
-**No title bar.** `BrandConfig.toolbar` can hide individual *buttons*, not the
-bar — the root `.mudix-toolbar` still carries the wordmark, profile name,
-status dot and hamburger. `src/embed.css` removes it (and the fullscreen
-reveal strip) outright. This is the one hack here that wants an upstream fix:
+**No title bar.** `BrandConfig.toolbar` can drop the bar's rows, not the
+bar — `.mudlet-topbar` (`.mudix-toolbar` before 1.0.0) still carries the
+wordmark, profile name, status dot and hamburger. `src/embed.css` removes it
+outright. This is the one hack here that wants an upstream fix:
 an `embed`/`chrome: false` flag in `BrandConfig` would replace both this and
 the dummy `mud` target above.
 

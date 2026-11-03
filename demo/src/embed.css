@@ -1,13 +1,12 @@
 /* Embed chrome removal.
  *
- * BrandConfig can hide individual toolbar *buttons* (`toolbar.hide`) but not
- * the bar itself — the root .mudix-toolbar still carries the wordmark,
- * profile name, status dot and hamburger. Until the library grows a real
- * embed/chrome flag, the bar and its fullscreen reveal strip are removed
- * here. `.app` is a flex column, so the output area simply takes the height
- * the bar gave up. */
-.mudix-toolbar,
-.app-topbar-hover-zone {
+ * BrandConfig can drop the bar's rows (`toolbar.menuBar` / `buttonBar`) but
+ * not the bar itself — `.mudlet-topbar` (1.0.0's name; it was .mudix-toolbar)
+ * still carries the wordmark, profile name, status dot and, at the hero's
+ * width, the hamburger. Until the library grows a real embed/chrome flag, the
+ * bar is removed here. `.app` is a flex column, so the output area simply
+ * takes the height the bar gave up. */
+.mudlet-topbar {
     display: none !important;
 }
 

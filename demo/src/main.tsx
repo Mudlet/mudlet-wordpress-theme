@@ -67,6 +67,11 @@ const brand: BrandConfig = {
     ],
     availableThemes: ['mudlet-site'],
     defaultTheme: 'mudlet-site',
+    // The world is rebuilt from the package on every visit and nothing in it
+    // is the visitor's to lose, so there is no reason to ask the browser to
+    // exempt it from eviction — and Firefox would show that request as a
+    // permission prompt over the front page's hero.
+    requestPersistentStorage: false,
     Landing: AutoLanding,
 };
 
