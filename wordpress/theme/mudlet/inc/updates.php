@@ -124,6 +124,24 @@ function mudlet_update_forced(): bool {
 		&& current_user_can( 'update_themes' );
 }
 
+add_action( 'load-update-core.php', 'mudlet_update_force_themes', 9 );
+/**
+ * Make Check again actually re-run the theme check.
+ *
+ * `force-check` only forces core's own version check. `wp_update_themes()`
+ * runs on the same page load but bails if the last theme check was under a
+ * minute ago — and opening Dashboard → Updates *is* a theme check, so clicking
+ * Check again on the page you just opened never reached the filter above, and
+ * the bypass in mudlet_update_forced() was dead code in the usual flow.
+ * Dropping core's record, one priority ahead of core's own hook at 10, is what
+ * makes it ask: one wordpress.org request, which is what the button promises.
+ */
+function mudlet_update_force_themes(): void {
+	if ( mudlet_update_forced() ) {
+		delete_site_transient( 'update_themes' );
+	}
+}
+
 /**
  * `owner/name` out of an Update URI, or '' if it is not a GitHub repository.
  *
