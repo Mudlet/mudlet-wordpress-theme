@@ -133,7 +133,12 @@ $icons  = array(
 									</span>
 								</button>
 							<?php endif; ?>
-							<a class="btn btn--ghost" href="<?php echo esc_url( $build['url'] ); ?>"><?php esc_html_e( 'Download', 'mudlet' ); ?></a>
+							<?php
+							// The word folds to the icon at phone width (theme.css),
+							// where the row's four controls otherwise run over the
+							// size beside them. It stays in the DOM for a reader.
+							?>
+							<a class="btn btn--ghost dlget" href="<?php echo esc_url( $build['url'] ); ?>"><?php mudlet_icon( 'download' ); ?><span class="dlget__w"><?php esc_html_e( 'Download', 'mudlet' ); ?></span></a>
 							<?php
 							// Only when the row is not already pointing there:
 							// a mirror nobody can route around is a single

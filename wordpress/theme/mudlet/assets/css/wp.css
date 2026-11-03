@@ -912,11 +912,20 @@
 /* The form. Whatever a plugin puts in the slot inherits the field rules below,
    which is the point of styling by element rather than by class - a shortcode
    brings its own markup and none of our class names. */
+/* minmax(0, 1fr) and not the implicit auto track: a plugin's form is one grid
+   item here, and an auto track will not go narrower than that item's
+   min-content. Contact Form 7 writes size="40" on every input, which is forty
+   characters of min-content, so on a phone the fields ran a good inch past the
+   panel's right edge while the panel itself stayed put. */
 #site .ctform {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	gap: .65rem;
 	width: 100%;
 }
+#site .ctform > *,
+#site .ctform .wpcf7-form-control-wrap { min-width: 0; }
+#site .ctform .wpcf7-form-control-wrap { display: block; }
 #site .ctform__row {
 	display: grid;
 	gap: .65rem;
@@ -944,6 +953,7 @@
 	border-radius: 8px;
 	padding: .5rem .65rem;
 	width: 100%;
+	max-width: 100%;
 }
 #site .ctform textarea { min-height: 6rem; resize: vertical; line-height: 1.6; }
 /* The placeholder's controls are disabled, and have to look it. A form that

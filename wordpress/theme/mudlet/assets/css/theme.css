@@ -276,6 +276,8 @@ button{font:inherit; color:inherit}
      so the arrows come out of the overlay and join the bar at the top, where
      the close button already is. */
   #site .mlb__arrow{position:static; margin:0; width:2.4rem; height:2.4rem}
+  #site .mlb__bar{gap:.5rem}
+  #site .mlb__x{margin-left:.5rem}
   #site .mlb__fig{padding-inline:.5rem}
 }
 
@@ -894,6 +896,14 @@ button{font:inherit; color:inherit}
   #site .dlrow .size{grid-column:1; grid-row:2; align-self:center; margin-top:.7rem;
     margin-left:calc(var(--dlmark) + var(--dlgut))}
   #site .dlrow__acts{grid-column:2; grid-row:2; margin-top:.7rem}
+  /* ...and even there the word "Download" is what pushes the group into the
+     size beside it, so it folds to the arrow it already carries. The word
+     stays for a screen reader; only its box goes. */
+  #site .dlrow{column-gap:1rem}
+  #site .dlget{padding:.42rem .8rem}
+  #site .dlget svg{width:1.05rem; height:1.05rem}
+  #site .dlget__w{position:absolute; width:1px; height:1px; overflow:hidden;
+    clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap}
   #site .dlmore{grid-row:3}
   #site .dlpane--qr{grid-template-columns:1fr; justify-items:center; text-align:center}
   #site .dlpane p{max-width:none}

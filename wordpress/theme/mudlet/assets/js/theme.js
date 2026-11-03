@@ -238,6 +238,26 @@
 		}).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 	})();
 
+	// ── ...and folds to its compact size where the normal one will not fit ──
+	//
+	// The normal widget is a fixed 303px iframe. On a phone the contact panel's
+	// content box is narrower than that, so the captcha stuck out past the
+	// panel's edge - and, before .ctform's track was minmax(0, 1fr), held the
+	// whole form open to its width, every field with it. data-size is read at
+	// render like data-theme, so it is decided here, once, off the width the
+	// box actually has. Compact is 164px wide. Only "normal" is touched:
+	// "invisible" draws nothing, and "compact" already fits.
+	(function () {
+		var boxes = document.querySelectorAll('.h-captcha[data-size="normal"]');
+		for (var i = 0; i < boxes.length; i++) {
+			// The nearest ancestor with a width: Contact Form 7 wraps the widget
+			// in a <span>, and an inline box reports a clientWidth of 0.
+			var up = boxes[i].parentElement;
+			while (up && !up.clientWidth) up = up.parentElement;
+			if (up && up.clientWidth < 303) boxes[i].setAttribute('data-size', 'compact');
+		}
+	})();
+
 	// ── search palette — "/" or ctrl/cmd-K, IDE style ────────────────────
 	//
 	// Three sources, one list. DATA.search is a flat [title, source, url] index
@@ -1614,11 +1634,17 @@
 			var n = document.createElement('p');
 			n.className = 'mlb__n';
 			var x = button('mlb__btn mlb__x', S.galClose || 'Close', CROSS);
-			bar.appendChild(n);
-			bar.appendChild(x);
-
 			var prev = button('mlb__btn mlb__arrow mlb__arrow--prev', S.galPrev || 'Previous', CHEV_L);
 			var next = button('mlb__btn mlb__arrow mlb__arrow--next', S.galNext || 'Next', CHEV_R);
+			// The arrows live in the bar, not beside it. Wide, they are fixed
+			// to the middle of the screen and the bar is only their parent;
+			// narrow, they drop back into it next to the close button. As
+			// children of the dialog they were grid items there, each taking
+			// a row of its own and squeezing the picture's row to nothing.
+			bar.appendChild(n);
+			bar.appendChild(prev);
+			bar.appendChild(next);
+			bar.appendChild(x);
 
 			var fig = document.createElement('figure');
 			fig.className = 'mlb__fig';
@@ -1650,8 +1676,6 @@
 			cap.appendChild(out);
 
 			dlg.appendChild(bar);
-			dlg.appendChild(prev);
-			dlg.appendChild(next);
 			dlg.appendChild(fig);
 			dlg.appendChild(cap);
 
