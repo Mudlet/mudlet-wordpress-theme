@@ -274,7 +274,7 @@ Verified against the real data: `4.22.0` gives *1 new feature, 2 improvements,
 `digest` in the releases JSON rather than out of that file — same number, no
 request — and the file is the fallback for releases too old to carry one.
 
-### The page caches empty themselves on a release
+### The page caches empty themselves on a release, and on a deploy
 
 The release data is read live, but WP Super Cache and Cloudflare both keep
 the HTML made from it, which is how 5.1.0's release day went on showing 5.0.2 on
@@ -285,6 +285,17 @@ every build's URL, size and hash). When a release record or the
 the request. If it has moved, it empties WP Super Cache and then Cloudflare,
 everything in both: the version also turns up in the download cards
 `page-layouts.php` builds, in the demo seed and in every language.
+
+A deploy does the same, and for the same reason. Every URL the theme hands out
+is cache-busted, its CSS and JS by a hash in `ver` and the hero's client by a
+hash of its `index.html` in `v`, but only in fresh HTML. After an update, Super
+Cache's front page goes on framing the old `index.html?v=…`, Cloudflare may still
+hold that file (it keeps `wp-content` for four hours), its bundles are gone, and
+the 404s are cached too. A returning visitor's service worker still has the old
+bundles, so for them nothing looks wrong. So `page-cache.php` also fingerprints
+the theme's version plus the client's hash, checks it on every request that
+reaches PHP, and runs the same purge the first time it moves. After **Update
+now**, that request is the admin's own next page.
 
 Super Cache needs nothing. Cloudflare needs a token that has only
 **Zone → Cache Purge** permission, plus the zone id, in `wp-config.php`:

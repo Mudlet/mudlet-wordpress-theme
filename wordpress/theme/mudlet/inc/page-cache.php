@@ -193,3 +193,60 @@ add_action(
 add_action( 'add_option_mudlet_release', 'mudlet_page_cache_maybe_changed' );
 add_action( 'update_option_mudlet_release', 'mudlet_page_cache_maybe_changed' );
 add_action( 'delete_option_mudlet_release', 'mudlet_page_cache_maybe_changed' );
+
+/*
+ * The other thing that moves every page at once: a deploy.
+ *
+ * Every URL the theme hands out is already cache-busted - its stylesheets and
+ * script by a hash in `ver`, the hero's client by a hash of its index.html in
+ * `v` (see mudlet_demo_src()) - but only in HTML that is fresh, and after an
+ * update both caches go on serving the HTML from before it. Super Cache's front
+ * page then frames `index.html?v=<old>`; Cloudflare, which keeps everything
+ * under wp-content for four hours, may hold that old index.html, whose bundles
+ * the update has just deleted; their 404s are cached in turn, and the hero
+ * stays scripted for a new visitor while a returning one, whose service worker
+ * kept the old bundles, sees nothing wrong. That inconsistency is the symptom.
+ *
+ * So the same purge runs when the deployed theme changes: its version (a
+ * release writes it into style.css) and the client's hash (a rebuild in place
+ * keeps the version). Checked on every request that reaches PHP - one autoloaded
+ * option and a hash of a 1KB file - because a deploy arrives by more doors than
+ * there are hooks for: Update now, an uploaded zip, WP-CLI, an rsync. After
+ * Update now, the first such request is the admin's own next page.
+ */
+
+/** Where the fingerprint of the last deploy the caches were emptied for lives. */
+const MUDLET_PAGE_CACHE_DEPLOYED = 'mudlet_deploy_cached_as';
+
+/**
+ * A short hash of the theme as deployed.
+ *
+ * @return string
+ */
+function mudlet_deploy_fingerprint(): string {
+	return substr( md5( wp_get_theme( get_template() )->get( 'Version' ) . "\n" . mudlet_demo_src() ), 0, 16 );
+}
+
+add_action( 'init', 'mudlet_page_cache_check_deploy' );
+/**
+ * Purge once if this is the first request a new deploy has served.
+ */
+function mudlet_page_cache_check_deploy(): void {
+	$now = mudlet_deploy_fingerprint();
+	if ( get_option( MUDLET_PAGE_CACHE_DEPLOYED ) === $now ) {
+		return;
+	}
+
+	// Written first, for the reason mudlet_page_cache_check() gives. Autoloaded,
+	// unlike the release fingerprint: this one is read on every request.
+	update_option( MUDLET_PAGE_CACHE_DEPLOYED, $now, true );
+
+	// At shutdown, so a Cloudflare round-trip is not spent before the page.
+	add_action(
+		'shutdown',
+		static function (): void {
+			mudlet_page_cache_purge( sprintf( 'theme %s', wp_get_theme( get_template() )->get( 'Version' ) ) );
+		},
+		5
+	);
+}
