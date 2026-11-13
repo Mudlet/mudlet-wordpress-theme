@@ -19,11 +19,11 @@ $years   = mudlet_archive_years();
 	<div class="rpanel rail__cats">
 		<b><?php esc_html_e( 'Categories', 'mudlet' ); ?></b>
 		<div class="catlist" role="group" aria-label="<?php esc_attr_e( 'Filter posts by category', 'mudlet' ); ?>">
-			<a class="cat" href="<?php echo esc_url( mudlet_news_url() ); ?>" data-cat="all" aria-pressed="<?php echo 0 === $current ? 'true' : 'false'; ?>">
+			<a class="cat" href="<?php echo esc_url( mudlet_news_url() ); ?>" data-cat="all"<?php echo 0 === $current ? ' aria-current="page"' : ''; ?>>
 				<?php esc_html_e( 'All', 'mudlet' ); ?><span class="n"><?php echo esc_html( number_format_i18n( $total ) ); ?></span>
 			</a>
 			<?php foreach ( $terms as $term ) : ?>
-				<a class="cat" href="<?php echo esc_url( get_category_link( $term ) ); ?>" data-cat="<?php echo esc_attr( mudlet_category_family( $term->slug ) ); ?>" aria-pressed="<?php echo $current === (int) $term->term_id ? 'true' : 'false'; ?>">
+				<a class="cat" href="<?php echo esc_url( get_category_link( $term ) ); ?>" data-cat="<?php echo esc_attr( mudlet_category_family( $term->slug ) ); ?>"<?php echo $current === (int) $term->term_id ? ' aria-current="page"' : ''; ?>>
 					<?php echo esc_html( $term->name ); ?><span class="n"><?php echo esc_html( number_format_i18n( $term->count ) ); ?></span>
 				</a>
 			<?php endforeach; ?>

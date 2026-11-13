@@ -86,6 +86,16 @@ $mudlet_shots = mudlet_front_thumbs( 3 );
 					if ( ! $mudlet_full ) {
 						continue;
 					}
+					// The image is the link's only content, so an empty alt
+					// leaves a link with no name. Not every shot in /media/
+					// has one; the caption, then a plain description, stands in.
+					$mudlet_alt = trim( (string) get_post_meta( $mudlet_shot, '_wp_attachment_image_alt', true ) );
+					if ( '' === $mudlet_alt ) {
+						$mudlet_alt = trim( wp_strip_all_tags( wp_get_attachment_caption( $mudlet_shot ) ) );
+					}
+					if ( '' === $mudlet_alt ) {
+						$mudlet_alt = __( 'A screenshot of Mudlet in use', 'mudlet' );
+					}
 					?>
 					<a class="shot" href="<?php echo esc_url( $mudlet_full ); ?>">
 						<?php
@@ -94,6 +104,7 @@ $mudlet_shots = mudlet_front_thumbs( 3 );
 							'medium_large',
 							false,
 							array(
+								'alt'      => $mudlet_alt,
 								'loading'  => 'lazy',
 								'decoding' => 'async',
 							)

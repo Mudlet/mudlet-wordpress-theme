@@ -20,7 +20,10 @@ img{max-width:100%; display:block}
    rule forgot. */
 img[hidden]{display:none}
 button{font:inherit; color:inherit}
-:focus-visible{outline:2px solid var(--ember); outline-offset:2px; border-radius:3px}
+/* --orange, not --ember: ember on cream is 2.93:1, under the 3:1 a focus
+   indicator needs (WCAG 1.4.11). Inside #site --orange is #c44400 in light
+   (4.95:1) and ember itself in dark, where it clears 6:1. */
+:focus-visible{outline:2px solid var(--orange); outline-offset:2px; border-radius:3px}
 
 /* ═══════════════════════════════════════════════════════════════
    MUDLET — direction B, refined
@@ -305,7 +308,7 @@ button{font:inherit; color:inherit}
   text-decoration:none; font-size:.88rem; color:var(--dim); padding:.4rem .6rem; border-radius:6px}
 #site .lang__menu a:hover{background:var(--band); color:var(--ink)}
 #site .lang__menu a[aria-current="true"]{color:var(--ink); font-weight:600}
-#site .lang__menu code{font-family:var(--display); font-size:.7rem; letter-spacing:.06em; opacity:.75}
+#site .lang__menu code{font-family:var(--display); font-size:.7rem; letter-spacing:.06em}
 @media (max-width:46rem){ #site .lang{display:none} }
 
 #site .btn{display:inline-flex; align-items:center; gap:.5rem; background:var(--orange); color:var(--on-accent);
@@ -741,7 +744,6 @@ button{font:inherit; color:inherit}
   letter-spacing:.02em; line-height:1.9; color:var(--dim)}
 #site .specs b{font-weight:600; color:var(--ink); margin-inline:.55ch 1ch}
 #site .specs .sep{color:var(--mark); opacity:.55; margin-inline:.6ch}
-#site .specs__more{opacity:.7}
 
 /* — page routing: the prototype carries two views in one document — */
 #site .page{display:none}
@@ -1174,9 +1176,9 @@ button{font:inherit; color:inherit}
 #site .cat[data-cat="release"]::before{background:var(--mark); opacity:1}
 #site .cat[data-cat="informational"]::before{background:var(--teal); opacity:1}
 #site .cat[data-cat="press"]::before{background:#8a9a5b; opacity:1}
-#site .cat .n{margin-left:auto; font-family:var(--display); font-size:.72rem; opacity:.65}
+#site .cat .n{margin-left:auto; font-family:var(--display); font-size:.72rem}
 #site .cat:hover{background:var(--band); color:var(--ink)}
-#site .cat[aria-pressed="true"]{background:var(--band); color:var(--link); font-weight:600}
+#site .cat[aria-current="page"]{background:var(--band); color:var(--link); font-weight:600}
 
 /* The year jump was the one control here the browser drew rather than this
    stylesheet: a native <select>, with an OS dropdown behind it and an OS arrow
@@ -1206,7 +1208,7 @@ button{font:inherit; color:inherit}
 #site .ylist a{display:flex; align-items:baseline; gap:.6ch; padding:.32rem .45rem;
   border-radius:6px; font-family:var(--display); font-size:.8rem; color:var(--dim);
   text-decoration:none; transition:.13s}
-#site .ylist a .n{margin-left:auto; font-size:.72rem; opacity:.6}
+#site .ylist a .n{margin-left:auto; font-size:.72rem}
 #site .ylist a:hover{background:var(--band); color:var(--ink)}
 #site .ylist a[aria-current="true"]{background:var(--band); color:var(--link); font-weight:600}
 
@@ -1221,10 +1223,12 @@ button{font:inherit; color:inherit}
   font-size:.8rem; font-weight:500; color:var(--dim); background:transparent;
   border:1px solid var(--line); border-radius:999px; padding:.34rem .85rem; cursor:pointer;
   transition:.15s}
-#site .chip b{font-weight:600; font-size:.72rem; opacity:.65}
+/* No opacity on text here or in the rail's counts: --dim is the faintest text
+   colour that clears 4.5:1, and faded to .6-.75 it drops to 2.5-3.3. Being
+   smaller is how a count steps back. */
+#site .chip b{font-weight:600; font-size:.72rem}
 #site .chip:hover{color:var(--ink); background:var(--band)}
-#site .chip[aria-pressed="true"]{background:var(--orange); border-color:var(--orange); color:var(--on-accent)}
-#site .chip[aria-pressed="true"] b{opacity:.75}
+#site .chip[aria-pressed="true"], #site .chip[aria-current="page"]{background:var(--orange); border-color:var(--orange); color:var(--on-accent)}
 /* ── the list ──────────────────────────────────────────────────────
    Rows on a date rail, not a card grid. The homepage already spends a
    grid of cards on three posts; an archive of 178 wants a log, and the

@@ -120,6 +120,18 @@
 	font-size: .84rem;
 	color: var(--dim);
 	text-align: center;
+	/* Release bodies arrive with style="opacity:0.75" on the video's caption,
+	   which takes --dim from 5.6:1 to 3.3:1. --dim is already the quiet
+	   colour; it does not need fading twice. */
+	opacity: 1 !important;
+}
+/* The upstream release plugin writes its changelog into the post body with
+   its own <style>: a #fafafa box for a white page. Its text inherits ours, so
+   on the dark theme that is cream on near-white, 1.25:1. These are the theme's
+   surfaces for the same box, which #site outranks that bare class for. */
+#site .prose .mudlet-changelog {
+	background: var(--band);
+	border-color: var(--line);
 }
 #site .prose .wp-block-embed__wrapper,
 #site .prose .wp-block-embed iframe { max-width: 100%; }
@@ -563,7 +575,6 @@
 	letter-spacing: .06em;
 	text-transform: uppercase;
 	color: var(--dim);
-	opacity: .7;
 	margin-left: .8ch;
 }
 /* nothing to open: the anchor carries no href and is text, so drop the affordances */

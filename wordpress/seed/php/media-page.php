@@ -126,6 +126,13 @@ $screencasts = array(
  * a guess about somebody else's game. An empty caption is also the normal
  * case for a screenshot somebody sends in, so the carousel had better look
  * right with a few of them, and this is how that gets noticed.
+ *
+ * The alt is a separate fact and those three do get one: a caption names the
+ * game for somebody browsing, and leaving it off is a choice about the page,
+ * but the image sits inside a link and an empty alt leaves that link with no
+ * name at all. The third entry describes only what is on screen - the window
+ * title says which game, so nothing is guessed. Where it is absent the
+ * caption doubles as the alt.
  */
 $shots = array(
 	array( 'https://www.mudlet.org/wp-content/uploads/2024/05/The-Land-MUD.png', 'The Land' ),
@@ -139,9 +146,9 @@ $shots = array(
 	array( 'https://www.mudlet.org/wp-content/uploads/2021/05/profile_swap.gif', 'Switching between profiles' ),
 	array( 'https://www.mudlet.org/wp-content/uploads/2021/01/mudlet_cleftofdimensions.gif', 'Cleft of Dimensions' ),
 	array( 'https://www.mudlet.org/wp-content/uploads/2020/05/cf-adjustable-container.png', 'An adjustable container' ),
-	array( 'https://www.mudlet.org/wp-content/uploads/2020/05/Selection_591.png', '' ),
-	array( 'https://www.mudlet.org/wp-content/uploads/2019/10/map-stat-big.png', '' ),
-	array( 'https://www.mudlet.org/wp-content/uploads/2019/10/group-combat-big-1.png', '' ),
+	array( 'https://www.mudlet.org/wp-content/uploads/2020/05/Selection_591.png', '', 'Carrion Fields in Mudlet 4.8, with a world map window, alias and variable panels, and health and mana gauges' ),
+	array( 'https://www.mudlet.org/wp-content/uploads/2019/10/map-stat-big.png', '', 'Clessidra in Mudlet 4.2, in Italian, with a parchment scroll of session statistics over the console, a minimap and an equipment list' ),
+	array( 'https://www.mudlet.org/wp-content/uploads/2019/10/group-combat-big-1.png', '', 'Clessidra in Mudlet 4.2, in Italian, mid group fight, with portraits and health bars for each party member beside the console' ),
 	array( 'https://www.mudlet.org/wp-content/uploads/2024/06/ArkadiaMUD-customized.png', 'Arkadia, customised' ),
 );
 
@@ -155,9 +162,10 @@ $shots = array(
  *
  * @param string $url     Where to fetch it from.
  * @param string $caption Caption, or '' for none.
+ * @param string $alt     Alt text.
  * @return int Attachment id, or 0 if it could not be fetched.
  */
-function mudlet_seed_shot( string $url, string $caption ): int {
+function mudlet_seed_shot( string $url, string $caption, string $alt ): int {
 	$found = get_posts(
 		array(
 			'post_type'      => 'attachment',
@@ -198,7 +206,7 @@ function mudlet_seed_shot( string $url, string $caption ): int {
 
 	// The caption is what the carousel prints; the alt is what a screen reader
 	// gets, and "Arkadia" is a better answer there than the file's name.
-	update_post_meta( $id, '_wp_attachment_image_alt', $caption );
+	update_post_meta( $id, '_wp_attachment_image_alt', $alt );
 	update_post_meta( $id, '_mudlet_seed_shot', $url );
 	wp_update_post(
 		array(
@@ -224,9 +232,11 @@ $got    = 0;
 if ( '0' !== getenv( 'SEED_MEDIA' ) ) {
 	WP_CLI::log( '  · fetching ' . count( $shots ) . ' screenshots from mudlet.org' );
 	foreach ( $shots as $shot ) {
-		list( $url, $caption ) = $shot;
+		$url     = $shot[0];
+		$caption = $shot[1];
+		$alt     = $shot[2] ?? $caption;
 
-		$id = mudlet_seed_shot( $url, $caption );
+		$id = mudlet_seed_shot( $url, $caption, $alt );
 		if ( ! $id ) {
 			continue;
 		}
@@ -238,7 +248,7 @@ if ( '0' !== getenv( 'SEED_MEDIA' ) ) {
 		$slides .= '<!-- wp:image {"id":' . $id . ',"sizeSlug":"large","linkDestination":"media"} -->'
 			. '<figure class="wp-block-image size-large">'
 			. '<a href="' . esc_url( $file ) . '">'
-			. '<img src="' . esc_url( $large ? $large : $file ) . '" alt="' . esc_attr( $caption ) . '" class="wp-image-' . $id . '"/>'
+			. '<img src="' . esc_url( $large ? $large : $file ) . '" alt="' . esc_attr( $alt ) . '" class="wp-image-' . $id . '"/>'
 			. '</a>'
 			. ( '' !== $caption ? '<figcaption class="wp-element-caption">' . esc_html( $caption ) . '</figcaption>' : '' )
 			. '</figure>'

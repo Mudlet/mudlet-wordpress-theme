@@ -39,6 +39,7 @@ require_once __DIR__ . '/inc/contact.php';
 require_once __DIR__ . '/inc/demo-seed.php';
 require_once __DIR__ . '/inc/release-meta.php';
 require_once __DIR__ . '/inc/divi-cleanup.php';
+require_once __DIR__ . '/inc/content-a11y.php';
 require_once __DIR__ . '/inc/comments.php';
 require_once __DIR__ . '/inc/languages.php';
 require_once __DIR__ . '/inc/updates.php';
