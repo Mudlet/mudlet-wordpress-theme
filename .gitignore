@@ -28,3 +28,7 @@ wordpress/seed/export/
 # Generated release dump (node wordpress/tools/fetch-releases.mjs).
 # Derived data that goes stale with every release; regenerate rather than commit.
 wordpress/seed/releases.json
+
+# Claude Code personal files (may hold secrets)
+**/.claude/settings.local.json
+CLAUDE.local.md
